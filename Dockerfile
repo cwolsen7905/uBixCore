@@ -16,9 +16,6 @@ USER www
 ARG CI_JOB_TOKEN
 ENV CI_JOB_TOKEN=$CI_JOB_TOKEN
 
-#RUN composer config -- gitlab-token.git.lan.vsmedia.net gitlab-ci-token $CI_JOB_TOKEN; \
-#    awk -v pass="$CI_JOB_TOKEN" '{gsub(/CHANGEME/, pass); print}' auth.json > tmp.auth && mv tmp.auth /web/auth.json;
-
 COPY --chown=www composer.json /web/
 COPY --chown=www public/ /web/public/
 COPY --chown=www php/ /web/php/
@@ -26,7 +23,7 @@ COPY --chown=www templates/ /web/templates/
 COPY --chown=www app/ /web/app/
 COPY --chown=www bin/ /web/bin/
 
-#temporary fix for dotenv
+#Temporary fix for dotenv
 COPY --chown=www .env /web/.env
 
 #RUN composer update --working-dir=/web/
