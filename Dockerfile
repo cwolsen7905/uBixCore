@@ -1,4 +1,5 @@
 FROM gitlab.brainchurts.com:5050/k8s/baseimages/nginx-php-fpm-memcache:latest
+
 USER root
 
 RUN apk --no-cache add composer php-pdo php-pdo_mysql php-simplexml php83-pecl-memcached 
