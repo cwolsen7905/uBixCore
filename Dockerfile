@@ -1,11 +1,8 @@
-FROM gitlab.brainchurts.com:5050/k8s/baseimages/nginx-php-fpm-memcache:latest
+FROM gitlab.brainchurts.com:5050/k8s/baseimages/nginx-php8-fpm-memcache:latest
 
 USER root
 
-RUN apk update && apk --no-cache add composer php-pdo php-pdo_mysql php-simplexml php-dev php-pear libmemcached-dev \
-	&& pecl install memcached \ 
-	&& docker-php-ext-enable memcached \
-	&& apk del php-dev libmemcached-dev php-pear
+RUN apk --no-cache add composer php-pdo php-pdo_mysql php-simplexml php-pecl-memcached
 
 RUN mkdir -p /web && \
     chown -R www:www /web && \
