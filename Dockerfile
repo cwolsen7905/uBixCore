@@ -1,4 +1,4 @@
-FROM gitlab.brainchurts.com:5050/k8s/baseimages/nginx-php84-fpm-memcache:dev
+FROM b
 
 USER root
 
@@ -26,7 +26,7 @@ COPY --chown=www bin/ /web/bin/
 #Temporary fix for dotenv
 COPY --chown=www .env /web/.env
 
-#RUN composer update --working-dir=/web/
+RUN composer update --working-dir=/web/
 
 RUN mkdir -p /web/var/cache/latte
 RUN chmod -R 777 /web/var
