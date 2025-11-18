@@ -10,7 +10,7 @@ metadata:
   selfLink: /apis/networking.k8s.io/v1/namespaces/live-dev/ingresses/sowingme-web
 spec:
   rules:
-  - host: sowingme-web.dev.vsmedia.net
+  - host: sowingme-web.dev.ubixsys.com
     http:
       paths:
       - backend:
