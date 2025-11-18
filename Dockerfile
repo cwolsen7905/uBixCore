@@ -6,7 +6,7 @@ USER root
 
 RUN mkdir -p /web && \
     chown -R www:www /web && \
-    chmod -R 755 /web
+    chmod -R 0755 /web
 
 #Handel DevOps configuration
 COPY config/devops/nginx.conf /etc/nginx/nginx.conf
