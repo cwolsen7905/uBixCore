@@ -50,6 +50,7 @@ for dir in $SCRIPT_DIR/app/*/; do
 
         	    if ! sed "s/{{DATE_STAMP}}/${DATE_STAMP}/g" $DEPLOY_FILE | $KUBECTL $KUBECONFIG apply -f -;  then
           	    	echo "Failed to apply deployment for $dir"
+					echo "$KUBECTL $KUBECONFIG apply -f -"
            	    	exit 1
             	fi
 
