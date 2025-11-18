@@ -38,7 +38,7 @@ spec:
           value: "DEV"
         - name: APP_NAME
           value: "SowingMeAdminApi"
-        image: gitlab.brainchurts.com:5050/ubixsys/ubixcore:latest
+        image: gitlab.brainchurts.com:5050/ubixsys/ubixcore:dev
         imagePullPolicy: Always
         name: sowingme-admin-api
         ports:
