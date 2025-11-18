@@ -1,4 +1,4 @@
-FROM gitlab.brainchurts.com:5050/k8s/baseimages/nginx-php8-fpm-memcache:dev
+FROM gitlab.brainchurts.com:5050/k8s/baseimages/nginx-php84-fpm-memcache:dev
 
 USER root
 
