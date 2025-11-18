@@ -2,8 +2,6 @@ FROM gitlab.brainchurts.com:5050/k8s/baseimages/nginx-php84-fpm-memcache:dev
 
 USER root
 
-#RUN apk update && apk add --no-cache php8X-pecl-memcached
-
 RUN mkdir -p /web && \
     chown -R www:www /web && \
     chmod -R 0755 /web
