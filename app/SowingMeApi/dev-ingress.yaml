@@ -5,17 +5,17 @@ metadata:
     field.cattle.io/creatorId: cwolsen
   labels:
     cattle.io/creator: norman
-  name: affiliate-api
-  namespace: webservices-dev
-  selfLink: /apis/networking.k8s.io/v1/namespaces/webservices-dev/ingresses/affiliate-api
+  name: sowingme-api
+  namespace: ws-dev
+  selfLink: /apis/networking.k8s.io/v1/namespaces/ws-dev/ingresses/sowingme-api
 spec:
   rules:
-  - host: affiliate-api.dev.vsmedia.net
+  - host: sowingme-api.dev.ubixsys.com
     http:
       paths:
       - backend:
           service:
-            name: affiliate-api
+            name: sowingme-api
             port:
               number: 8080
         path: /
