@@ -5,17 +5,17 @@ metadata:
     field.cattle.io/creatorId: cwolsen
   labels:
     cattle.io/creator: norman
-    workload.user.cattle.io/workloadselector: deployment-webservices-dev-sowingme-admin-api
+    workload.user.cattle.io/workloadselector: deployment-ws-dev-sowingme-admin-api
   name: sowingme-admin-api
-  namespace: webservices-dev
-  selfLink: /apis/apps/v1/namespaces/webservices-dev/deployments/sowingme-admin-api
+  namespace: ws-dev
+  selfLink: /apis/apps/v1/namespaces/ws-dev/deployments/sowingme-admin-api
 spec:
   progressDeadlineSeconds: 600
   replicas: 1
   revisionHistoryLimit: 10
   selector:
     matchLabels:
-      workload.user.cattle.io/workloadselector: deployment-webservices-dev-sowingme-admin-api
+      workload.user.cattle.io/workloadselector: deployment-ws-dev-sowingme-admin-api
   strategy:
     rollingUpdate:
       maxSurge: 1
@@ -28,7 +28,7 @@ spec:
         date: "{{DATE_STAMP}}"
       creationTimestamp: null
       labels:
-        workload.user.cattle.io/workloadselector: deployment-webservices-dev-sowingme-admin-api
+        workload.user.cattle.io/workloadselector: deployment-ws-dev-sowingme-admin-api
     spec:
       containers:
       - env:

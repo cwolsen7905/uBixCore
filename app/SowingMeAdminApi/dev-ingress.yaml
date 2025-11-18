@@ -6,8 +6,8 @@ metadata:
   labels:
     cattle.io/creator: norman
   name: sowingme-admin-api
-  namespace: webservices-dev
-  selfLink: /apis/networking.k8s.io/v1/namespaces/webservices-dev/ingresses/sowingme-admin-api
+  namespace: ws-dev
+  selfLink: /apis/networking.k8s.io/v1/namespaces/ws-dev/ingresses/sowingme-admin-api
 spec:
   rules:
   - host: sowingme-admin-api.dev.ubixsys.com
