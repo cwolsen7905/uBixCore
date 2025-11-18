@@ -54,7 +54,7 @@ final class RunCommand extends Command
 
         putenv('APP_NAME=' . $appName);
 
-        // Determine if this is a SSvelteKit or PHP application
+        // Determine if this is a SvelteKit or PHP application
         if (file_exists($this->appPath . $appName . '/svelte.config.js')) {
             // If SvelteKit configuration file exists, run the SvelteKit application
             $result = $this->processService->executeAsSubprocess('npm install --prefix ' . escapeshellarg($this->appPath . $appName));
@@ -62,6 +62,8 @@ final class RunCommand extends Command
                 $output->writeln('<error>Failed to install npm dependencies for SvelteKit app: ' . $appName . '</error>');
                 return Command::FAILURE;
             }
+
+			$result = $this->processService->executeAsSubprocess('cd ' . escapeshellarg($this->appPath . $appName) . ' && npm run dev -- --open --host=' . escapeshellarg((string)$input->getOption('host')) . ' --port=' . escapeshellarg((string)$input->getOption('port')));
             return Command::SUCCESS;
         }
 
