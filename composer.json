@@ -2,7 +2,7 @@
 	"name": "ubixsys/ubixcore",
     "description": "uBix Core - The last repo!",
     "type": "library",
-    "license": "VSM License",
+    "license": "uBix License",
     "authors": [
       {
         "name": "Christopher W. Olsen",
