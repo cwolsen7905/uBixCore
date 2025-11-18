@@ -2,7 +2,7 @@ FROM gitlab.brainchurts.com:5050/k8s/baseimages/nginx-php8-fpm-memcache:latest
 
 USER root
 
-RUN apk --no-cache add composer php-pdo php-pdo_mysql php-simplexml php-pecl-memcached
+#RUN apk update && apk add --no-cache php8X-pecl-memcached
 
 RUN mkdir -p /web && \
     chown -R www:www /web && \
