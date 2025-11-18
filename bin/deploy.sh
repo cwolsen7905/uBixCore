@@ -25,7 +25,7 @@ elif [ "$ENVIRONMENT" == "sandbox" ]; then
     KUBECONFIGS=("")
     KUBECTL="microk8s kubectl"
 else
-	KUBECONFIGS=("~/.kube/devstageconfig")
+	KUBECONFIGS=("/home/gitlab-runner/.kube/devstageconfig")
 fi
 
 echo "Deploying to environment: $ENVIRONMENT"
