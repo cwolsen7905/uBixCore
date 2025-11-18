@@ -1,0 +1,3 @@
+<?xml version="1.0" ?>
+<!-- This file is required for the phpcs custom sniffs with the Vsm namespace to work -->
+<ruleset name="Vsm" />

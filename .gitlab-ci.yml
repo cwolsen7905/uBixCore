@@ -1,0 +1,75 @@
+before_script:
+  - docker --config ~/."$CI_PROJECT_NAME" login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD" $CI_REGISTRY
+
+stages:
+  - test
+  - build
+  - deploy
+  
+deploy-composer:
+  stage: deploy
+  tags:
+  - shell
+  script:
+  - '/usr/bin/curl --header "Job-Token: $CI_JOB_TOKEN" --data tag=$CI_COMMIT_TAG "${CI_API_V4_URL}/projects/$CI_PROJECT_ID/packages/composer"'
+  only:
+  - tags
+
+build-dev:
+  tags:
+  - shell
+  stage: build
+  script:
+  - docker --config ~/."$CI_PROJECT_NAME" build --build-arg CI_JOB_TOKEN=${CI_JOB_TOKEN} --pull -t "$CI_REGISTRY_IMAGE:$CI_COMMIT_REF_SLUG" -f Dockerfile .
+  - docker --config ~/."$CI_PROJECT_NAME" push "$CI_REGISTRY_IMAGE:$CI_COMMIT_REF_SLUG"
+  only:
+    - dev
+
+deploy-dev:
+  stage: deploy
+  tags:
+  - shell
+  script:
+  - bash bin/deploy.sh $CI_COMMIT_REF_SLUG
+  only:
+  - dev
+
+build-staging:
+  tags:
+  - shell
+  stage: build
+  script:
+  - docker --config ~/."$CI_PROJECT_NAME" build --build-arg CI_JOB_TOKEN=${CI_JOB_TOKEN} --pull -t "$CI_REGISTRY_IMAGE:$CI_COMMIT_REF_SLUG" -f Dockerfile_Prod .
+  - docker --config ~/."$CI_PROJECT_NAME" push "$CI_REGISTRY_IMAGE:$CI_COMMIT_REF_SLUG"
+  only:
+  - staging
+
+deploy-staging:
+  stage: deploy
+  tags:
+  - shell
+  script:
+  - bash bin/deploy.sh $CI_COMMIT_REF_SLUG
+  only:
+  - staging
+
+build-prod:
+  tags:
+  - shell
+  stage: build
+  script:
+  - docker --config ~/."$CI_PROJECT_NAME" build --build-arg CI_JOB_TOKEN=${CI_JOB_TOKEN} --pull -t "$CI_REGISTRY_IMAGE:$CI_COMMIT_REF_SLUG" -f Dockerfile_Prod .
+  - docker --config ~/."$CI_PROJECT_NAME" push "$CI_REGISTRY_IMAGE:$CI_COMMIT_REF_SLUG"
+  only:
+    - main
+    - master
+
+deploy-prod:
+  stage: deploy
+  tags:
+  - shell
+  script:
+  - bash bin/deploy.sh $CI_COMMIT_REF_SLUG
+  only:
+  - main
+  - master

@@ -1,0 +1,113 @@
+#!/usr/bin/env php
+<?php
+
+declare(strict_types=1);
+
+use DI\Container;
+use Dotenv\Dotenv;
+use Symfony\Component\Console\Application;
+use Symfony\Component\Console\Command\Command as SymfonyCommand;
+use Ubix\Console\Command\Cron\ListCommand;
+use Ubix\Enum\Exception\ExceptionCode;
+
+//
+//  Set the timezone
+//
+date_default_timezone_set('America/New_York');
+
+//
+//  Load Composer packages
+//
+require_once __DIR__ . '/../vendor/autoload.php';
+
+//
+//  Initialize Dotenv to read our .env file
+//
+(Dotenv::createUnsafeImmutable(__DIR__ . '/../'))->load();
+
+//
+//  Temporary error output for sandbox testing
+//
+if (getenv('IS_SANDBOX') === 'true' || getenv('IS_DEV') === 'true') {
+    ini_set('display_errors', 1);
+    ini_set('display_startup_errors', 1);
+
+    error_reporting(E_ALL);
+
+    register_shutdown_function(function (): void {
+        $error = error_get_last();
+        if ($error !== null) {
+            echo '<pre>Fatal error in ', $error['file'], ' on line ', $error['line'], ':', PHP_EOL, $error['message'], '</pre>';
+        }
+    });
+}
+
+//
+//  Build the PHP-DI container (same as in your Slim app)
+//
+$container = (require __DIR__ . '/../app/UbixCli/src/Dependencies.php')(); // @phpstan-ignore callable.nonCallable
+assert($container instanceof Container);
+
+//
+//  Initialize the Symfony Console application
+//
+$application = new Application();
+
+//
+//  Determine if all cron scripts should be loaded
+//
+$includeCrons = false;
+foreach ($argv ?? [] as $argument) {
+    if (strpos($argument, 'cron:') !== false) {
+        $includeCrons = true;
+        break;
+    }
+}
+
+//
+//  Load all Console classes from the php/Ubix/Console directories
+//
+$directories = [
+    __DIR__ . '/../php/Ubix/Console/Command',
+    __DIR__ . '/../php/Ubix/Console/Command/**',
+    __DIR__ . '/../php/Ubix/Console/Command/**/**',
+    __DIR__ . '/../php/Ubix/Console/Command/**/**/**',
+    __DIR__ . '/../php/Ubix/Console/Command/**/**/**/**',
+    __DIR__ . '/../php/Ubix/Console/Command/**/**/**/**/**',
+    __DIR__ . '/../php/Ubix/Console/Command/**/**/**/**/**/**',
+    __DIR__ . '/../php/Ubix/Console/Command/**/**/**/**/**/**/**',
+    __DIR__ . '/../php/Ubix/Console/Command/**/**/**/**/**/**/**/**',
+    __DIR__ . '/../php/Ubix/Console/Command/**/**/**/**/**/**/**/**/**',
+    __DIR__ . '/../php/Ubix/Console/Command/**/**/**/**/**/**/**/**/**/**',
+];
+foreach ($directories as $directory) {
+    foreach (glob($directory . '/*.php') ?: [] as $file) {
+        $className = strtr(substr($file, strpos($file, '/../php/') + strlen('/../php/'), -strlen('.php')), ['/' => '\\']);
+
+        if (!class_exists($className)) {
+            throw new Exception('Command class `' . $className . '` does not exist', ExceptionCode::MissingCommandClass->value);
+        }
+
+        if (!is_subclass_of($className, SymfonyCommand::class)) {
+            throw new Exception('Command class `' . $className . '` does not extend `' . SymfonyCommand::class . '`', ExceptionCode::InvalidCommandClass->value);
+        }
+
+        if (str_starts_with(substr($className, strrpos($className, '\\') ?: 0), '\\Abstract')) { // Exclude abstract classes
+            continue;
+        }
+
+        if (strpos($className, 'Ubix\\Console\\Command\\Cron\\') === 0 && !$includeCrons && $className !== ListCommand::class) { // Exclude crons unless the flag is enabled (but always include cron:list)
+            continue;
+        }
+
+        $command = $container->get($className);
+        assert($command instanceof SymfonyCommand);
+
+        $application->add($command);
+    }
+}
+
+//
+//  Run the application
+//
+$application->run();

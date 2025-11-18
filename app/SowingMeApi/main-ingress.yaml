@@ -1,0 +1,22 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  annotations:
+    field.cattle.io/creatorId: cwolsen
+  labels:
+    cattle.io/creator: norman
+  name: affiliate-api
+  namespace: webservices
+  selfLink: /apis/networking.k8s.io/v1/namespaces/webservices/ingresses/affiliate-api
+spec:
+  rules:
+  - host: affiliate-api.lan.vsmedia.net
+    http:
+      paths:
+      - backend:
+          service:
+             name: affiliate-api
+             port:
+               number: 8080
+        path: /
+        pathType: Prefix
