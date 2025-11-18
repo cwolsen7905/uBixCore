@@ -30,7 +30,7 @@ COPY --chown=www bin/ /web/bin/
 COPY --chown=www .env /web/.env
 
 #RUN composer config gitlab-domains git.lan.vsmedia.net; \
-RUN composer update --working-dir=/web/
+#RUN composer update --working-dir=/web/
 
 RUN mkdir -p /web/var/cache/latte
 RUN chmod -R 777 /web/var
