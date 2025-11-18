@@ -29,7 +29,7 @@ COPY --chown=www bin/ /web/bin/
 #temporary fix for dotenv
 COPY --chown=www .env /web/.env
 
-RUN composer update --working-dir=/web/
+#RUN composer update --working-dir=/web/
 
 RUN mkdir -p /web/var/cache/latte
 RUN chmod -R 777 /web/var
