@@ -9,6 +9,7 @@ metadata:
   namespace: ws-dev
   selfLink: /apis/networking.k8s.io/v1/namespaces/ws-dev/ingresses/sowingme-api
 spec:
+  ingressClassName: nginx
   rules:
   - host: sowingme-api.dev.ubixsys.com
     http:
@@ -19,4 +20,15 @@ spec:
             port:
               number: 8080
         path: /
-        pathType: Prefix
+        pathType: ImplementationSpecific
+  tls:
+    - hosts:
+      - sowingme-api.dev.ubixsys.com
+      secretName: tls-wildcard-ubixsys-dev
+status:
+  loadBalancer:
+    ingress:
+      - hostname: kube-001.brainchurts.com
+      - hostname: kube-002.brainchurts.com
+      - hostname: kube-003.brainchurts.com
+      - hostname: kube-004.brainchurts.com
