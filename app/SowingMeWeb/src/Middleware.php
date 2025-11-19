@@ -34,7 +34,6 @@ return static function (App $app): void {
     //
     //  Application specific middleware
     //
-    $app->add(BearerTokenAuthenticationMiddleware::class);
     $app->add(NormalizedHostMiddleware::class);
     $app->add(NormalizedIpAddressMiddleware::class);
 
@@ -53,4 +52,5 @@ return static function (App $app): void {
 
     $errorMiddleware = $app->addErrorMiddleware(false, true, true, $logger);
     $errorMiddleware->setDefaultErrorHandler($slimErrorHandler);
+
 };
