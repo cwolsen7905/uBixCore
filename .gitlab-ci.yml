@@ -21,8 +21,6 @@ build-dev:
   stage: build
   script:
   - docker buildx build --platform linux/amd64,linux/arm64 --push -t "$CI_REGISTRY_IMAGE:$CI_COMMIT_REF_SLUG" .
-  #- docker --config ~/."$CI_PROJECT_NAME" build --build-arg CI_JOB_TOKEN=${CI_JOB_TOKEN} --pull -t "$CI_REGISTRY_IMAGE:$CI_COMMIT_REF_SLUG" -f Dockerfile .
-  #- docker --config ~/."$CI_PROJECT_NAME" push "$CI_REGISTRY_IMAGE:$CI_COMMIT_REF_SLUG"
   only:
     - dev
 
