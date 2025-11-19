@@ -61,4 +61,20 @@ final class SowingMeWebController extends Controller
 		);
     }
 
+	/**
+     * Home page for SowingMeWeb
+     *
+     * @param Request  $request  The HTTP request object containing client data.
+     * @param Response $response The HTTP response object used to send data back to the client
+     *
+     * @return Response The modified response object with the operation result.
+     */
+    public function signup(Request $request, Response $response): Response
+    {
+
+        return $this->renderTemplate(
+			$response,
+			'signup.latte',
+		);
+    }
 }

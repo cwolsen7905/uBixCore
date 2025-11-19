@@ -10,6 +10,7 @@ use Ubix\Controller\SowingMeWeb\SowingMeWebController;
 return static function (App $app): void {
 	// phpcs:disable Generic.Functions.FunctionCallArgumentSpacing.TooMuchSpaceAfterComma -- disable this rule to allow for vertical spacing of the route parameters
 	$app->map(['GET'], '/', SowingMeWebController::class . ':home');
+	$app->map(['GET'], '/signup', SowingMeWebController::class . ':signup');
 	// phpcs:enable Generic.Functions.FunctionCallArgumentSpacing.TooMuchSpaceAfterComma
 
     //
