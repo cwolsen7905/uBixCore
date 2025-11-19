@@ -18,7 +18,7 @@ spec:
           service:
             name: sowing-me-js
             port:
-              number: 5173
+              number: 3000
         path: /
         pathType: ImplementationSpecific
   tls:

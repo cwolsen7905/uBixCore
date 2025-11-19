@@ -24,7 +24,7 @@ spec:
   template:
     metadata:
       annotations:
-        field.cattle.io/ports: '[[{"containerPort":5173,"dnsName":"sowing-me-js","hostPort":0,"kind":"ClusterIP","name":"5173tcp02","protocol":"TCP","sourcePort":0}]]'
+        field.cattle.io/ports: '[[{"containerPort":3000,"dnsName":"sowing-me-js","hostPort":0,"kind":"ClusterIP","name":"3000tcp02","protocol":"TCP","sourcePort":0}]]'
         date: "{{DATE_STAMP}}"
       creationTimestamp: null
       labels:
@@ -42,8 +42,8 @@ spec:
         imagePullPolicy: Always
         name: sowing-me-js
         ports:
-        - containerPort: 5173
-          name: 5173tcp02s
+        - containerPort: 3000
+          name: 3000tcp02s
           protocol: TCP
         resources: {}
         securityContext:
