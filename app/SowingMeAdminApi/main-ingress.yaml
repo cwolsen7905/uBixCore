@@ -11,17 +11,7 @@ metadata:
 spec:
   ingressClassName: nginx
   rules:
-  - host: www.sowing.me
-    http:
-      paths:
-      - backend:
-          service:
-            name: sowing-me-admin-api
-            port:
-              number: 8080
-        path: /
-        pathType: ImplementationSpecific
-  - host: sowing.me
+  - host: admin-api.sowing.me
     http:
       paths:
       - backend:
@@ -33,8 +23,7 @@ spec:
         pathType: ImplementationSpecific
   tls:
     - hosts:
-      - www.sowing.me
-      - sowing.me
+      - admin-api.sowing.me
       secretName: tls-wildcard-sowing-me-prod
 status:
   loadBalancer:
