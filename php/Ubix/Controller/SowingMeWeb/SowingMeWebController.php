@@ -58,9 +58,6 @@ final class SowingMeWebController extends Controller
         return $this->renderTemplate(
 			$response,
 			'home.latte',
-			[
-				// Template parameters go here
-			],
 		);
     }
 
