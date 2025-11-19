@@ -67,7 +67,7 @@ spec:
       securityContext: {}
       terminationGracePeriodSeconds: 30
       volumes:
-      - hostPath:
-          path: /logs
-          type: DirectoryOrCreate
+      - nfs:
+          server: 10.50.0.1
+          path: /data/nfs/logs
         name: logs
