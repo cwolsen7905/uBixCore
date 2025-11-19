@@ -11,7 +11,7 @@ metadata:
 spec:
   ingressClassName: nginx
   rules:
-  - host: sowing-me-js.dev.ubixsys.com
+  - host: app-sowing-me.dev.ubixsys.com
     http:
       paths:
       - backend:
@@ -23,7 +23,7 @@ spec:
         pathType: ImplementationSpecific
   tls:
     - hosts:
-      - sowing-me-js.dev.ubixsys.com
+      - app-sowing-me.dev.ubixsys.com
       secretName: tls-wildcard-ubixsys-dev
 status:
   loadBalancer:
