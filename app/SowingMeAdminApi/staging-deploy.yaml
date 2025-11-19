@@ -5,17 +5,17 @@ metadata:
     field.cattle.io/creatorId: cwolsen
   labels:
     cattle.io/creator: norman
-    workload.user.cattle.io/workloadselector: deployment-webservices-staging-internal-admin-api
-  name: internal-admin-api
-  namespace: webservices-staging
-  selfLink: /apis/apps/v1/namespaces/webservices-staging/deployments/internal-admin-api
+    workload.user.cattle.io/workloadselector: deployment-ws-staging-sowingme-admin-api
+  name: sowingme-admin-api
+  namespace: ws-staging
+  selfLink: /apis/apps/v1/namespaces/ws-staging/deployments/sowingme-admin-api
 spec:
   progressDeadlineSeconds: 600
   replicas: 1
   revisionHistoryLimit: 10
   selector:
     matchLabels:
-      workload.user.cattle.io/workloadselector: deployment-webservices-staging-internal-admin-api
+      workload.user.cattle.io/workloadselector: deployment-ws-staging-sowingme-admin-api
   strategy:
     rollingUpdate:
       maxSurge: 1
@@ -24,23 +24,23 @@ spec:
   template:
     metadata:
       annotations:
-        field.cattle.io/ports: '[[{"containerPort":8080,"dnsName":"internal-admin-api","hostPort":0,"kind":"ClusterIP","name":"8080tcp02","protocol":"TCP","sourcePort":0}]]'
+        field.cattle.io/ports: '[[{"containerPort":8080,"dnsName":"sowingme-admin-api","hostPort":0,"kind":"ClusterIP","name":"8080tcp02","protocol":"TCP","sourcePort":0}]]'
         date: "{{DATE_STAMP}}"
       creationTimestamp: null
       labels:
-        workload.user.cattle.io/workloadselector: deployment-webservices-staging-internal-admin-api
+        workload.user.cattle.io/workloadselector: deployment-ws-staging-sowingme-admin-api
     spec:
       containers:
       - env:
         - name: IN_DEV
-          value: "1"
+          value: "0"
         - name: ENV
           value: "STAGING"
         - name: APP_NAME
-          value: "InternalAdminApi"
-        image: harbor.lan.vsmedia.net/registry-lan-vsmedia-net/vsm-labs/project-neptune:staging
+          value: "SowingMeApi"
+        image: gitlab.brainchurts.com:5050/ubixsys/ubixcore:staging
         imagePullPolicy: Always
-        name: internal-admin-api
+        name: sowingme-admin-api
         ports:
         - containerPort: 8080
           name: 8080tcp02
@@ -57,24 +57,16 @@ spec:
         terminationMessagePolicy: File
         tty: true
         volumeMounts:
-        - mountPath: /mnt/vol-default-flat
-          name: vol-default-flat
-          readOnly: true
         - mountPath: /logs
           name: logs
       dnsPolicy: ClusterFirst
       imagePullSecrets:
-      - name: vsm-gitlab
-      - name: harbor-pull
+      - name: regcred
       restartPolicy: Always
       schedulerName: default-scheduler
       securityContext: {}
       terminationGracePeriodSeconds: 30
       volumes:
-      - hostPath:
-          path: /code/vol-default-flat/dev
-          type: ""
-        name: vol-default-flat
       - hostPath:
           path: /logs
           type: DirectoryOrCreate

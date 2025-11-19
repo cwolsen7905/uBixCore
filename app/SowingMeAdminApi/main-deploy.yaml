@@ -5,17 +5,17 @@ metadata:
     field.cattle.io/creatorId: cwolsen
   labels:
     cattle.io/creator: norman
-    workload.user.cattle.io/workloadselector: deployment-webservices-internal-admin-api
-  name: internal-admin-api
-  namespace: webservices
-  selfLink: /apis/apps/v1/namespaces/webservices/deployments/internal-admin-api
+    workload.user.cattle.io/workloadselector: deployment-ws-prod-sowingme-admin-api
+  name: sowingme-admin-api
+  namespace: ws-prod
+  selfLink: /apis/apps/v1/namespaces/ws-prod/deployments/sowingme-admin-api
 spec:
   progressDeadlineSeconds: 600
   replicas: 1
   revisionHistoryLimit: 10
   selector:
     matchLabels:
-      workload.user.cattle.io/workloadselector: deployment-webservices-internal-admin-api
+      workload.user.cattle.io/workloadselector: deployment-ws-prod-sowingme-admin-api
   strategy:
     rollingUpdate:
       maxSurge: 1
@@ -24,11 +24,11 @@ spec:
   template:
     metadata:
       annotations:
-        field.cattle.io/ports: '[[{"containerPort":8080,"dnsName":"internal-admin-api","hostPort":0,"kind":"ClusterIP","name":"8080tcp02","protocol":"TCP","sourcePort":0}]]'
+        field.cattle.io/ports: '[[{"containerPort":8080,"dnsName":"sowingme-admin-api","hostPort":0,"kind":"ClusterIP","name":"8080tcp02","protocol":"TCP","sourcePort":0}]]'
         date: "{{DATE_STAMP}}"
       creationTimestamp: null
       labels:
-        workload.user.cattle.io/workloadselector: deployment-webservices-internal-admin-api
+        workload.user.cattle.io/workloadselector: deployment-ws-prod-sowingme-admin-api
     spec:
       containers:
       - env:
@@ -37,10 +37,10 @@ spec:
         - name: ENV
           value: "PROD"
         - name: APP_NAME
-          value: "InternalAdminApi"
-        image: registry.lan.vsmedia.net/vsm-labs/project-neptune:main
+          value: "SowingMeAdminApi"
+        image: gitlab.brainchurts.com:5050/ubixsys/ubixcore:main
         imagePullPolicy: Always
-        name: internal-admin-api
+        name: sowingme-admin-api
         ports:
         - containerPort: 8080
           name: 8080tcp02
@@ -57,24 +57,16 @@ spec:
         terminationMessagePolicy: File
         tty: true
         volumeMounts:
-        - mountPath: /mnt/vol-default-flat
-          name: vol-default-flat
-          readOnly: true
         - mountPath: /logs
           name: logs
       dnsPolicy: ClusterFirst
       imagePullSecrets:
-      - name: vsm-gitlab
-      - name: harbor-pull
+      - name: regcred
       restartPolicy: Always
       schedulerName: default-scheduler
       securityContext: {}
       terminationGracePeriodSeconds: 30
       volumes:
-      - hostPath:
-          path: /code/vol-default-flat/dev
-          type: ""
-        name: vol-default-flat
       - hostPath:
           path: /logs
           type: DirectoryOrCreate
