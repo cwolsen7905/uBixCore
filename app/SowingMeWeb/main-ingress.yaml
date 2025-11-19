@@ -5,18 +5,41 @@ metadata:
     field.cattle.io/creatorId: cwolsen
   labels:
     cattle.io/creator: norman
-  name: affiliate-api
-  namespace: webservices
-  selfLink: /apis/networking.k8s.io/v1/namespaces/webservices/ingresses/affiliate-api
+  name: sowingme-web
+  namespace: live-prod
+  selfLink: /apis/networking.k8s.io/v1/namespaces/live-prod/ingresses/sowingme-web
 spec:
+  ingressClassName: nginx
   rules:
-  - host: affiliate-api.lan.vsmedia.net
+  - host: www.sowing.me
     http:
       paths:
       - backend:
           service:
-             name: affiliate-api
-             port:
-               number: 8080
+            name: sowingme-web
+            port:
+              number: 8080
         path: /
-        pathType: Prefix
+        pathType: ImplementationSpecific
+  - host: sowing.me
+    http:
+      paths:
+      - backend:
+          service:
+            name: sowingme-web
+            port:
+              number: 8080
+        path: /
+        pathType: ImplementationSpecific
+  tls:
+    - hosts:
+      - www.sowing.me
+      - sowing.me
+      secretName: tls-wildcard-sowing-me-prod
+status:
+  loadBalancer:
+    ingress:
+      - hostname: kube-001.brainchurts.com
+      - hostname: kube-002.brainchurts.com
+      - hostname: kube-003.brainchurts.com
+      - hostname: kube-004.brainchurts.com
