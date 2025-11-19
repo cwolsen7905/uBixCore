@@ -53,7 +53,7 @@ final class BearerTokenAuthenticationMiddleware implements Middleware
         //  If the bearer token is missing or is invalid throw an HTTP forbidden exception
         //
         if (!in_array($bearerToken, self::BEARER_TOKENS, true)) {
-            throw new HttpForbiddenException($request, 'You must include a valid bearer token.');
+            throw new HttpForbiddenException($request, 'You must include a valid bearer token');
         }
 
         //

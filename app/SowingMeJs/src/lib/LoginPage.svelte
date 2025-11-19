@@ -11,7 +11,7 @@
     // Your bearer token (replace with your actual logic)
     const bearerToken = 'a8f3c9d7e2b6f1a4c5e8d9b0f7a3c6e1';
 
-    const res = await fetch('http://sowing-me-api.dev.ubixsys.com/auth', {
+    const res = await fetch('https://sowing-me-api.dev.ubixsys.com/auth', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
