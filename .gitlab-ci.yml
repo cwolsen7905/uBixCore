@@ -21,7 +21,7 @@ build-dev:
   stage: build
   script:
   - docker buildx build --platform linux/amd64,linux/arm64 --push -t "$CI_REGISTRY_IMAGE:$CI_COMMIT_REF_SLUG" .
-  - docker buildx build --platform linux/amd64,linux/arm64 --push -t "${CI_REGISTRY_IMAGE}:${CI_COMMIT_REF_SLUG}-node" . -f Dockerfile_Node_Dev
+  - docker buildx build --platform linux/amd64,linux/arm64 --push -t "${CI_REGISTRY_IMAGE}:${CI_COMMIT_REF_SLUG}-node" . -f Dockerfile_Node_${CI_COMMIT_REF_SLUG^}
   only:
     - dev
 
@@ -39,7 +39,8 @@ build-staging:
   - shell
   stage: build
   script:
-  - docker buildx build --platform linux/amd64,linux/arm64 --push -t "$CI_REGISTRY_IMAGE:$CI_COMMIT_REF_SLUG" -f Dockerfile_Prod .
+  - docker buildx build --platform linux/amd64,linux/arm64 --push -t "$CI_REGISTRY_IMAGE:$CI_COMMIT_REF_SLUG" -f Dockerfile_${CI_COMMIT_REF_SLUG^} .
+  - docker buildx build --platform linux/amd64,linux/arm64 --push -t "${CI_REGISTRY_IMAGE}:${CI_COMMIT_REF_SLUG}-node" . -f Dockerfile_Node_${CI_COMMIT_REF_SLUG^}
   only:
   - staging
 
@@ -52,17 +53,18 @@ deploy-staging:
   only:
   - staging
 
-build-prod:
+build-main:
   tags:
   - shell
   stage: build
   script:
-  - docker buildx build --platform linux/amd64,linux/arm64 --push -t "$CI_REGISTRY_IMAGE:$CI_COMMIT_REF_SLUG" -f Dockerfile_Prod .
+  - docker buildx build --platform linux/amd64,linux/arm64 --push -t "$CI_REGISTRY_IMAGE:$CI_COMMIT_REF_SLUG" -f Dockerfile_${CI_COMMIT_REF_SLUG^} .
+  - docker buildx build --platform linux/amd64,linux/arm64 --push -t "${CI_REGISTRY_IMAGE}:${CI_COMMIT_REF_SLUG}-node" . -f Dockerfile_Node_${CI_COMMIT_REF_SLUG^}
   only:
     - main
     - master
 
-deploy-prod:
+deploy-main:
   stage: deploy
   tags:
   - shell
