@@ -1,0 +1,73 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:
+    field.cattle.io/creatorId: cwolsen
+  labels:
+    cattle.io/creator: norman
+    workload.user.cattle.io/workloadselector: deployment-live-staging-sowing-me-js
+  name: sowing-me-js
+  namespace: live-staging
+  selfLink: /apis/apps/v1/namespaces/live-staging/deployments/sowing-me-js
+spec:
+  progressDeadlineSeconds: 600
+  replicas: 1
+  revisionHistoryLimit: 10
+  selector:
+    matchLabels:
+      workload.user.cattle.io/workloadselector: deployment-live-staging-sowing-me-js
+  strategy:
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+    type: RollingUpdate
+  template:
+    metadata:
+      annotations:
+        field.cattle.io/ports: '[[{"containerPort":3000,"dnsName":"sowing-me-js","hostPort":0,"kind":"ClusterIP","name":"3000tcp02","protocol":"TCP","sourcePort":0}]]'
+        date: "{{DATE_STAMP}}"
+      creationTimestamp: null
+      labels:
+        workload.user.cattle.io/workloadselector: deployment-live-staging-sowing-me-js
+    spec:
+      containers:
+      - env:
+        - name: IN_DEV
+          value: "0"
+        - name: ENV
+          value: "STAGING"
+        - name: APP_NAME
+          value: "SowingMeJs"
+        image: gitlab.brainchurts.com:5050/ubixsys/ubixcore:staging-node
+        imagePullPolicy: Always
+        name: sowing-me-js
+        ports:
+        - containerPort: 3000
+          name: 3000tcp02s
+          protocol: TCP
+        resources: {}
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities: {}
+          privileged: false
+          readOnlyRootFilesystem: false
+          runAsNonRoot: false
+        stdin: true
+        terminationMessagePath: /dev/termination-log
+        terminationMessagePolicy: File
+        tty: true
+        volumeMounts:
+        - mountPath: /logs
+          name: logs
+      dnsPolicy: ClusterFirst
+      imagePullSecrets:
+      - name: regcred
+      restartPolicy: Always
+      schedulerName: default-scheduler
+      securityContext: {}
+      terminationGracePeriodSeconds: 30
+      volumes:
+      - nfs:
+          server: 10.50.0.1
+          path: /data/nfs/logs
+        name: logs
