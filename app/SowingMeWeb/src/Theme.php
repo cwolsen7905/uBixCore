@@ -2,4 +2,4 @@
 
 declare(strict_types=1);
 
-return 'affiliate-api-v1';
+return 'sowingme-web-v1';
