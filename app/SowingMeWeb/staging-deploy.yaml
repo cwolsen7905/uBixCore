@@ -5,17 +5,17 @@ metadata:
     field.cattle.io/creatorId: cwolsen
   labels:
     cattle.io/creator: norman
-    workload.user.cattle.io/workloadselector: deployment-live-staging-sowingme-web
-  name: sowingme-web
+    workload.user.cattle.io/workloadselector: deployment-live-staging-sowing-me-web
+  name: sowing-me-web
   namespace: live-staging
-  selfLink: /apis/apps/v1/namespaces/live-staging/deployments/sowingme-web
+  selfLink: /apis/apps/v1/namespaces/live-staging/deployments/sowing-me-web
 spec:
   progressDeadlineSeconds: 600
   replicas: 1
   revisionHistoryLimit: 10
   selector:
     matchLabels:
-      workload.user.cattle.io/workloadselector: deployment-live-staging-sowingme-web
+      workload.user.cattle.io/workloadselector: deployment-live-staging-sowing-me-web
   strategy:
     rollingUpdate:
       maxSurge: 1
@@ -24,11 +24,11 @@ spec:
   template:
     metadata:
       annotations:
-        field.cattle.io/ports: '[[{"containerPort":8080,"dnsName":"sowingme-web","hostPort":0,"kind":"ClusterIP","name":"8080tcp02","protocol":"TCP","sourcePort":0}]]'
+        field.cattle.io/ports: '[[{"containerPort":8080,"dnsName":"sowing-me-web","hostPort":0,"kind":"ClusterIP","name":"8080tcp02","protocol":"TCP","sourcePort":0}]]'
         date: "{{DATE_STAMP}}"
       creationTimestamp: null
       labels:
-        workload.user.cattle.io/workloadselector: deployment-live-staging-sowingme-web
+        workload.user.cattle.io/workloadselector: deployment-live-staging-sowing-me-web
     spec:
       containers:
       - env:
@@ -40,7 +40,7 @@ spec:
           value: "SowingMeWeb"
         image: gitlab.brainchurts.com:5050/ubixsys/ubixcore:staging
         imagePullPolicy: Always
-        name: sowingme-web
+        name: sowing-me-web
         ports:
         - containerPort: 8080
           name: 8080tcp02

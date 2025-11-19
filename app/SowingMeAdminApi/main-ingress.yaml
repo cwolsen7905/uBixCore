@@ -5,9 +5,9 @@ metadata:
     field.cattle.io/creatorId: cwolsen
   labels:
     cattle.io/creator: norman
-  name: sowingme-admin-api
+  name: sowing-me-admin-api
   namespace: ws-prod
-  selfLink: /apis/networking.k8s.io/v1/namespaces/ws-prod/ingresses/sowingme-admin-api
+  selfLink: /apis/networking.k8s.io/v1/namespaces/ws-prod/ingresses/sowing-me-admin-api
 spec:
   ingressClassName: nginx
   rules:
@@ -16,7 +16,7 @@ spec:
       paths:
       - backend:
           service:
-            name: sowingme-admin-api
+            name: sowing-me-admin-api
             port:
               number: 8080
         path: /
@@ -26,7 +26,7 @@ spec:
       paths:
       - backend:
           service:
-            name: sowingme-admin-api
+            name: sowing-me-admin-api
             port:
               number: 8080
         path: /
