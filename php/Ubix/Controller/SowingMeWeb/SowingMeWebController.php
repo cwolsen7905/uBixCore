@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Ubix\Controller\InternalAdminApi;
+namespace Ubix\Controller\SowingMeWeb;
 
 use Exception;
 use Psr\Http\Message\ResponseInterface as Response;
