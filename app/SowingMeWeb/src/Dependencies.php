@@ -95,14 +95,13 @@ return static function (): Container {
     $logLevel = in_array($logLevel, $allowedLevels, true) ? $logLevel : 'Info';
     assert(in_array($logLevel, $allowedLevels, true));
 
-
     $container->addDefinitions([
 
         Engine::class                            => autowire()->method('setAutoRefresh', true)->method('setTempDirectory', $cacheDir)->method('setLoader', new FileLoader($templateDir . $theme)),
         FilterService::class                     => autowire()->constructorParameter('bearerToken', getenv('VSM_FILTER_API_BEARER_TOKEN_BROADCASTING')),
         GeolocationService::class                => autowire(UbixGeolocationService::class)->constructorParameter('apiProtocolAndHostname', getenv('VSM_GEOLOCATION_API_PROTOCOL_AND_HOSTNAME')),
         HttpClient::class                        => autowire(CurlHttpClient::class),
-        Logger::class                            => autowire(MonologLogger::class)->constructorParameter('name', $appName)->constructorParameter('handlers', [new StreamHandler(getenv('LOGGER_PATH') . '/' . $appName . '.log', Level::fromName($logLevel), true, 0777)])->constructorParameter('processors', [new UidProcessor()]),
+        Logger::class                            => autowire(MonologLogger::class)->constructorParameter('name', $appName)->constructorParameter('handlers', [new StreamHandler(getenv('LOGGER_PATH') . '/' . strtolower(getenv('ENV') ?? 'NA') . '/' . $appName . '.log', Level::fromName($logLevel), true, 0777)])->constructorParameter('processors', [new UidProcessor()]),
         MessageWriter::class                     => autowire(MessageSqlRepository::class),
         PendingPlatformUserReader::class         => autowire(PendingPlatformUserSqlRepository::class),
         PerformerReader::class                   => autowire(PerformerSqlRepository::class),
