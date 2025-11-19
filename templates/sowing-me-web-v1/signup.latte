@@ -1,0 +1,69 @@
+<style>
+	body {
+		font-family: 'Segoe UI', Arial, sans-serif;
+		background: linear-gradient(135deg, #e0eafc 0%, #cfdef3 100%);
+		min-height: 100vh;
+		margin: 0;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+	}
+	.signup-container {
+		background: #fff;
+		border-radius: 16px;
+		box-shadow: 0 4px 24px rgba(0,0,0,0.08);
+		padding: 48px 32px;
+		max-width: 420px;
+		text-align: center;
+	}
+	.signup-title {
+		font-size: 2rem;
+		font-weight: bold;
+		margin-bottom: 12px;
+		color: #333;
+	}
+	.signup-desc {
+		font-size: 1rem;
+		color: #555;
+		margin-bottom: 32px;
+	}
+	.signup-form input {
+		width: 100%;
+		padding: 10px;
+		margin-bottom: 16px;
+		border: 1px solid #ccc;
+		border-radius: 6px;
+		font-size: 1rem;
+	}
+	.signup-btn {
+		background: #4a90e2;
+		color: #fff;
+		border: none;
+		border-radius: 8px;
+		padding: 12px 32px;
+		font-size: 1rem;
+		cursor: pointer;
+		transition: background 0.2s;
+	}
+	.signup-btn:hover {
+		background: #357abd;
+	}
+	.coming-soon {
+		color: #e67e22;
+		font-weight: bold;
+		margin-top: 20px;
+		display: none;
+	}
+</style>
+
+<div class="signup-container">
+	<div class="signup-title">Sign Up for Sowing.me</div>
+	<div class="signup-desc">Create your account and join our Christian creator community.<br>Signups are coming soon!</div>
+	<form class="signup-form" onsubmit="event.preventDefault(); document.getElementById('comingSoon').style.display='block';">
+		<input type="text" name="name" placeholder="Name" required>
+		<input type="email" name="email" placeholder="Email" required>
+		<input type="password" name="password" placeholder="Password" required>
+		<button type="submit" class="signup-btn">Sign Up</button>
+	</form>
+	<div id="comingSoon" class="coming-soon">Coming soon!</div>
+</div>
