@@ -30,5 +30,8 @@ export default defineConfig({
 				}
 			}
 		]
+	},
+	preview: {
+		allowedHosts: ['sowing-me-js.dev.ubixsys.com', 'sowing-me-js.staging.ubixsys.com', 'sowing-me-js.sandbox.ubixsys.com', 'app.sowing.me']
 	}
 });
