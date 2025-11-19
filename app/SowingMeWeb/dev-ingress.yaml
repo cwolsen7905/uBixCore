@@ -9,6 +9,7 @@ metadata:
   namespace: live-dev
   selfLink: /apis/networking.k8s.io/v1/namespaces/live-dev/ingresses/sowingme-web
 spec:
+  ingressClassName: nginx
   rules:
   - host: sowingme-web.dev.ubixsys.com
     http:
