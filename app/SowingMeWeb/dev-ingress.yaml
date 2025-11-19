@@ -19,4 +19,15 @@ spec:
             port:
               number: 8080
         path: /
-        pathType: Prefix
+        pathType: ImplementationSpecific
+  tls:
+    - hosts:
+      - sowingme-web.dev.ubixsys.com
+      secretName: tls-wildcard-ubixsys-dev
+status:
+  loadBalancer:
+    ingress:
+      - hostname: kube-001.brainchurts.com
+      - hostname: kube-002.brainchurts.com
+      - hostname: kube-003.brainchurts.com
+      - hostname: kube-004.brainchurts.com
