@@ -5,7 +5,7 @@ export async function load({ fetch, cookies}) {
   const cookieHeader = cookies.getAll().map(({ name, value }) => `${name}=${value}`).join('; ');
 
   // Call your auth endpoint or check cookies/session
-  const res = await fetch('http://internal-admin-api.sb.vsmedia.net/auth', {
+  const res = await fetch('http://sowing-me-api.dev.ubixsys.com/auth', {
     headers: {
       'Content-Type': 'application/json',
       Authorization: `Bearer a8f3c9d7e2b6f1a4c5e8d9b0f7a3c6e1`, // Example token, replace as needed
