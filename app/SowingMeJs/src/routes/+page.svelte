@@ -1,5 +1,3 @@
-<!--
-
 <script>
 
 	import Sidebar from '$lib/Sidebar.svelte';
@@ -48,7 +46,5 @@
 
 
 <pre>DATA: {JSON.stringify($userData?.user, null, 2)}</pre>
-
--->
 
 Hi
