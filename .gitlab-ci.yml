@@ -1,5 +1,5 @@
 before_script:
-  - docker --config ~/."$CI_PROJECT_NAME" login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD" $CI_REGISTRY
+  - docker login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD" $CI_REGISTRY
 
 stages:
   - test
@@ -20,8 +20,7 @@ build-dev:
   - shell
   stage: build
   script:
-  - docker --config ~/."$CI_PROJECT_NAME" build --build-arg CI_JOB_TOKEN=${CI_JOB_TOKEN} --pull -t "$CI_REGISTRY_IMAGE:$CI_COMMIT_REF_SLUG" -f Dockerfile .
-  - docker --config ~/."$CI_PROJECT_NAME" push "$CI_REGISTRY_IMAGE:$CI_COMMIT_REF_SLUG"
+  - docker buildx build --platform linux/amd64,linux/arm64 --push -t "$CI_REGISTRY_IMAGE:$CI_COMMIT_REF_SLUG" .
   only:
     - dev
 
@@ -39,8 +38,7 @@ build-staging:
   - shell
   stage: build
   script:
-  - docker --config ~/."$CI_PROJECT_NAME" build --build-arg CI_JOB_TOKEN=${CI_JOB_TOKEN} --pull -t "$CI_REGISTRY_IMAGE:$CI_COMMIT_REF_SLUG" -f Dockerfile_Prod .
-  - docker --config ~/."$CI_PROJECT_NAME" push "$CI_REGISTRY_IMAGE:$CI_COMMIT_REF_SLUG"
+  - docker buildx build --platform linux/amd64,linux/arm64 --push -t "$CI_REGISTRY_IMAGE:$CI_COMMIT_REF_SLUG" -f Dockerfile_Prod .
   only:
   - staging
 
@@ -58,8 +56,7 @@ build-prod:
   - shell
   stage: build
   script:
-  - docker --config ~/."$CI_PROJECT_NAME" build --build-arg CI_JOB_TOKEN=${CI_JOB_TOKEN} --pull -t "$CI_REGISTRY_IMAGE:$CI_COMMIT_REF_SLUG" -f Dockerfile_Prod .
-  - docker --config ~/."$CI_PROJECT_NAME" push "$CI_REGISTRY_IMAGE:$CI_COMMIT_REF_SLUG"
+  - docker buildx build --platform linux/amd64,linux/arm64 --push -t "$CI_REGISTRY_IMAGE:$CI_COMMIT_REF_SLUG" -f Dockerfile_Prod .
   only:
     - main
     - master
