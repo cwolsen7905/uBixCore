@@ -3,17 +3,17 @@ kind: Ingress
 metadata:
   annotations:
     field.cattle.io/creatorId: cwolsen
-  name: sowingme-api
+  name: sowing-me-api
   namespace: ws-sandbox
-  selfLink: /apis/networking.k8s.io/v1/namespaces/ws-sandbox/ingresses/sowingme-api
+  selfLink: /apis/networking.k8s.io/v1/namespaces/ws-sandbox/ingresses/sowing-me-api
 spec:
   rules:
-  - host: sowingme-api.sb.vsmedia.net
+  - host: sowing-me-api.sb.ubixsys.com
     http:
       paths:
       - backend:
           service:
-            name: sowingme-api
+            name: sowing-me-api
             port:
               number: 80
         path: /

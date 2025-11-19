@@ -4,17 +4,17 @@ metadata:
   annotations:
     field.cattle.io/creatorId: cwolsen
   labels:
-    project-neptune: affiliate-api
-  name: affiliate-api
-  namespace: webservices-sandbox
-  selfLink: /apis/apps/v1/namespaces/webservices-sandbox/deployments/affiliate-api
+    project-neptune: sowing-me-api
+  name: sowing-me-api
+  namespace: ws-sandbox
+  selfLink: /apis/apps/v1/namespaces/ws-sandbox/deployments/sowing-me-api
 spec:
   progressDeadlineSeconds: 600
   replicas: 1
   revisionHistoryLimit: 10
   selector:
     matchLabels:
-      workload.user.cattle.io/workloadselector: deployment-webservices-sandbox-affiliate-api
+      workload.user.cattle.io/workloadselector: deployment-ws-sandbox-sowing-me-api
   strategy:
     rollingUpdate:
       maxSurge: 1
@@ -23,11 +23,11 @@ spec:
   template:
     metadata:
       annotations:
-        field.cattle.io/ports: '[[{"containerPort":80,"dnsName":"affiliate-api","hostPort":0,"kind":"ClusterIP","name":"80tcp02","protocol":"TCP","sourcePort":0}]]'
+        field.cattle.io/ports: '[[{"containerPort":80,"dnsName":"sowing-me-api","hostPort":0,"kind":"ClusterIP","name":"80tcp02","protocol":"TCP","sourcePort":0}]]'
         date: "{{DATE_STAMP}}"
       creationTimestamp: null
       labels:
-        workload.user.cattle.io/workloadselector: deployment-webservices-sandbox-affiliate-api
+        workload.user.cattle.io/workloadselector: deployment-ws-sandbox-sowing-me-api
     spec:
       containers:
       - env:
@@ -36,10 +36,10 @@ spec:
         - name: ENV
           value: "DEV"
         - name: APP_NAME
-          value: "AffiliateApi"
+          value: "SowingMeApi"
         image: project-neptune:sandbox
         imagePullPolicy: Never
-        name: affiliate-api
+        name: sowing-me-api
         ports:
         - containerPort: 80
           name: 80tcp02

@@ -5,25 +5,25 @@ metadata:
     field.cattle.io/creatorId: cwolsen
   labels:
     cattle.io/creator: norman
-  name: sowingme-admin-api
+  name: sowing-me-admin-api
   namespace: ws-staging
-  selfLink: /apis/networking.k8s.io/v1/namespaces/ws-staging/ingresses/sowingme-admin-api
+  selfLink: /apis/networking.k8s.io/v1/namespaces/ws-staging/ingresses/sowing-me-admin-api
 spec:
   ingressClassName: nginx
   rules:
-  - host: sowingme-admin-api.staging.ubixsys.com
+  - host: sowing-me-admin-api.staging.ubixsys.com
     http:
       paths:
       - backend:
           service:
-            name: sowingme-admin-api
+            name: sowing-me-admin-api
             port:
               number: 8080
         path: /
         pathType: ImplementationSpecific
   tls:
     - hosts:
-      - sowingme-admin-api.staging.ubixsys.com
+      - sowing-me-admin-api.staging.ubixsys.com
       secretName: tls-wildcard-ubixsys-staging
 status:
   loadBalancer:

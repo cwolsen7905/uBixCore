@@ -17,6 +17,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd -P)"
 # If environment is prod use la3config and la3config-blue as array otherwise use devstageconfig
 if [ "$ENVIRONMENT" == "main" ]; then
 	KUBECONFIGS=("/home/gitlab-runner/.kube/la3config" "/home/gitlab-runner/.kube/la3config-blue")
+	KUBECONFIGS=("/home/gitlab-runner/.kube/devstageconfig")
 elif [ "$ENVIRONMENT" == "sandbox" ]; then
     if [ ! -d $SCRIPT_DIR/log ]; then
         mkdir $SCRIPT_DIR/log
