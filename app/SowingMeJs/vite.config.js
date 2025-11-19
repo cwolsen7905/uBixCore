@@ -42,5 +42,13 @@ export default defineConfig({
           origin: '*', // or '*' for all origins
           credentials: true
        }
-    }
+    },
+	preview: {
+		allowedHosts: [
+			'app-sowing-me.dev.ubixsys.com',
+			'app-sowing-me.staging.ubixsys.com',
+			'app-sowing-me.sandbox.ubixsys.com',
+			'app.sowing.me'
+		]
+	}
 });
