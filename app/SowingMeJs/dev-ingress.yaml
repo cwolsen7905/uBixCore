@@ -1,0 +1,34 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  annotations:
+    field.cattle.io/creatorId: cwolsen
+  labels:
+    cattle.io/creator: norman
+  name: sowing-me-js
+  namespace: live-dev
+  selfLink: /apis/networking.k8s.io/v1/namespaces/live-dev/ingresses/sowing-me-js
+spec:
+  ingressClassName: nginx
+  rules:
+  - host: sowing-me-js.dev.ubixsys.com
+    http:
+      paths:
+      - backend:
+          service:
+            name: sowing-me-js
+            port:
+              number: 3000
+        path: /
+        pathType: ImplementationSpecific
+  tls:
+    - hosts:
+      - sowing-me-js.dev.ubixsys.com
+      secretName: tls-wildcard-ubixsys-dev
+status:
+  loadBalancer:
+    ingress:
+      - hostname: kube-001.brainchurts.com
+      - hostname: kube-002.brainchurts.com
+      - hostname: kube-003.brainchurts.com
+      - hostname: kube-004.brainchurts.com
