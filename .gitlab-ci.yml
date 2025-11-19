@@ -21,7 +21,7 @@ build-dev:
   stage: build
   script:
   - docker buildx build --platform linux/amd64,linux/arm64 --push -t "$CI_REGISTRY_IMAGE:$CI_COMMIT_REF_SLUG" .
-  - docker buildx build --platform linux/amd64,linux/arm64 --push -t "${CI_REGISTRY_IMAGE}-NPM:$CI_COMMIT_REF_SLUG" . -f Dockerfile_NPM_Dev
+  - docker buildx build --platform linux/amd64,linux/arm64 --push -t "${CI_REGISTRY_IMAGE}-NODE:$CI_COMMIT_REF_SLUG" . -f Dockerfile_NPM_Dev
   only:
     - dev
 
