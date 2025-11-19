@@ -9,7 +9,7 @@ use Ubix\Controller\AffiliateApi\AttributionController;
 
 return static function (App $app): void {
 	// phpcs:disable Generic.Functions.FunctionCallArgumentSpacing.TooMuchSpaceAfterComma -- disable this rule to allow for vertical spacing of the route parameters
-    $app->map(['POST'], '/attribution/firstmoney', AttributionController::class . ':firstMoney');
+	$app->map(['GET'], '/',                        SowingMeWebController::class . ':home');
 	// phpcs:enable Generic.Functions.FunctionCallArgumentSpacing.TooMuchSpaceAfterComma
 
     //
