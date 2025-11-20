@@ -261,7 +261,7 @@
       {#if sidebarOpen}
         <img src="https://sowing.me/assets/horizontal_logo_white.png" alt="Sowing.me" />
       {:else}
-        <img src="https://sowing.me/assets/logo_transparent.png" alt="Sowing.me" class="logo-small" />
+        <img src="https://sowing.me/assets/horizontal_logo_white_small.png" alt="Sowing.me" class="logo-small" />
       {/if}
     </a>
   </div>
