@@ -1,14 +1,33 @@
 <script>
   let activeTab = 'basics';
+  let moreDropdownOpen = false;
 
   const tabs = [
     { id: 'basics', label: 'Basics' },
     { id: 'account', label: 'Account' },
     { id: 'email-notifications', label: 'Email Notifications' },
     { id: 'memberships', label: 'Memberships' },
-    { id: 'billing-history', label: 'Billing History' },
-    { id: 'more', label: 'More' }
+    { id: 'billing-history', label: 'Billing History' }
   ];
+
+  const moreOptions = [
+    { id: 'payment-methods', label: 'Payment Methods' },
+    { id: 'connected-apps', label: 'Connected Apps' },
+    { id: 'blocked-users', label: 'Blocked Users' }
+  ];
+
+  function selectMoreOption(id) {
+    activeTab = id;
+    moreDropdownOpen = false;
+  }
+
+  function toggleMoreDropdown() {
+    moreDropdownOpen = !moreDropdownOpen;
+  }
+
+  function closeDropdown() {
+    moreDropdownOpen = false;
+  }
 
   // Form data for basics
   let avatar = 'https://ui-avatars.com/api/?name=User&background=4a90e2&color=fff';
@@ -192,6 +211,77 @@
     color: #666;
   }
 
+  .more-dropdown {
+    position: relative;
+  }
+
+  .more-btn {
+    padding: 12px 16px;
+    background: none;
+    border: none;
+    font-size: 0.95rem;
+    color: #666;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: color 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  .more-btn:hover {
+    color: #4a90e2;
+  }
+
+  .more-btn.active {
+    color: #4a90e2;
+    font-weight: 600;
+  }
+
+  .more-btn::after {
+    content: '▼';
+    font-size: 0.6rem;
+  }
+
+  .dropdown-menu {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    background: #fff;
+    border: 1px solid #eee;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    min-width: 180px;
+    z-index: 100;
+    margin-top: 4px;
+  }
+
+  .dropdown-item {
+    display: block;
+    width: 100%;
+    padding: 12px 16px;
+    background: none;
+    border: none;
+    text-align: left;
+    font-size: 0.95rem;
+    color: #333;
+    cursor: pointer;
+    transition: background 0.15s;
+  }
+
+  .dropdown-item:hover {
+    background: #f5f5f5;
+    color: #4a90e2;
+  }
+
+  .dropdown-item:first-child {
+    border-radius: 8px 8px 0 0;
+  }
+
+  .dropdown-item:last-child {
+    border-radius: 0 0 8px 8px;
+  }
+
   @media (max-width: 600px) {
     .form-row {
       grid-template-columns: 1fr;
@@ -221,6 +311,24 @@
         {tab.label}
       </button>
     {/each}
+    <div class="more-dropdown">
+      <button
+        class="more-btn"
+        class:active={moreOptions.some(opt => opt.id === activeTab)}
+        on:click={toggleMoreDropdown}
+      >
+        More
+      </button>
+      {#if moreDropdownOpen}
+        <div class="dropdown-menu">
+          {#each moreOptions as option}
+            <button class="dropdown-item" on:click={() => selectMoreOption(option.id)}>
+              {option.label}
+            </button>
+          {/each}
+        </div>
+      {/if}
+    </div>
   </div>
 
   <div class="tab-content">
