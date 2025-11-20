@@ -68,8 +68,8 @@
     gap: 8px;
     border-bottom: 2px solid #eee;
     margin-bottom: 32px;
-    overflow-x: auto;
     padding-bottom: 2px;
+    position: relative;
   }
 
   .tab {
@@ -396,10 +396,22 @@
         <p>Coming soon...</p>
       </div>
 
-    {:else if activeTab === 'more'}
+    {:else if activeTab === 'payment-methods'}
       <div class="coming-soon">
-        <h3>More Settings</h3>
-        <p>Payment Methods and Blocked Users coming soon...</p>
+        <h3>Payment Methods</h3>
+        <p>Coming soon...</p>
+      </div>
+
+    {:else if activeTab === 'connected-apps'}
+      <div class="coming-soon">
+        <h3>Connected Apps</h3>
+        <p>Coming soon...</p>
+      </div>
+
+    {:else if activeTab === 'blocked-users'}
+      <div class="coming-soon">
+        <h3>Blocked Users</h3>
+        <p>Coming soon...</p>
       </div>
     {/if}
   </div>
