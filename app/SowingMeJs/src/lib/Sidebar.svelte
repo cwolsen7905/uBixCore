@@ -72,6 +72,25 @@
     box-shadow: 0 2px 8px rgba(0,0,0,0.08);
     z-index: 2;
   }
+  .logo {
+    padding: 20px;
+    text-align: center;
+    border-bottom: 1px solid #eee;
+  }
+  .logo a {
+    display: block;
+  }
+  .logo img {
+    max-width: 100%;
+    height: auto;
+    max-height: 40px;
+  }
+  .logo .logo-small {
+    max-height: 32px;
+  }
+  .sidebar.collapsed .logo {
+    padding: 12px 8px;
+  }
   .search {
     padding: 24px 20px 12px 20px;
     border-bottom: 1px solid #eee;
@@ -236,6 +255,15 @@
     {:else}
       <span>&#x25B6;</span>
     {/if}
+  </div>
+  <div class="logo">
+    <a href="/">
+      {#if sidebarOpen}
+        <img src="https://sowing.me/assets/horizontal_logo_white.png" alt="Sowing.me" />
+      {:else}
+        <img src="https://sowing.me/assets/horizontal_logo_white_small.png" alt="Sowing.me" class="logo-small" />
+      {/if}
+    </a>
   </div>
   <div class="search">
     <input type="text" bind:value={search} placeholder={sidebarOpen ? "Search..." : "🔍"} />
