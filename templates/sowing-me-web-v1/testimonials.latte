@@ -1,0 +1,315 @@
+{extends 'layout.latte'}
+
+{block title}Testimonials{/block}
+
+{block head}
+<style>
+    .testimonials-hero {
+        background: var(--color-primary);
+        color: var(--color-white);
+        padding: 80px 0;
+        text-align: center;
+    }
+
+    .testimonials-hero h1 {
+        font-size: 3rem;
+        margin-bottom: 20px;
+    }
+
+    .testimonials-hero p {
+        font-size: 1.2rem;
+        opacity: 0.9;
+    }
+
+    .testimonials-section {
+        padding: 100px 0;
+    }
+
+    .testimonials-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+        gap: 30px;
+    }
+
+    .testimonial-card {
+        background: var(--color-white);
+        border-radius: 12px;
+        padding: 40px;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+        position: relative;
+    }
+
+    .testimonial-card::before {
+        content: '"';
+        position: absolute;
+        top: 20px;
+        left: 30px;
+        font-size: 5rem;
+        color: var(--color-light);
+        font-family: Georgia, serif;
+        line-height: 1;
+    }
+
+    .testimonial-content {
+        position: relative;
+        z-index: 1;
+    }
+
+    .testimonial-text {
+        font-size: 1.05rem;
+        line-height: 1.7;
+        color: #546E7A;
+        margin-bottom: 25px;
+        font-style: italic;
+    }
+
+    .testimonial-author {
+        display: flex;
+        align-items: center;
+        gap: 15px;
+    }
+
+    .author-avatar {
+        width: 50px;
+        height: 50px;
+        border-radius: 50%;
+        background: var(--color-primary);
+        color: var(--color-white);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 700;
+        font-size: 1.2rem;
+    }
+
+    .author-info h4 {
+        margin-bottom: 5px;
+        font-size: 1rem;
+    }
+
+    .author-info p {
+        color: #78909C;
+        font-size: 0.9rem;
+    }
+
+    .featured-testimonial {
+        background: var(--color-light);
+        padding: 100px 0;
+    }
+
+    .featured-content {
+        max-width: 800px;
+        margin: 0 auto;
+        text-align: center;
+    }
+
+    .featured-quote {
+        font-size: 1.5rem;
+        line-height: 1.8;
+        color: var(--color-dark);
+        margin-bottom: 30px;
+        font-style: italic;
+    }
+
+    .featured-author {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 15px;
+    }
+
+    .featured-author .author-avatar {
+        width: 60px;
+        height: 60px;
+        font-size: 1.5rem;
+    }
+
+    .stats-testimonial {
+        padding: 80px 0;
+        background: var(--color-white);
+    }
+
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 40px;
+        text-align: center;
+    }
+
+    .stat-item h3 {
+        font-size: 3rem;
+        color: var(--color-primary);
+        margin-bottom: 10px;
+    }
+
+    .stat-item p {
+        color: #546E7A;
+        font-weight: 500;
+    }
+
+    .cta-testimonials {
+        background: var(--color-secondary);
+        color: var(--color-white);
+        padding: 80px 0;
+        text-align: center;
+    }
+
+    .cta-testimonials h2 {
+        margin-bottom: 20px;
+    }
+
+    .cta-testimonials p {
+        margin-bottom: 30px;
+        opacity: 0.9;
+    }
+
+    @media (max-width: 768px) {
+        .testimonials-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .featured-quote {
+            font-size: 1.2rem;
+        }
+    }
+</style>
+{/block}
+
+{block content}
+<section class="testimonials-hero">
+    <div class="container">
+        <h1>Creator Stories</h1>
+        <p>Hear from Christian creators who are thriving on Sowing.me</p>
+    </div>
+</section>
+
+<section class="testimonials-section">
+    <div class="container">
+        <div class="testimonials-grid">
+            <div class="testimonial-card">
+                <div class="testimonial-content">
+                    <p class="testimonial-text">Sowing.me changed everything for my podcast ministry. I went from struggling with donations to having predictable monthly income. Now I can focus on creating content instead of constantly fundraising.</p>
+                    <div class="testimonial-author">
+                        <div class="author-avatar">JM</div>
+                        <div class="author-info">
+                            <h4>James Mitchell</h4>
+                            <p>Faith & Family Podcast</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="testimonial-card">
+                <div class="testimonial-content">
+                    <p class="testimonial-text">I was worried about getting censored for my faith-based content. On Sowing.me, I can share my message freely without fear. The community here actually wants to hear about Jesus!</p>
+                    <div class="testimonial-author">
+                        <div class="author-avatar">SR</div>
+                        <div class="author-info">
+                            <h4>Sarah Rodriguez</h4>
+                            <p>Devotional Writer</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="testimonial-card">
+                <div class="testimonial-content">
+                    <p class="testimonial-text">The direct connection with my supporters is incredible. I can actually get to know the people who believe in my worship music ministry. It's not just transactions—it's real community.</p>
+                    <div class="testimonial-author">
+                        <div class="author-avatar">DK</div>
+                        <div class="author-info">
+                            <h4>David Kim</h4>
+                            <p>Worship Leader & Songwriter</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="testimonial-card">
+                <div class="testimonial-content">
+                    <p class="testimonial-text">I started with just 20 supporters and now I have over 300. The growth tools and analytics helped me understand what my audience really wants. My income has tripled in a year.</p>
+                    <div class="testimonial-author">
+                        <div class="author-avatar">EB</div>
+                        <div class="author-info">
+                            <h4>Emily Baker</h4>
+                            <p>Bible Study Teacher</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="testimonial-card">
+                <div class="testimonial-content">
+                    <p class="testimonial-text">As a Christian artist, I struggled to find my audience on mainstream platforms. Sowing.me connected me with people who actually appreciate faith-inspired art. It's been a blessing.</p>
+                    <div class="testimonial-author">
+                        <div class="author-avatar">MC</div>
+                        <div class="author-info">
+                            <h4>Michael Chen</h4>
+                            <p>Christian Artist</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="testimonial-card">
+                <div class="testimonial-content">
+                    <p class="testimonial-text">The weekly payouts are a game-changer. I know exactly when money is coming in, which makes it so much easier to plan and budget for my ministry expenses.</p>
+                    <div class="testimonial-author">
+                        <div class="author-avatar">LT</div>
+                        <div class="author-info">
+                            <h4>Lisa Thompson</h4>
+                            <p>Youth Ministry Vlogger</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="featured-testimonial">
+    <div class="container">
+        <div class="featured-content">
+            <p class="featured-quote">"Sowing.me isn't just a platform—it's a calling. They understand that Christian creators need a place where our faith is celebrated, not censored. I've finally found my home for ministry."</p>
+            <div class="featured-author">
+                <div class="author-avatar">RP</div>
+                <div class="author-info" style="text-align: left;">
+                    <h4>Pastor Robert Phillips</h4>
+                    <p>Daily Devotional Ministry • 2,500+ supporters</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="stats-testimonial">
+    <div class="container">
+        <div class="stats-grid">
+            <div class="stat-item">
+                <h3>95%</h3>
+                <p>Creator Satisfaction</p>
+            </div>
+            <div class="stat-item">
+                <h3>4.8/5</h3>
+                <p>Average Rating</p>
+            </div>
+            <div class="stat-item">
+                <h3>89%</h3>
+                <p>Would Recommend</p>
+            </div>
+            <div class="stat-item">
+                <h3>3x</h3>
+                <p>Average Income Growth</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="cta-testimonials">
+    <div class="container">
+        <h2>Ready to Write Your Story?</h2>
+        <p>Join thousands of Christian creators who are thriving on Sowing.me</p>
+        <a href="/signup" class="btn btn-accent">Start Creating Today</a>
+    </div>
+</section>
+{/block}

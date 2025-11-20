@@ -62,7 +62,7 @@ final class SowingMeWebController extends Controller
     }
 
 	/**
-     * Home page for SowingMeWeb
+     * Signup page for SowingMeWeb
      *
      * @param Request  $request  The HTTP request object containing client data.
      * @param Response $response The HTTP response object used to send data back to the client
@@ -71,10 +71,87 @@ final class SowingMeWebController extends Controller
      */
     public function signup(Request $request, Response $response): Response
     {
-
         return $this->renderTemplate(
 			$response,
 			'signup.latte',
 		);
+    }
+
+    /**
+     * For Creators page
+     *
+     * @param Request  $request  The HTTP request object containing client data.
+     * @param Response $response The HTTP response object used to send data back to the client
+     *
+     * @return Response The modified response object with the operation result.
+     */
+    public function forCreators(Request $request, Response $response): Response
+    {
+        return $this->renderTemplate($response, 'for-creators.latte');
+    }
+
+    /**
+     * How It Works page
+     *
+     * @param Request  $request  The HTTP request object containing client data.
+     * @param Response $response The HTTP response object used to send data back to the client
+     *
+     * @return Response The modified response object with the operation result.
+     */
+    public function howItWorks(Request $request, Response $response): Response
+    {
+        return $this->renderTemplate($response, 'how-it-works.latte');
+    }
+
+    /**
+     * Pricing page
+     *
+     * @param Request  $request  The HTTP request object containing client data.
+     * @param Response $response The HTTP response object used to send data back to the client
+     *
+     * @return Response The modified response object with the operation result.
+     */
+    public function pricing(Request $request, Response $response): Response
+    {
+        return $this->renderTemplate($response, 'pricing.latte');
+    }
+
+    /**
+     * About page
+     *
+     * @param Request  $request  The HTTP request object containing client data.
+     * @param Response $response The HTTP response object used to send data back to the client
+     *
+     * @return Response The modified response object with the operation result.
+     */
+    public function about(Request $request, Response $response): Response
+    {
+        return $this->renderTemplate($response, 'about.latte');
+    }
+
+    /**
+     * FAQ page
+     *
+     * @param Request  $request  The HTTP request object containing client data.
+     * @param Response $response The HTTP response object used to send data back to the client
+     *
+     * @return Response The modified response object with the operation result.
+     */
+    public function faq(Request $request, Response $response): Response
+    {
+        return $this->renderTemplate($response, 'faq.latte');
+    }
+
+    /**
+     * Testimonials page
+     *
+     * @param Request  $request  The HTTP request object containing client data.
+     * @param Response $response The HTTP response object used to send data back to the client
+     *
+     * @return Response The modified response object with the operation result.
+     */
+    public function testimonials(Request $request, Response $response): Response
+    {
+        return $this->renderTemplate($response, 'testimonials.latte');
     }
 }

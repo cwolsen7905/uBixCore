@@ -1,64 +1,286 @@
-<style>
-	body {
-		font-family: 'Segoe UI', Arial, sans-serif;
-		background: linear-gradient(135deg, #e0eafc 0%, #cfdef3 100%);
-		min-height: 100vh;
-		margin: 0;
-		display: flex;
-		align-items: center;
-		justify-content: center;
-	}
-	.landing-container {
-		background: #fff;
-		border-radius: 16px;
-		box-shadow: 0 4px 24px rgba(0,0,0,0.08);
-		padding: 48px 32px;
-		max-width: 420px;
-		text-align: center;
-	}
-	.landing-logo {
-		font-size: 48px;
-		color: #4a90e2;
-		margin-bottom: 16px;
-	}
-	.landing-title {
-		font-size: 2rem;
-		font-weight: bold;
-		margin-bottom: 12px;
-		color: #333;
-	}
-	.landing-subtitle {
-		font-size: 1.1rem;
-		color: #4a90e2;
-		margin-bottom: 20px;
-	}
-	.landing-desc {
-		font-size: 1rem;
-		color: #555;
-		margin-bottom: 32px;
-	}
-	.landing-btn {
-		background: #4a90e2;
-		color: #fff;
-		border: none;
-		border-radius: 8px;
-		padding: 12px 32px;
-		font-size: 1rem;
-		cursor: pointer;
-		transition: background 0.2s;
-	}
-	.landing-btn:hover {
-		background: #357abd;
-	}
-</style>
+{extends 'layout.latte'}
 
-<div class="landing-container">
-	<div class="landing-logo">✝️</div>
-	<div class="landing-title">Welcome to Sowing.me</div>
-	<div class="landing-subtitle">Empowering Christian Creators & Supporters</div>
-	<div class="landing-desc">
-		Sowing.me is a platform where Christians can share, support, and grow together.<br>
-		Join a community that uplifts faith-based creators and helps spread the message of hope.
-	</div>
-	<a href="/signup"><button class="landing-btn">Get Started</button></a>
-</div>
+{block title}Home{/block}
+
+{block head}
+<style>
+    .hero {
+        background: linear-gradient(135deg, var(--color-primary) 0%, #1B5E20 100%);
+        color: var(--color-white);
+        padding: 100px 0;
+        text-align: center;
+    }
+
+    .hero h1 {
+        font-size: 3.5rem;
+        margin-bottom: 20px;
+    }
+
+    .hero .tagline {
+        font-size: 1.5rem;
+        opacity: 0.9;
+        margin-bottom: 30px;
+    }
+
+    .hero p {
+        font-size: 1.2rem;
+        max-width: 600px;
+        margin: 0 auto 40px;
+        opacity: 0.9;
+    }
+
+    .hero-buttons {
+        display: flex;
+        gap: 15px;
+        justify-content: center;
+        flex-wrap: wrap;
+    }
+
+    .hero .btn {
+        padding: 15px 30px;
+        font-size: 1.1rem;
+    }
+
+    .features {
+        padding: 100px 0;
+    }
+
+    .features-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 40px;
+        margin-top: 60px;
+    }
+
+    .feature-card {
+        text-align: center;
+        padding: 40px 30px;
+        border-radius: 12px;
+        background: var(--color-white);
+        box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+        transition: transform 0.3s;
+    }
+
+    .feature-card:hover {
+        transform: translateY(-5px);
+    }
+
+    .feature-icon {
+        font-size: 3rem;
+        margin-bottom: 20px;
+    }
+
+    .feature-card h3 {
+        margin-bottom: 15px;
+        color: var(--color-primary);
+    }
+
+    .how-it-works-preview {
+        background: var(--color-light);
+        padding: 100px 0;
+    }
+
+    .steps {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 30px;
+        margin-top: 60px;
+    }
+
+    .step {
+        text-align: center;
+        padding: 30px;
+    }
+
+    .step-number {
+        width: 60px;
+        height: 60px;
+        border-radius: 50%;
+        background: var(--color-primary);
+        color: var(--color-white);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.5rem;
+        font-weight: 700;
+        margin: 0 auto 20px;
+    }
+
+    .step h3 {
+        margin-bottom: 10px;
+    }
+
+    .cta-section {
+        background: var(--color-secondary);
+        color: var(--color-white);
+        padding: 80px 0;
+        text-align: center;
+    }
+
+    .cta-section h2 {
+        margin-bottom: 20px;
+    }
+
+    .cta-section p {
+        margin-bottom: 30px;
+        opacity: 0.9;
+        max-width: 600px;
+        margin-left: auto;
+        margin-right: auto;
+    }
+
+    .stats {
+        padding: 80px 0;
+        background: var(--color-white);
+    }
+
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 40px;
+        text-align: center;
+    }
+
+    .stat-item h3 {
+        font-size: 3rem;
+        color: var(--color-primary);
+        margin-bottom: 10px;
+    }
+
+    .stat-item p {
+        color: #546E7A;
+        font-weight: 500;
+    }
+
+    @media (max-width: 768px) {
+        .hero h1 {
+            font-size: 2.5rem;
+        }
+
+        .hero .tagline {
+            font-size: 1.2rem;
+        }
+    }
+</style>
+{/block}
+
+{block content}
+<section class="hero">
+    <div class="container">
+        <h1>Support Christian Creators</h1>
+        <p class="tagline">Planting. Believing. Thriving.</p>
+        <p>Sowing.me empowers faith-based creators to share their gifts while building a community of supporters who believe in their mission.</p>
+        <div class="hero-buttons">
+            <a href="/for-creators" class="btn btn-accent">Start Creating</a>
+            <a href="/how-it-works" class="btn btn-outline" style="border-color: white; color: white;">Learn More</a>
+        </div>
+    </div>
+</section>
+
+<section class="features">
+    <div class="container">
+        <h2 class="section-title text-center">Why Choose Sowing.me?</h2>
+        <p class="section-subtitle text-center">A platform built on faith, designed for growth</p>
+
+        <div class="features-grid">
+            <div class="feature-card">
+                <div class="feature-icon">🌱</div>
+                <h3>Faith-Centered Community</h3>
+                <p>Connect with supporters who share your values and understand your mission to spread faith through content.</p>
+            </div>
+
+            <div class="feature-card">
+                <div class="feature-icon">💰</div>
+                <h3>Sustainable Income</h3>
+                <p>Build a reliable income stream through monthly memberships, allowing you to focus on creating meaningful content.</p>
+            </div>
+
+            <div class="feature-card">
+                <div class="feature-icon">🤝</div>
+                <h3>Direct Connection</h3>
+                <p>Engage directly with your supporters through exclusive content, messages, and community features.</p>
+            </div>
+
+            <div class="feature-card">
+                <div class="feature-icon">📈</div>
+                <h3>Growth Tools</h3>
+                <p>Access analytics, promotional tools, and resources to help you grow your audience and increase your impact.</p>
+            </div>
+
+            <div class="feature-card">
+                <div class="feature-icon">🔒</div>
+                <h3>Creator-Friendly Terms</h3>
+                <p>Keep more of what you earn with competitive rates and transparent pricing. No hidden fees.</p>
+            </div>
+
+            <div class="feature-card">
+                <div class="feature-icon">✝️</div>
+                <h3>Aligned Values</h3>
+                <p>A platform that respects and supports Christian content creators without censorship of faith-based messaging.</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="how-it-works-preview">
+    <div class="container">
+        <h2 class="section-title text-center">How It Works</h2>
+        <p class="section-subtitle text-center">Get started in three simple steps</p>
+
+        <div class="steps">
+            <div class="step">
+                <div class="step-number">1</div>
+                <h3>Create Your Page</h3>
+                <p>Set up your creator profile, describe your mission, and define membership tiers with exclusive benefits.</p>
+            </div>
+
+            <div class="step">
+                <div class="step-number">2</div>
+                <h3>Share Your Content</h3>
+                <p>Post videos, podcasts, articles, or any content that inspires your community and shares your message.</p>
+            </div>
+
+            <div class="step">
+                <div class="step-number">3</div>
+                <h3>Grow & Thrive</h3>
+                <p>Build your supporter base, receive monthly income, and focus on what matters most—your ministry.</p>
+            </div>
+        </div>
+
+        <div class="text-center" style="margin-top: 40px;">
+            <a href="/how-it-works" class="btn btn-primary">Learn More</a>
+        </div>
+    </div>
+</section>
+
+<section class="stats">
+    <div class="container">
+        <div class="stats-grid">
+            <div class="stat-item">
+                <h3>1000+</h3>
+                <p>Active Creators</p>
+            </div>
+            <div class="stat-item">
+                <h3>50K+</h3>
+                <p>Monthly Supporters</p>
+            </div>
+            <div class="stat-item">
+                <h3>$2M+</h3>
+                <p>Paid to Creators</p>
+            </div>
+            <div class="stat-item">
+                <h3>95%</h3>
+                <p>Creator Satisfaction</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="cta-section">
+    <div class="container">
+        <h2>Ready to Start Your Journey?</h2>
+        <p>Join thousands of Christian creators who are building sustainable ministries through Sowing.me.</p>
+        <a href="/signup" class="btn btn-accent">Get Started Free</a>
+    </div>
+</section>
+{/block}

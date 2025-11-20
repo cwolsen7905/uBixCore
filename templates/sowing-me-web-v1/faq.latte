@@ -1,0 +1,232 @@
+{extends 'layout.latte'}
+
+{block title}FAQ{/block}
+
+{block head}
+<style>
+    .faq-hero {
+        background: var(--color-light);
+        padding: 80px 0;
+        text-align: center;
+    }
+
+    .faq-hero h1 {
+        font-size: 3rem;
+        margin-bottom: 20px;
+    }
+
+    .faq-hero p {
+        font-size: 1.2rem;
+        color: #546E7A;
+    }
+
+    .faq-section {
+        padding: 80px 0;
+    }
+
+    .faq-category {
+        margin-bottom: 60px;
+    }
+
+    .faq-category h2 {
+        font-size: 1.8rem;
+        margin-bottom: 30px;
+        color: var(--color-primary);
+        padding-bottom: 15px;
+        border-bottom: 2px solid var(--color-light);
+    }
+
+    .faq-item {
+        margin-bottom: 25px;
+        background: var(--color-white);
+        border-radius: 8px;
+        padding: 25px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+    }
+
+    .faq-item h3 {
+        font-size: 1.1rem;
+        margin-bottom: 15px;
+        color: var(--color-dark);
+    }
+
+    .faq-item p {
+        color: #546E7A;
+        line-height: 1.7;
+    }
+
+    .faq-item ul {
+        margin-top: 10px;
+        padding-left: 20px;
+        color: #546E7A;
+    }
+
+    .faq-item li {
+        margin-bottom: 8px;
+    }
+
+    .contact-section {
+        background: var(--color-secondary);
+        color: var(--color-white);
+        padding: 80px 0;
+        text-align: center;
+    }
+
+    .contact-section h2 {
+        margin-bottom: 20px;
+    }
+
+    .contact-section p {
+        margin-bottom: 30px;
+        opacity: 0.9;
+    }
+</style>
+{/block}
+
+{block content}
+<section class="faq-hero">
+    <div class="container">
+        <h1>Frequently Asked Questions</h1>
+        <p>Find answers to common questions about Sowing.me</p>
+    </div>
+</section>
+
+<section class="faq-section">
+    <div class="container">
+
+        <div class="faq-category">
+            <h2>Getting Started</h2>
+
+            <div class="faq-item">
+                <h3>How do I create a page on Sowing.me?</h3>
+                <p>Creating your page is free and takes just a few minutes. Click "Get Started," create an account, and follow the prompts to set up your profile, describe your content, and create your membership tiers.</p>
+            </div>
+
+            <div class="faq-item">
+                <h3>Is Sowing.me only for Christian creators?</h3>
+                <p>Sowing.me is designed specifically for Christian content creators and faith-based content. We welcome all types of Christian creators—musicians, podcasters, teachers, writers, artists, and more.</p>
+            </div>
+
+            <div class="faq-item">
+                <h3>What types of content can I share?</h3>
+                <p>You can share almost any type of content including videos, audio, images, text posts, polls, and links. Content must align with our community guidelines and support our mission of spreading faith-based content.</p>
+            </div>
+
+            <div class="faq-item">
+                <h3>Do I need a large following to start?</h3>
+                <p>No! Many successful creators on Sowing.me started with small audiences. What matters most is the connection you build with your supporters, not the total number.</p>
+            </div>
+        </div>
+
+        <div class="faq-category">
+            <h2>Payments & Pricing</h2>
+
+            <div class="faq-item">
+                <h3>How much does Sowing.me cost?</h3>
+                <p>Creating a page is free. We charge a platform fee on your earnings: 8% for Starter accounts, or 5% for Pro accounts. Plus standard payment processing fees (2.9% + $0.30 per transaction).</p>
+            </div>
+
+            <div class="faq-item">
+                <h3>When do I get paid?</h3>
+                <p>We process payouts weekly or monthly (your choice). Payments are sent directly to your connected bank account or PayPal. Most creators receive their funds within 2-5 business days after payout is processed.</p>
+            </div>
+
+            <div class="faq-item">
+                <h3>What payment methods do supporters use?</h3>
+                <p>Supporters can pay with credit/debit cards, PayPal, and in some regions, Apple Pay and Google Pay.</p>
+            </div>
+
+            <div class="faq-item">
+                <h3>Can supporters cancel their membership?</h3>
+                <p>Yes, supporters can cancel their membership at any time. They'll continue to have access until the end of their current billing period.</p>
+            </div>
+
+            <div class="faq-item">
+                <h3>How do membership tiers work?</h3>
+                <p>You create tiers with different price points and benefits. Supporters choose the tier that fits their budget. For example:</p>
+                <ul>
+                    <li>$5/month - Access to exclusive posts</li>
+                    <li>$10/month - Above + monthly live Q&A</li>
+                    <li>$25/month - Above + direct messaging access</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="faq-category">
+            <h2>For Supporters</h2>
+
+            <div class="faq-item">
+                <h3>How do I find creators to support?</h3>
+                <p>You can browse creators by category, search for specific topics, or discover recommended creators based on your interests. Many creators also share their Sowing.me links on social media.</p>
+            </div>
+
+            <div class="faq-item">
+                <h3>Can I support multiple creators?</h3>
+                <p>Absolutely! You can support as many creators as you'd like, each with their own separate membership.</p>
+            </div>
+
+            <div class="faq-item">
+                <h3>What if I want to change my support level?</h3>
+                <p>You can upgrade or downgrade your membership tier at any time. Changes take effect at the start of your next billing cycle.</p>
+            </div>
+
+            <div class="faq-item">
+                <h3>Is my payment information secure?</h3>
+                <p>Yes. We use industry-standard encryption and never store your full payment details on our servers. All transactions are processed through secure, PCI-compliant payment providers.</p>
+            </div>
+        </div>
+
+        <div class="faq-category">
+            <h2>Content & Features</h2>
+
+            <div class="faq-item">
+                <h3>Can I schedule posts in advance?</h3>
+                <p>Yes! Pro accounts can schedule posts to publish at specific times, perfect for maintaining a consistent posting schedule.</p>
+            </div>
+
+            <div class="faq-item">
+                <h3>Can I offer one-time purchases?</h3>
+                <p>Currently, Sowing.me focuses on recurring memberships. One-time purchases and digital product sales are on our roadmap for future development.</p>
+            </div>
+
+            <div class="faq-item">
+                <h3>Is there a mobile app?</h3>
+                <p>Sowing.me is fully mobile-responsive and works great in any mobile browser. Native iOS and Android apps are in development.</p>
+            </div>
+
+            <div class="faq-item">
+                <h3>Can I communicate directly with my supporters?</h3>
+                <p>Yes! You can send messages to all supporters, specific tiers, or individual members. You can also create posts that allow comments and discussion.</p>
+            </div>
+        </div>
+
+        <div class="faq-category">
+            <h2>Account & Support</h2>
+
+            <div class="faq-item">
+                <h3>How do I contact support?</h3>
+                <p>You can reach our support team at support@sowing.me. Pro accounts receive priority support with faster response times.</p>
+            </div>
+
+            <div class="faq-item">
+                <h3>Can I delete my account?</h3>
+                <p>Yes, you can delete your account at any time from your account settings. If you have active supporters, we recommend notifying them first.</p>
+            </div>
+
+            <div class="faq-item">
+                <h3>What are the community guidelines?</h3>
+                <p>We require all content to be respectful, legal, and aligned with Christian values. Hate speech, illegal content, and content that contradicts our mission are not permitted.</p>
+            </div>
+        </div>
+
+    </div>
+</section>
+
+<section class="contact-section">
+    <div class="container">
+        <h2>Still Have Questions?</h2>
+        <p>Our support team is here to help</p>
+        <a href="mailto:support@sowing.me" class="btn btn-accent">Contact Support</a>
+    </div>
+</section>
+{/block}
