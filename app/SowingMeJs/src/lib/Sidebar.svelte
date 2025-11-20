@@ -2,39 +2,11 @@
   export let sidebarOpen = true;
   export let search = '';
   export let navLinks = [
-    {
-      section: 'Main',
-      links: [
-        { href: '/', label: 'Home' },
-        { href: '/dashboard', label: 'Dashboard' }
-      ]
-    },
-    {
-      section: 'Affiliates',
-      links: [
-        { href: '/affiliates', label: 'Affiliates' },
-        { href: '/affiliates/banners', label: 'Banners' }
-      ]
-    },
-    {
-      section: 'Broadcasting',
-      links: [
-        { href: '/broadcasting/models', label: 'Models' },
-        { href: '/broadcasting/fanclubs', label: 'Fan Clubs' }
-      ]
-    },
-    {
-      section: 'Reports',
-      links: [
-        { href: '/reports', label: 'Reports' }
-      ]
-    },
-    {
-      section: 'Settings',
-      links: [
-        { href: '/settings', label: 'Settings' }
-      ]
-    }
+    { href: '/', label: 'Home', icon: '🏠' },
+    { href: '/explore', label: 'Explore', icon: '🔍' },
+    { href: '/chats', label: 'Chats', icon: '💬' },
+    { href: '/notifications', label: 'Notifications', icon: '🔔' },
+    { href: '/settings', label: 'Settings', icon: '⚙️' }
   ];
   export let user = {
     name: 'John Doe',
@@ -74,7 +46,7 @@
   }
   .logo {
     padding: 20px;
-    text-align: center;
+    text-align: left;
     border-bottom: 1px solid #eee;
   }
   .logo a {
@@ -117,25 +89,11 @@
     gap: 4px;
     overflow-y: auto;
   }
-  .nav-section {
-    margin-bottom: 8px;
-  }
-  .nav-section-label {
-    padding: 8px 24px 4px 24px;
-    font-size: 0.75rem;
-    font-weight: 600;
-    color: #888;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-  }
-  .sidebar.collapsed .nav-section-label {
-    padding: 8px 8px 4px 8px;
-    text-align: center;
-    font-size: 0.6rem;
-  }
   .nav-link {
-    display: block;
-    padding: 10px 24px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 20px;
     color: #333;
     text-decoration: none;
     border-radius: 6px;
@@ -146,13 +104,19 @@
     text-overflow: ellipsis;
   }
   .sidebar.collapsed .nav-link {
-    padding: 10px 8px;
-    text-align: center;
-    font-size: 0.8rem;
+    padding: 12px;
+    justify-content: center;
   }
   .nav-link:hover {
     background: #eaf4fd;
     color: #4a90e2;
+  }
+  .nav-icon {
+    font-size: 1.2rem;
+    flex-shrink: 0;
+  }
+  .nav-label {
+    flex: 1;
   }
   .user-section {
     padding: 20px;
@@ -269,25 +233,13 @@
     <input type="text" bind:value={search} placeholder={sidebarOpen ? "Search..." : "🔍"} />
   </div>
   <nav class="nav">
-    {#each navLinks as section}
-      <div class="nav-section">
-        <div class="nav-section-label">
-          {#if sidebarOpen}
-            {section.section}
-          {:else}
-            {section.section.charAt(0)}
-          {/if}
-        </div>
-        {#each section.links as link}
-          <a class="nav-link" href={link.href}>
-            {#if sidebarOpen}
-              {link.label}
-            {:else}
-              {link.label.charAt(0)}
-            {/if}
-          </a>
-        {/each}
-      </div>
+    {#each navLinks as link}
+      <a class="nav-link" href={link.href}>
+        <span class="nav-icon">{link.icon}</span>
+        {#if sidebarOpen}
+          <span class="nav-label">{link.label}</span>
+        {/if}
+      </a>
     {/each}
   </nav>
   <div class="user-section">
