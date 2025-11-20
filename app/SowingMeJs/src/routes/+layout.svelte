@@ -163,22 +163,6 @@ nav a:hover {
 </style>
 
 <div class="layout">
-<header class="header">
-  <div class="logo">
-    <img src="/logo.png" alt="Logo" style="height:32px; margin-right: 1rem;" />
-    Internal Admin POC
-  </div>
-  <div class="user-menu" on:click={toggleMenu} use:onClickOutside={closeMenu}>
-    <span class="user-name">{user.name}</span>
-    <svg width="20" height="20" fill="currentColor" viewBox="0 0 20 20"><path d="M5.25 7.5L10 12.5L14.75 7.5H5.25Z"/></svg>
-    {#if menuOpen}
-      <div class="menu-dropdown">
-        <a href="/profile">Profile</a>
-        <button on:click={logout}>Logout</button>
-      </div>
-    {/if}
-  </div>
-</header>
   <div class="main-area">
 <nav class:collapsed={navCollapsed}>
   <button class="collapse-btn" on:click={toggleNav}>
