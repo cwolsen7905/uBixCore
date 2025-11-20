@@ -1,0 +1,351 @@
+{extends 'layout.latte'}
+
+{block title}Pricing{/block}
+
+{block head}
+<style>
+    .pricing-hero {
+        background: var(--color-light);
+        padding: 80px 0;
+        text-align: center;
+    }
+
+    .pricing-hero h1 {
+        font-size: 3rem;
+        margin-bottom: 20px;
+    }
+
+    .pricing-hero p {
+        font-size: 1.2rem;
+        color: #546E7A;
+    }
+
+    .pricing-cards {
+        padding: 80px 0;
+    }
+
+    .cards-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+        gap: 30px;
+        max-width: 1000px;
+        margin: 0 auto;
+    }
+
+    .pricing-card {
+        background: var(--color-white);
+        border-radius: 12px;
+        padding: 40px;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+        text-align: center;
+        position: relative;
+    }
+
+    .pricing-card.featured {
+        border: 3px solid var(--color-primary);
+        transform: scale(1.05);
+    }
+
+    .pricing-card.featured::before {
+        content: "Most Popular";
+        position: absolute;
+        top: -15px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: var(--color-primary);
+        color: white;
+        padding: 5px 20px;
+        border-radius: 20px;
+        font-size: 0.85rem;
+        font-weight: 600;
+    }
+
+    .pricing-card h3 {
+        font-size: 1.5rem;
+        margin-bottom: 10px;
+    }
+
+    .pricing-card .price {
+        font-size: 3rem;
+        font-weight: 800;
+        color: var(--color-primary);
+        margin: 20px 0;
+    }
+
+    .pricing-card .price span {
+        font-size: 1rem;
+        font-weight: 400;
+        color: #546E7A;
+    }
+
+    .pricing-card .description {
+        color: #546E7A;
+        margin-bottom: 30px;
+    }
+
+    .pricing-card ul {
+        list-style: none;
+        padding: 0;
+        margin-bottom: 30px;
+        text-align: left;
+    }
+
+    .pricing-card li {
+        padding: 12px 0;
+        border-bottom: 1px solid #E0E0E0;
+        padding-left: 30px;
+        position: relative;
+    }
+
+    .pricing-card li:last-child {
+        border-bottom: none;
+    }
+
+    .pricing-card li::before {
+        content: "✓";
+        position: absolute;
+        left: 0;
+        color: var(--color-primary);
+        font-weight: bold;
+    }
+
+    .comparison {
+        padding: 80px 0;
+        background: var(--color-light);
+    }
+
+    .comparison-table {
+        max-width: 900px;
+        margin: 60px auto 0;
+        background: white;
+        border-radius: 12px;
+        overflow: hidden;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+    }
+
+    .comparison-table table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+    .comparison-table th,
+    .comparison-table td {
+        padding: 20px;
+        text-align: left;
+        border-bottom: 1px solid #E0E0E0;
+    }
+
+    .comparison-table th {
+        background: var(--color-primary);
+        color: white;
+        font-weight: 600;
+    }
+
+    .comparison-table tr:last-child td {
+        border-bottom: none;
+    }
+
+    .comparison-table .check {
+        color: var(--color-primary);
+        font-weight: bold;
+    }
+
+    .faq-preview {
+        padding: 80px 0;
+    }
+
+    .faq-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+        gap: 30px;
+        margin-top: 60px;
+    }
+
+    .faq-item h4 {
+        margin-bottom: 10px;
+        color: var(--color-dark);
+    }
+
+    .faq-item p {
+        color: #546E7A;
+    }
+
+    .cta-pricing {
+        background: var(--color-secondary);
+        color: var(--color-white);
+        padding: 80px 0;
+        text-align: center;
+    }
+
+    .cta-pricing h2 {
+        margin-bottom: 20px;
+    }
+
+    .cta-pricing p {
+        margin-bottom: 30px;
+        opacity: 0.9;
+    }
+
+    @media (max-width: 768px) {
+        .pricing-card.featured {
+            transform: none;
+        }
+
+        .faq-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .comparison-table {
+            overflow-x: auto;
+        }
+    }
+</style>
+{/block}
+
+{block content}
+<section class="pricing-hero">
+    <div class="container">
+        <h1>Simple, Transparent Pricing</h1>
+        <p>Keep more of what you earn. No hidden fees, no surprises.</p>
+    </div>
+</section>
+
+<section class="pricing-cards">
+    <div class="container">
+        <div class="cards-grid">
+            <div class="pricing-card">
+                <h3>Starter</h3>
+                <div class="price">Free <span>to start</span></div>
+                <p class="description">Perfect for new creators just getting started</p>
+                <ul>
+                    <li>Create your page for free</li>
+                    <li>Up to 3 membership tiers</li>
+                    <li>Basic analytics</li>
+                    <li>Email support</li>
+                    <li>8% platform fee on earnings</li>
+                </ul>
+                <a href="/signup" class="btn btn-outline" style="width: 100%;">Get Started</a>
+            </div>
+
+            <div class="pricing-card featured">
+                <h3>Pro</h3>
+                <div class="price">5% <span>platform fee</span></div>
+                <p class="description">For growing creators who want more features</p>
+                <ul>
+                    <li>Everything in Starter</li>
+                    <li>Unlimited membership tiers</li>
+                    <li>Advanced analytics</li>
+                    <li>Priority support</li>
+                    <li>Custom page branding</li>
+                    <li>Promotional tools</li>
+                </ul>
+                <a href="/signup" class="btn btn-primary" style="width: 100%;">Start Free Trial</a>
+            </div>
+        </div>
+
+        <p class="text-center" style="margin-top: 40px; color: #546E7A;">
+            * Plus standard payment processing fees (2.9% + $0.30 per transaction)
+        </p>
+    </div>
+</section>
+
+<section class="comparison">
+    <div class="container">
+        <h2 class="section-title text-center">Compare Plans</h2>
+
+        <div class="comparison-table">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Feature</th>
+                        <th>Starter</th>
+                        <th>Pro</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Platform Fee</td>
+                        <td>8%</td>
+                        <td>5%</td>
+                    </tr>
+                    <tr>
+                        <td>Membership Tiers</td>
+                        <td>Up to 3</td>
+                        <td>Unlimited</td>
+                    </tr>
+                    <tr>
+                        <td>Basic Analytics</td>
+                        <td class="check">✓</td>
+                        <td class="check">✓</td>
+                    </tr>
+                    <tr>
+                        <td>Advanced Analytics</td>
+                        <td>—</td>
+                        <td class="check">✓</td>
+                    </tr>
+                    <tr>
+                        <td>Custom Branding</td>
+                        <td>—</td>
+                        <td class="check">✓</td>
+                    </tr>
+                    <tr>
+                        <td>Promotional Tools</td>
+                        <td>—</td>
+                        <td class="check">✓</td>
+                    </tr>
+                    <tr>
+                        <td>Priority Support</td>
+                        <td>—</td>
+                        <td class="check">✓</td>
+                    </tr>
+                    <tr>
+                        <td>Early Access Features</td>
+                        <td>—</td>
+                        <td class="check">✓</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</section>
+
+<section class="faq-preview">
+    <div class="container">
+        <h2 class="section-title text-center">Pricing FAQ</h2>
+
+        <div class="faq-grid">
+            <div class="faq-item">
+                <h4>When do I get paid?</h4>
+                <p>We process payouts weekly or monthly (your choice) directly to your bank account or PayPal.</p>
+            </div>
+
+            <div class="faq-item">
+                <h4>Are there any hidden fees?</h4>
+                <p>No hidden fees. You pay the platform fee plus standard payment processing fees. That's it.</p>
+            </div>
+
+            <div class="faq-item">
+                <h4>Can I switch plans?</h4>
+                <p>Yes! You can upgrade to Pro anytime or downgrade at the end of your billing cycle.</p>
+            </div>
+
+            <div class="faq-item">
+                <h4>Is there a free trial for Pro?</h4>
+                <p>Yes, new creators get a 30-day free trial of Pro features to help you get started.</p>
+            </div>
+        </div>
+
+        <div class="text-center" style="margin-top: 40px;">
+            <a href="/faq" class="btn btn-outline">View All FAQs</a>
+        </div>
+    </div>
+</section>
+
+<section class="cta-pricing">
+    <div class="container">
+        <h2>Start Creating Today</h2>
+        <p>Join thousands of Christian creators building their ministry on Sowing.me</p>
+        <a href="/signup" class="btn btn-accent">Create Your Free Page</a>
+    </div>
+</section>
+{/block}

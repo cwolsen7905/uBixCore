@@ -1,0 +1,313 @@
+{extends 'layout.latte'}
+
+{block title}For Creators{/block}
+
+{block head}
+<style>
+    .creator-hero {
+        background: linear-gradient(135deg, var(--color-accent) 0%, #F57C00 100%);
+        color: var(--color-white);
+        padding: 100px 0;
+        text-align: center;
+    }
+
+    .creator-hero h1 {
+        font-size: 3rem;
+        margin-bottom: 20px;
+    }
+
+    .creator-hero p {
+        font-size: 1.2rem;
+        max-width: 700px;
+        margin: 0 auto 40px;
+        opacity: 0.95;
+    }
+
+    .benefits {
+        padding: 100px 0;
+    }
+
+    .benefits-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 60px;
+        align-items: center;
+        margin-top: 60px;
+    }
+
+    .benefits-content h3 {
+        font-size: 1.8rem;
+        margin-bottom: 20px;
+        color: var(--color-primary);
+    }
+
+    .benefits-content p {
+        margin-bottom: 15px;
+        color: #546E7A;
+    }
+
+    .benefits-content ul {
+        list-style: none;
+        padding: 0;
+    }
+
+    .benefits-content li {
+        padding: 10px 0;
+        padding-left: 30px;
+        position: relative;
+    }
+
+    .benefits-content li::before {
+        content: "✓";
+        position: absolute;
+        left: 0;
+        color: var(--color-primary);
+        font-weight: bold;
+    }
+
+    .benefits-image {
+        background: var(--color-light);
+        border-radius: 12px;
+        padding: 60px;
+        text-align: center;
+    }
+
+    .benefits-image .placeholder {
+        font-size: 4rem;
+    }
+
+    .creator-types {
+        background: var(--color-light);
+        padding: 100px 0;
+    }
+
+    .types-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        gap: 30px;
+        margin-top: 60px;
+    }
+
+    .type-card {
+        background: var(--color-white);
+        padding: 40px 30px;
+        border-radius: 12px;
+        text-align: center;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+    }
+
+    .type-icon {
+        font-size: 3rem;
+        margin-bottom: 20px;
+    }
+
+    .type-card h3 {
+        margin-bottom: 15px;
+        color: var(--color-dark);
+    }
+
+    .earnings {
+        padding: 100px 0;
+    }
+
+    .earnings-calculator {
+        background: var(--color-white);
+        border-radius: 12px;
+        padding: 60px;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+        max-width: 800px;
+        margin: 60px auto 0;
+    }
+
+    .earnings-example {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 30px;
+        text-align: center;
+        margin-top: 40px;
+    }
+
+    .earnings-item h4 {
+        font-size: 2rem;
+        color: var(--color-primary);
+        margin-bottom: 10px;
+    }
+
+    .earnings-item p {
+        color: #546E7A;
+    }
+
+    .cta-creator {
+        background: var(--color-primary);
+        color: var(--color-white);
+        padding: 80px 0;
+        text-align: center;
+    }
+
+    .cta-creator h2 {
+        margin-bottom: 20px;
+    }
+
+    .cta-creator p {
+        margin-bottom: 30px;
+        opacity: 0.9;
+    }
+
+    @media (max-width: 768px) {
+        .benefits-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .earnings-example {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+{/block}
+
+{block content}
+<section class="creator-hero">
+    <div class="container">
+        <h1>Turn Your Calling Into a Ministry</h1>
+        <p>Sowing.me helps Christian creators build sustainable income while sharing faith-based content with a supportive community.</p>
+        <a href="/signup" class="btn btn-primary" style="background: var(--color-white); color: var(--color-accent);">Start Your Page</a>
+    </div>
+</section>
+
+<section class="benefits">
+    <div class="container">
+        <h2 class="section-title text-center">Why Creators Choose Sowing.me</h2>
+
+        <div class="benefits-grid">
+            <div class="benefits-content">
+                <h3>Earn Predictable Income</h3>
+                <p>Stop relying on unpredictable ad revenue or one-time donations. Build a reliable monthly income through supporter memberships.</p>
+                <ul>
+                    <li>Monthly recurring payments from supporters</li>
+                    <li>Multiple membership tier options</li>
+                    <li>Keep up to 92% of your earnings</li>
+                    <li>Weekly payouts to your bank account</li>
+                </ul>
+            </div>
+            <div class="benefits-image">
+                <div class="placeholder">💵</div>
+            </div>
+        </div>
+
+        <div class="benefits-grid" style="margin-top: 80px;">
+            <div class="benefits-image">
+                <div class="placeholder">👥</div>
+            </div>
+            <div class="benefits-content">
+                <h3>Build Real Community</h3>
+                <p>Connect directly with people who believe in your mission and want to support your growth.</p>
+                <ul>
+                    <li>Direct messaging with supporters</li>
+                    <li>Exclusive posts and content</li>
+                    <li>Community polls and discussions</li>
+                    <li>Special member-only live streams</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="benefits-grid" style="margin-top: 80px;">
+            <div class="benefits-content">
+                <h3>Focus on What Matters</h3>
+                <p>Spend less time worrying about monetization and more time creating content that glorifies God.</p>
+                <ul>
+                    <li>Simple, intuitive creator dashboard</li>
+                    <li>Analytics to understand your audience</li>
+                    <li>Promotional tools to grow your reach</li>
+                    <li>No content censorship of faith-based messaging</li>
+                </ul>
+            </div>
+            <div class="benefits-image">
+                <div class="placeholder">🎯</div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="creator-types">
+    <div class="container">
+        <h2 class="section-title text-center">Perfect for All Christian Creators</h2>
+        <p class="section-subtitle text-center">No matter your ministry, Sowing.me can help you grow</p>
+
+        <div class="types-grid">
+            <div class="type-card">
+                <div class="type-icon">🎙️</div>
+                <h3>Podcasters</h3>
+                <p>Share devotionals, interviews, and teachings with exclusive bonus episodes for members.</p>
+            </div>
+
+            <div class="type-card">
+                <div class="type-icon">🎵</div>
+                <h3>Musicians & Worship Leaders</h3>
+                <p>Release worship music, tutorials, and behind-the-scenes content for your supporters.</p>
+            </div>
+
+            <div class="type-card">
+                <div class="type-icon">📹</div>
+                <h3>Video Creators</h3>
+                <p>Produce Bible studies, vlogs, and inspirational content with early access for members.</p>
+            </div>
+
+            <div class="type-card">
+                <div class="type-icon">✍️</div>
+                <h3>Writers & Bloggers</h3>
+                <p>Share devotionals, articles, and books-in-progress with your dedicated readers.</p>
+            </div>
+
+            <div class="type-card">
+                <div class="type-icon">🎨</div>
+                <h3>Artists & Designers</h3>
+                <p>Create faith-inspired art, printables, and designs with exclusive access for supporters.</p>
+            </div>
+
+            <div class="type-card">
+                <div class="type-icon">📚</div>
+                <h3>Teachers & Coaches</h3>
+                <p>Offer courses, mentorship, and educational content to those seeking to grow in faith.</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="earnings">
+    <div class="container">
+        <h2 class="section-title text-center">Your Earning Potential</h2>
+        <p class="section-subtitle text-center">See what you could earn with Sowing.me</p>
+
+        <div class="earnings-calculator">
+            <p class="text-center" style="margin-bottom: 30px;">If you have supporters paying an average of $10/month:</p>
+
+            <div class="earnings-example">
+                <div class="earnings-item">
+                    <h4>$460</h4>
+                    <p>50 supporters</p>
+                </div>
+                <div class="earnings-item">
+                    <h4>$920</h4>
+                    <p>100 supporters</p>
+                </div>
+                <div class="earnings-item">
+                    <h4>$4,600</h4>
+                    <p>500 supporters</p>
+                </div>
+            </div>
+
+            <p class="text-center" style="margin-top: 30px; color: #546E7A; font-size: 0.9rem;">
+                *Based on 8% platform fee. Your actual earnings may vary based on tier pricing and payment processing fees.
+            </p>
+        </div>
+    </div>
+</section>
+
+<section class="cta-creator">
+    <div class="container">
+        <h2>Start Growing Your Ministry Today</h2>
+        <p>Join thousands of Christian creators who are thriving on Sowing.me</p>
+        <a href="/signup" class="btn btn-accent">Create Your Free Page</a>
+    </div>
+</section>
+{/block}
