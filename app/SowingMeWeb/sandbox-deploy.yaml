@@ -4,17 +4,18 @@ metadata:
   annotations:
     field.cattle.io/creatorId: cwolsen
   labels:
-    project-neptune: affiliate-api
-  name: affiliate-api
-  namespace: webservices-sandbox
-  selfLink: /apis/apps/v1/namespaces/webservices-sandbox/deployments/affiliate-api
+    cattle.io/creator: norman
+    workload.user.cattle.io/workloadselector: deployment-live-sandbox-sowing-me-web
+  name: sowing-me-web
+  namespace: live-sandbox
+  selfLink: /apis/apps/v1/namespaces/live-sandbox/deployments/sowing-me-web
 spec:
   progressDeadlineSeconds: 600
   replicas: 1
   revisionHistoryLimit: 10
   selector:
     matchLabels:
-      workload.user.cattle.io/workloadselector: deployment-webservices-sandbox-affiliate-api
+      workload.user.cattle.io/workloadselector: deployment-live-sandbox-sowing-me-web
   strategy:
     rollingUpdate:
       maxSurge: 1
@@ -23,11 +24,11 @@ spec:
   template:
     metadata:
       annotations:
-        field.cattle.io/ports: '[[{"containerPort":80,"dnsName":"affiliate-api","hostPort":0,"kind":"ClusterIP","name":"80tcp02","protocol":"TCP","sourcePort":0}]]'
+        field.cattle.io/ports: '[[{"containerPort":8080,"dnsName":"sowing-me-web","hostPort":0,"kind":"ClusterIP","name":"8080tcp02","protocol":"TCP","sourcePort":0}]]'
         date: "{{DATE_STAMP}}"
       creationTimestamp: null
       labels:
-        workload.user.cattle.io/workloadselector: deployment-webservices-sandbox-affiliate-api
+        workload.user.cattle.io/workloadselector: deployment-live-sandbox-sowing-me-web
     spec:
       containers:
       - env:
@@ -36,13 +37,13 @@ spec:
         - name: ENV
           value: "DEV"
         - name: APP_NAME
-          value: "AffiliateApi"
-        image: project-neptune:sandbox
-        imagePullPolicy: Never
-        name: affiliate-api
+          value: "SowingMeWeb"
+        image: gitlab.brainchurts.com:5050/ubixsys/ubixcore:sandbox
+        imagePullPolicy: Always
+        name: sowing-me-web
         ports:
-        - containerPort: 80
-          name: 80tcp02
+        - containerPort: 8080
+          name: 8080tcp02
           protocol: TCP
         resources: {}
         securityContext:
@@ -56,24 +57,17 @@ spec:
         terminationMessagePolicy: File
         tty: true
         volumeMounts:
-        - mountPath: /mnt/project-neptune
-          name: project-neptune
-          readOnly: false
         - mountPath: /logs
           name: logs
       dnsPolicy: ClusterFirst
       imagePullSecrets:
-      - name: vsm-gitlab
+      - name: regcred
       restartPolicy: Always
       schedulerName: default-scheduler
       securityContext: {}
       terminationGracePeriodSeconds: 30
       volumes:
-      - hostPath:
-          path: /code/project-neptune
-          type: ""
-        name: project-neptune
-      - hostPath:
-          path: /logs
-          type: DirectoryOrCreate
+      - nfs:
+          server: 10.50.0.1
+          path: /data/nfs/logs
         name: logs

@@ -1,0 +1,248 @@
+{extends 'layout.latte'}
+
+{block title}About{/block}
+
+{block head}
+<style>
+    .about-hero {
+        background: linear-gradient(135deg, var(--color-primary) 0%, #1B5E20 100%);
+        color: var(--color-white);
+        padding: 100px 0;
+        text-align: center;
+    }
+
+    .about-hero h1 {
+        font-size: 3rem;
+        margin-bottom: 20px;
+    }
+
+    .about-hero p {
+        font-size: 1.3rem;
+        opacity: 0.9;
+    }
+
+    .mission {
+        padding: 100px 0;
+    }
+
+    .mission-content {
+        max-width: 800px;
+        margin: 0 auto;
+        text-align: center;
+    }
+
+    .mission-content h2 {
+        margin-bottom: 30px;
+    }
+
+    .mission-content p {
+        font-size: 1.1rem;
+        color: #546E7A;
+        margin-bottom: 20px;
+        line-height: 1.8;
+    }
+
+    .scripture {
+        background: var(--color-light);
+        padding: 40px;
+        border-radius: 12px;
+        margin: 40px 0;
+        font-style: italic;
+    }
+
+    .scripture p {
+        font-size: 1.2rem;
+        color: var(--color-dark);
+        margin-bottom: 10px;
+    }
+
+    .scripture cite {
+        color: var(--color-primary);
+        font-weight: 600;
+        font-style: normal;
+    }
+
+    .values {
+        background: var(--color-light);
+        padding: 100px 0;
+    }
+
+    .values-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 40px;
+        margin-top: 60px;
+    }
+
+    .value-card {
+        background: var(--color-white);
+        padding: 40px;
+        border-radius: 12px;
+        text-align: center;
+    }
+
+    .value-icon {
+        font-size: 3rem;
+        margin-bottom: 20px;
+    }
+
+    .value-card h3 {
+        margin-bottom: 15px;
+        color: var(--color-primary);
+    }
+
+    .value-card p {
+        color: #546E7A;
+    }
+
+    .story {
+        padding: 100px 0;
+    }
+
+    .story-content {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 60px;
+        align-items: center;
+    }
+
+    .story-text h2 {
+        margin-bottom: 20px;
+    }
+
+    .story-text p {
+        color: #546E7A;
+        margin-bottom: 15px;
+        line-height: 1.7;
+    }
+
+    .story-image {
+        background: var(--color-light);
+        border-radius: 12px;
+        padding: 80px;
+        text-align: center;
+    }
+
+    .story-image .placeholder {
+        font-size: 5rem;
+    }
+
+    .cta-about {
+        background: var(--color-secondary);
+        color: var(--color-white);
+        padding: 80px 0;
+        text-align: center;
+    }
+
+    .cta-about h2 {
+        margin-bottom: 20px;
+    }
+
+    .cta-about p {
+        margin-bottom: 30px;
+        opacity: 0.9;
+    }
+
+    @media (max-width: 768px) {
+        .story-content {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+{/block}
+
+{block content}
+<section class="about-hero">
+    <div class="container">
+        <h1>About Sowing.me</h1>
+        <p>Planting. Believing. Thriving.</p>
+    </div>
+</section>
+
+<section class="mission">
+    <div class="container">
+        <div class="mission-content">
+            <h2 class="section-title">Our Mission</h2>
+            <p>Sowing.me exists to empower Christian content creators to share their God-given gifts with the world while building sustainable ministries through community support.</p>
+            <p>We believe that those who dedicate their lives to spreading faith, hope, and love deserve a platform that supports their work—not censors it.</p>
+
+            <div class="scripture">
+                <p>"Remember this: Whoever sows sparingly will also reap sparingly, and whoever sows generously will also reap generously."</p>
+                <cite>— 2 Corinthians 9:6</cite>
+            </div>
+
+            <p>Just as the farmer plants seeds in faith, trusting God for the harvest, we help creators plant their content seeds and trust their community to help them thrive.</p>
+        </div>
+    </div>
+</section>
+
+<section class="values">
+    <div class="container">
+        <h2 class="section-title text-center">Our Values</h2>
+        <p class="section-subtitle text-center">The principles that guide everything we do</p>
+
+        <div class="values-grid">
+            <div class="value-card">
+                <div class="value-icon">✝️</div>
+                <h3>Faith First</h3>
+                <p>We're built on Christian values and committed to supporting faith-based content without censorship or discrimination.</p>
+            </div>
+
+            <div class="value-card">
+                <div class="value-icon">🤝</div>
+                <h3>Community</h3>
+                <p>We foster genuine connections between creators and supporters, building relationships that go beyond transactions.</p>
+            </div>
+
+            <div class="value-card">
+                <div class="value-icon">💡</div>
+                <h3>Transparency</h3>
+                <p>No hidden fees, no surprise policy changes. We're honest and upfront about how our platform works.</p>
+            </div>
+
+            <div class="value-card">
+                <div class="value-icon">🌱</div>
+                <h3>Growth</h3>
+                <p>We're committed to helping creators grow their audience, their income, and their impact on the world.</p>
+            </div>
+
+            <div class="value-card">
+                <div class="value-icon">🛡️</div>
+                <h3>Integrity</h3>
+                <p>We do what's right, even when it's hard. Our creators and supporters can trust us to act with honor.</p>
+            </div>
+
+            <div class="value-card">
+                <div class="value-icon">❤️</div>
+                <h3>Generosity</h3>
+                <p>We believe in the power of giving. When we all give generously, everyone thrives.</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="story">
+    <div class="container">
+        <div class="story-content">
+            <div class="story-text">
+                <h2>Our Story</h2>
+                <p>Sowing.me was born from a simple observation: Christian content creators were being underserved—and sometimes actively discriminated against—by mainstream platforms.</p>
+                <p>We saw talented musicians, podcasters, teachers, and artists struggling to monetize their work. Some were demonetized for sharing their faith. Others couldn't find an audience that understood their mission.</p>
+                <p>We knew there had to be a better way. A platform built specifically for the Christian community, where creators could share their gifts freely and supporters could invest in content that aligns with their values.</p>
+                <p>Today, Sowing.me serves thousands of creators and tens of thousands of supporters, all working together to spread faith, hope, and love through content that matters.</p>
+            </div>
+            <div class="story-image">
+                <div class="placeholder">🌾</div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="cta-about">
+    <div class="container">
+        <h2>Join Our Community</h2>
+        <p>Be part of something bigger. Start creating or supporting today.</p>
+        <a href="/signup" class="btn btn-accent">Get Started</a>
+    </div>
+</section>
+{/block}

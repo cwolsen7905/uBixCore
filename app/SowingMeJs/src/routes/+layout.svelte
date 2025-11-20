@@ -1,60 +1,16 @@
 <script>
-  import { onClickOutside } from '$lib/action.js';
-
-  import LoginPage from '$lib/LoginPage.svelte'; // <-- Add this import
-
+  import LoginPage from '$lib/LoginPage.svelte';
+  import Sidebar from '$lib/Sidebar.svelte';
   import { userData } from '$lib/stores.js';
 
-  let user = { name: 'Jane Doe' };
-  let menuOpen = false;
-  let navCollapsed = false; // <-- Add this
+  let sidebarOpen = true;
+  let search = '';
 
   export let data;
 
   if( data?.user ) {
-    userData.set(data); 
+    userData.set(data);
   }
-
-  const navLinks = [
-    {
-      section: 'Main',
-      links: [
-        { href: '/', label: 'Home' },
-		{ href: '/dashboard', label: 'Dashboard' }
-	]
-	},
-	{
-		section: 'Affiliates',
-	  links: [
-        { href: '/affiliates', label: 'Affiliates' },
-        { href: '/affiliates/banners', label: 'Banners' }
-      ]
-    },
-		{
-		section: 'Broadcasting',
-	  links: [
-        { href: '/broadcasting/models', label: 'Models' },
-        { href: '/broadcasting/fanclubs', label: 'Fan Clubs' }
-      ]
-    },
-    {
-      section: 'Reports',
-      links: [
-        { href: '/reports', label: 'Reports' }
-      ]
-    },
-    {
-      section: 'Settings',
-      links: [
-        { href: '/settings', label: 'Settings' }
-      ]
-    }
-  ];
-
-  function toggleMenu() { menuOpen = !menuOpen; }
-  function closeMenu() { menuOpen = false; }
-  function logout() { alert('Logging out...'); closeMenu(); }
-  function toggleNav() { navCollapsed = !navCollapsed; }
 </script>
 
 <style>
@@ -163,22 +119,6 @@ nav a:hover {
 </style>
 
 <div class="layout">
-<header class="header">
-  <div class="logo">
-    <img src="/logo.png" alt="Logo" style="height:32px; margin-right: 1rem;" />
-    Internal Admin POC
-  </div>
-  <div class="user-menu" on:click={toggleMenu} use:onClickOutside={closeMenu}>
-    <span class="user-name">{user.name}</span>
-    <svg width="20" height="20" fill="currentColor" viewBox="0 0 20 20"><path d="M5.25 7.5L10 12.5L14.75 7.5H5.25Z"/></svg>
-    {#if menuOpen}
-      <div class="menu-dropdown">
-        <a href="/profile">Profile</a>
-        <button on:click={logout}>Logout</button>
-      </div>
-    {/if}
-  </div>
-</header>
   <div class="main-area">
 <nav class:collapsed={navCollapsed}>
   <button class="collapse-btn" on:click={toggleNav}>
