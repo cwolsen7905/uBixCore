@@ -1,60 +1,16 @@
 <script>
-  import { onClickOutside } from '$lib/action.js';
-
-  import LoginPage from '$lib/LoginPage.svelte'; // <-- Add this import
-
+  import LoginPage from '$lib/LoginPage.svelte';
+  import Sidebar from '$lib/Sidebar.svelte';
   import { userData } from '$lib/stores.js';
 
-  let user = { name: 'Jane Doe' };
-  let menuOpen = false;
-  let navCollapsed = false; // <-- Add this
+  let sidebarOpen = true;
+  let search = '';
 
   export let data;
 
   if( data?.user ) {
-    userData.set(data); 
+    userData.set(data);
   }
-
-  const navLinks = [
-    {
-      section: 'Main',
-      links: [
-        { href: '/', label: 'Home' },
-		{ href: '/dashboard', label: 'Dashboard' }
-	]
-	},
-	{
-		section: 'Affiliates',
-	  links: [
-        { href: '/affiliates', label: 'Affiliates' },
-        { href: '/affiliates/banners', label: 'Banners' }
-      ]
-    },
-		{
-		section: 'Broadcasting',
-	  links: [
-        { href: '/broadcasting/models', label: 'Models' },
-        { href: '/broadcasting/fanclubs', label: 'Fan Clubs' }
-      ]
-    },
-    {
-      section: 'Reports',
-      links: [
-        { href: '/reports', label: 'Reports' }
-      ]
-    },
-    {
-      section: 'Settings',
-      links: [
-        { href: '/settings', label: 'Settings' }
-      ]
-    }
-  ];
-
-  function toggleMenu() { menuOpen = !menuOpen; }
-  function closeMenu() { menuOpen = false; }
-  function logout() { alert('Logging out...'); closeMenu(); }
-  function toggleNav() { navCollapsed = !navCollapsed; }
 </script>
 
 <style>

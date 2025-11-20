@@ -6,10 +6,39 @@
 	let sidebarOpen = true;
 	let search = '';
 	let navLinks = [
-		{ name: 'Home', href: '/' },
-		{ name: 'Explore', href: '/explore' },
-		{ name: 'Messages', href: '/messages' },
-		{ name: 'Settings', href: '/settings' }
+		{
+			section: 'Main',
+			links: [
+				{ href: '/', label: 'Home' },
+				{ href: '/dashboard', label: 'Dashboard' }
+			]
+		},
+		{
+			section: 'Affiliates',
+			links: [
+				{ href: '/affiliates', label: 'Affiliates' },
+				{ href: '/affiliates/banners', label: 'Banners' }
+			]
+		},
+		{
+			section: 'Broadcasting',
+			links: [
+				{ href: '/broadcasting/models', label: 'Models' },
+				{ href: '/broadcasting/fanclubs', label: 'Fan Clubs' }
+			]
+		},
+		{
+			section: 'Reports',
+			links: [
+				{ href: '/reports', label: 'Reports' }
+			]
+		},
+		{
+			section: 'Settings',
+			links: [
+				{ href: '/settings', label: 'Settings' }
+			]
+		}
 	];
 	let user = {
 		name: 'John Doe',
