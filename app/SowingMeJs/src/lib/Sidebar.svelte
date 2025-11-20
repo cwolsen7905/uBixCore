@@ -2,39 +2,11 @@
   export let sidebarOpen = true;
   export let search = '';
   export let navLinks = [
-    {
-      section: 'Main',
-      links: [
-        { href: '/', label: 'Home' },
-        { href: '/dashboard', label: 'Dashboard' }
-      ]
-    },
-    {
-      section: 'Affiliates',
-      links: [
-        { href: '/affiliates', label: 'Affiliates' },
-        { href: '/affiliates/banners', label: 'Banners' }
-      ]
-    },
-    {
-      section: 'Broadcasting',
-      links: [
-        { href: '/broadcasting/models', label: 'Models' },
-        { href: '/broadcasting/fanclubs', label: 'Fan Clubs' }
-      ]
-    },
-    {
-      section: 'Reports',
-      links: [
-        { href: '/reports', label: 'Reports' }
-      ]
-    },
-    {
-      section: 'Settings',
-      links: [
-        { href: '/settings', label: 'Settings' }
-      ]
-    }
+    { href: '/', label: 'Home', icon: '🏠' },
+    { href: '/explore', label: 'Explore', icon: '🔍' },
+    { href: '/chats', label: 'Chats', icon: '💬' },
+    { href: '/notifications', label: 'Notifications', icon: '🔔' },
+    { href: '/settings', label: 'Settings', icon: '⚙️' }
   ];
   export let user = {
     name: 'John Doe',
@@ -74,7 +46,7 @@
   }
   .logo {
     padding: 20px;
-    text-align: center;
+    text-align: left;
     border-bottom: 1px solid #eee;
   }
   .logo a {
