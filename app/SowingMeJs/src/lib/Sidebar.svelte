@@ -17,11 +17,8 @@
   let showAccountMenu = false;
 
   async function handleLogout() {
-    const apiEndpoint = import.meta.env.VITE_ENV === 'production'
-      ? 'https://api.sowingme.com/logout'
-      : import.meta.env.VITE_ENV === 'dev'
-        ? 'https://dev-api.sowingme.com/logout'
-        : 'http://localhost:8888/logout';
+    const apiBaseUrl = $userData?.apiBaseUrl || 'http://localhost:8888';
+    const apiEndpoint = `${apiBaseUrl}/logout`;
 
     try {
       await fetch(apiEndpoint, {

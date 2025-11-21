@@ -1,5 +1,7 @@
 /** @type {import('@sveltejs/kit').LayoutServerLoad} */
 
+import { env } from '$env/dynamic/private';
+
 export async function load({ fetch, request}) {
 
   const cookie = request.headers.get('cookie');
@@ -7,12 +9,16 @@ export async function load({ fetch, request}) {
   console.log('Fetching user authentication status from API...');
   console.log('Individual cookie header:', cookie);
 
-  // If environment variable ENV == production, use production API endpoint if dev use dev endpoint otherwise use localost
-  const apiEndpoint = import.meta.env.VITE_ENV === 'production'
-	? 'https://api.sowingme.com/auth'
-	: import.meta.env.VITE_ENV === 'dev'
-	  ? 'https://dev-api.sowingme.com/auth'
-	  : 'http://localhost:8888/auth';
+  // If environment variable ENV == 'PROD' api host is https://api.sowingme.com if ENV == 'DEV' host is https://sowing-me-api.dev.ubixsys.com if ENV == 'STAGING' host is https://sowing-me-api.staging.ubixsys.com else localhost:8888
+  const apiBaseUrl = env.ENV === 'PROD'
+	? 'https://api.sowingme.com'
+	: env.ENV === 'DEV'
+	  ? 'https://sowing-me-api.dev.ubixsys.com'
+	  : env.ENV === 'STAGING'
+	    ? 'https://sowing-me-api.staging.ubixsys.com'
+	    : 'http://localhost:8888';
+
+const apiEndpoint = `${apiBaseUrl}/auth`;
   
 
   console.log(`Using API endpoint: ${apiEndpoint}`);
@@ -38,9 +44,9 @@ export async function load({ fetch, request}) {
   console.log(`Auth endpoint response status: ${res.status}`);
   console.log('Auth endpoint response data:', data);
 
-
   return {
-    user: data || null
+    user: data || null,
+    apiBaseUrl
   }
 
 }
