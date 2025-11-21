@@ -11,7 +11,7 @@ export async function load({ fetch, request}) {
 
   // If environment variable ENV == 'PROD' api host is https://api.sowingme.com if ENV == 'DEV' host is https://sowing-me-api.dev.ubixsys.com if ENV == 'STAGING' host is https://sowing-me-api.staging.ubixsys.com else localhost:8888
   const apiBaseUrl = env.ENV === 'PROD'
-	? 'https://api.sowingme.com'
+	? 'https://api.sowing.me'
 	: env.ENV === 'DEV'
 	  ? 'https://sowing-me-api.dev.ubixsys.com'
 	  : env.ENV === 'STAGING'
