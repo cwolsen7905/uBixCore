@@ -1,17 +1,28 @@
 /** @type {import('@sveltejs/kit').LayoutServerLoad} */
 
-export async function load({ fetch, cookies}) {
-   // Get all cookies as a string
-  const cookieHeader = cookies.getAll().map(({ name, value }) => `${name}=${value}`).join('; ');
+export async function load({ fetch, request}) {
+
+  const cookie = request.headers.get('cookie');
+
+  console.log('Fetching user authentication status from API...');
+  console.log('Individual cookie header:', cookie);
+
+  // If environment variable ENV == production, use production API endpoint if dev use dev endpoint otherwise use localost
+  const apiEndpoint = import.meta.env.VITE_ENV === 'production'
+	? 'https://api.sowingme.com/auth'
+	: import.meta.env.VITE_ENV === 'dev'
+	  ? 'https://dev-api.sowingme.com/auth'
+	  : 'http://localhost:8888/auth';
+  
+
+  console.log(`Using API endpoint: ${apiEndpoint}`);
 
   // Call your auth endpoint or check cookies/session
-  const res = await fetch('https://sowing-me-api.dev.ubixsys.com/auth', {
+  const res = await fetch(apiEndpoint, {
     headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer a8f3c9d7e2b6f1a4c5e8d9b0f7a3c6e1`, // Example token, replace as needed
-      cookie: cookieHeader
-    },
-    credentials: 'include'
+    	'Content-Type': 'application/json',
+		cookie
+    }
   });
 
   // Check if res is json data or set data to null
@@ -24,21 +35,12 @@ export async function load({ fetch, cookies}) {
     data = null;
   }
   
-  // Return sample user data of username: mrolsen, firstName: Mike, lastName: Rolsen if response is 401
-  if (res.status === 405) {
-    console.log('User not logged in, returning sample user data.');
-    return {
-      user: {
-        username: 'mrolsen',
-        firstName: 'Mike',
-        lastName: 'Rolsen'
-      }
-    }
-  }
+  console.log(`Auth endpoint response status: ${res.status}`);
+  console.log('Auth endpoint response data:', data);
+
 
   return {
     user: data || null
   }
-
 
 }

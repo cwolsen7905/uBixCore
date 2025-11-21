@@ -19,21 +19,40 @@
     min-height: 100vh;
     background: #f6f8fa;
   }
+  .layout.blurred {
+    filter: blur(5px);
+    pointer-events: none;
+    user-select: none;
+  }
   .content {
     flex: 1;
     padding: 2rem;
     overflow: auto;
     min-width: 0;
   }
+  .modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+  }
 </style>
 
-<div class="layout">
+<div class="layout" class:blurred={!$userData?.user?.id}>
   <Sidebar bind:sidebarOpen bind:search />
   <div class="content">
-    {#if !$userData?.user}
-      <LoginPage />
-    {:else}
-      <slot />
-    {/if}
+    <slot />
   </div>
 </div>
+
+{#if !$userData?.user?.id}
+  <div class="modal-overlay">
+    <LoginPage />
+  </div>
+{/if}

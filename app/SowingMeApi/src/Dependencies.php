@@ -17,6 +17,7 @@ use Psr\Http\Message\ResponseFactoryInterface as ResponseFactory;
 use Psr\Http\Message\StreamFactoryInterface as StreamFactory;
 use Psr\Log\LoggerInterface as Logger;
 use Psr\SimpleCache\CacheInterface as SimpleCache;
+use SessionHandlerInterface as SessionHandler;
 use Slim\Psr7\Factory\ResponseFactory as SlimResponseFactory;
 use Ubix\Enum\Exception\ExceptionCode;
 use Ubix\HttpClient\CurlHttpClient;
@@ -55,12 +56,17 @@ use Ubix\Repository\PlatformWhiteLabel\PlatformWhiteLabelReaderInterface as Plat
 use Ubix\Repository\PlatformWhiteLabel\PlatformWhiteLabelSqlRepository;
 use Ubix\Repository\ScreenName\ScreenNameReaderInterface as ScreenNameReader;
 use Ubix\Repository\ScreenName\ScreenNameSqlRepository;
+use Ubix\Repository\User\UserReaderInterface as UserReader;
+use Ubix\Repository\User\UserSqlRepository;
 use Ubix\Service\FilterService;
 use Ubix\Service\Geolocation\GeolocationServiceInterface as GeolocationService;
 use Ubix\Service\Geolocation\UbixGeolocationService;
 use Ubix\Service\Sql\MysqlPdoSqlService;
 use Ubix\Service\Sql\SqlServiceInterface as SqlService;
 use Ubix\Service\XvtService;
+use Ubix\Middleware\CorsMiddleware;
+use Ubix\Middleware\SessionAuthenticationMiddleware;
+use Ubix\SessionHandler\SimpleCacheLegacySessionHandler;
 use Ubix\SimpleCache\MemcachedLegacySimpleCache;
 
 use function DI\autowire;
@@ -118,10 +124,12 @@ return static function (): Container {
         RequestFactory::class                    => get(Psr17Factory::class),
         ResponseFactory::class                   => autowire(SlimResponseFactory::class),
         ScreenNameReader::class                  => autowire(ScreenNameSqlRepository::class),
+        UserReader::class                        => autowire(UserSqlRepository::class),
+        SessionAuthenticationMiddleware::class   => autowire()->constructorParameter('excludedRoutes', [['method' => 'POST', 'path' => '/auth'], ['method' => 'OPTIONS', 'path' => '/auth']]),
+        SessionHandler::class                    => autowire(SimpleCacheLegacySessionHandler::class),
         SimpleCache::class                       => autowire(MemcachedLegacySimpleCache::class)->constructorParameter('servers', $memcacheServers),
         SqlService::class                        => autowire(MysqlPdoSqlService::class),
         StreamFactory::class                     => get(Psr17Factory::class),
-        XvtService::class                        => autowire()->constructorParameter('httpClient', autowire(CurlHttpClient::class)->constructorParameter('timeout', XvtService::API_TIMEOUT)),
         AffiliateReader::class                   => autowire(AffiliateSqlRepository::class),
         AffiliateWriter::class                   => autowire(AffiliateSqlRepository::class),
         AttributionLogReader::class              => autowire(AttributionLogSqlRepository::class),
@@ -129,6 +137,12 @@ return static function (): Container {
         BillingTransactionReader::class          => autowire(BillingTransactionSqlRepository::class),
         DealReader::class                        => autowire(DealSqlRepository::class),
         CommissionPlanReader::class              => autowire(CommissionPlanSqlRepository::class),
+        CorsMiddleware::class                    => autowire()->constructorParameter('allowedOrigins', [
+            'http://localhost:5173',
+            'http://127.0.0.1:5173',
+            'https://sowingme.com',
+            'https://dev.sowingme.com',
+        ]),
     ]);
 
     return $container->build();

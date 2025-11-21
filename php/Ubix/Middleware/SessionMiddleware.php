@@ -60,10 +60,24 @@ final class SessionMiddleware implements Middleware
         $requestHost = $request->getServerParams()['HTTP_HOST'] ?? 'localhost';
 
         $domain = getenv('IS_SANDBOX') !== 'true' && getenv('IS_DEV') !== 'true' && getenv('IS_STAGING') !== 'true' && preg_match('/[a-z0-9\-]{1,63}\.[a-z\.]{2,6}$/', $requestHost, $regex) ? $regex[0] : '';
-        $path   = getenv('IS_SANDBOX') === 'true' ? '/' : '/; SameSite=None';
-        $secure = getenv('IS_SANDBOX') !== 'true';
+        $path   = '/';// getenv('IS_SANDBOX') === 'true' ? '/' : '/; SameSite=None';
+        $secure = true;// getenv('IS_SANDBOX') !== 'true';
 
-        session_set_cookie_params(0, $path, $domain, $secure, true); // Invoke session_set_cookie_params() before session_set_save_handler() because the latter will invoke session_get_cookie_params() to get the $domain value
+
+		$isSecure = (getenv('HTTPS') !== false && getenv('HTTPS') !== 'off') || (getenv('HTTP_X_FORWARDED_PROTO') === 'https');
+
+
+		// Invoke session_set_cookie_params() before session_set_save_handler() because the latter will invoke session_get_cookie_params() to get the $domain value
+        session_set_cookie_params(
+			[
+				'lifetime' => 0,
+				'path'     => $path,
+				'domain'   => $domain,
+				'secure'   => $isSecure,
+				'httponly' => false,
+				'samesite' => 'Lax', // TEMPORARY: because of the way we're serving the app in development
+			]
+		);
         session_set_save_handler($this->sessionHandler, true);
         session_start();
 
