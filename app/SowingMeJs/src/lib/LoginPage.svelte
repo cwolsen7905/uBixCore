@@ -16,7 +16,7 @@
     fieldErrors = {};
 
     // Get API base URL from store (passed from server)
-    const apiBaseUrl = $userData?.apiBaseUrl || 'http://localhost:8888';
+    const apiBaseUrl = $userData?.apiBaseUrl || 'https://api.sowingme.com';
     const apiEndpoint = `${apiBaseUrl}/auth`;
 
     let res;
