@@ -8,9 +8,9 @@ export async function load({ fetch, request}) {
   console.log('Individual cookie header:', cookie);
 
   // If environment variable ENV == production, use production API endpoint if dev use dev endpoint otherwise use localost
-  const apiEndpoint = import.meta.env.VITE_ENV === 'production'
+  const apiEndpoint = import.meta.env.VITE_ENV === 'PROD'
 	? 'https://api.sowingme.com/auth'
-	: import.meta.env.VITE_ENV === 'dev'
+	: import.meta.env.VITE_ENV === 'DEV'
 	  ? 'https://dev-api.sowingme.com/auth'
 	  : 'http://localhost:8888/auth';
   

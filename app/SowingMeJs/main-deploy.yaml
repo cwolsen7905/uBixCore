@@ -36,6 +36,8 @@ spec:
           value: "0"
         - name: ENV
           value: "PROD"
+        - name: VITE_ENV
+          value: "PROD"
         - name: APP_NAME
           value: "SowingMeJs"
         image: gitlab.brainchurts.com:5050/ubixsys/ubixcore:main-node
