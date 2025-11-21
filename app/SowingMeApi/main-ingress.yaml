@@ -24,7 +24,7 @@ spec:
   tls:
     - hosts:
       - api.sowing.me
-      secretName: tls-wildcard-sowing-me-prod
+      secretName: tls-wildcard-sowingme
 status:
   loadBalancer:
     ingress:
