@@ -56,6 +56,8 @@
       return;
     }
 
+	console.log(data);
+
     // Handle other errors
     errorMessage = data.message || 'Login failed';
   }
