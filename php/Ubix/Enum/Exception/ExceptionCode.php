@@ -225,6 +225,7 @@ enum ExceptionCode: int
     case AFFILIATE_NOT_FOUND                     = 13016;
     case TRANSACTION_NOT_FOUND                   = 13017;
     case UNSUPPORTED_AFFILIATE_PROPERTY_TYPE     = 13018;
+    case USER_NOT_FOUND                          = 13019;
 
     //
     //  Dennis Morrison's exception codes should use integers from 14000 to 14999

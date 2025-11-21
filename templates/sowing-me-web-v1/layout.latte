@@ -224,6 +224,39 @@
             .header-content {
                 padding: 10px 15px;
             }
+
+            .mobile-nav {
+                display: none;
+                position: absolute;
+                top: 100%;
+                left: 0;
+                right: 0;
+                background: var(--color-white);
+                box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+                padding: 20px;
+                flex-direction: column;
+                gap: 15px;
+            }
+
+            .mobile-nav.active {
+                display: flex;
+            }
+
+            .mobile-nav a {
+                color: var(--color-dark);
+                font-weight: 500;
+                padding: 10px 0;
+                border-bottom: 1px solid #eee;
+            }
+
+            .mobile-nav a:last-child {
+                border-bottom: none;
+            }
+
+            .mobile-nav .btn {
+                text-align: center;
+                margin-top: 10px;
+            }
         }
 
         /* Utility classes */
@@ -282,8 +315,16 @@
                 <a href="/faq">FAQ</a>
                 <a href="/signup" class="btn btn-primary">Get Started</a>
             </nav>
-            <button class="mobile-menu-btn">&#9776;</button>
+            <button class="mobile-menu-btn" onclick="document.querySelector('.mobile-nav').classList.toggle('active')">&#9776;</button>
         </div>
+        <nav class="mobile-nav">
+            <a href="/for-creators">For Creators</a>
+            <a href="/how-it-works">How It Works</a>
+            <a href="/pricing">Pricing</a>
+            <a href="/about">About</a>
+            <a href="/faq">FAQ</a>
+            <a href="/signup" class="btn btn-primary">Get Started</a>
+        </nav>
     </header>
 
     <main>

@@ -8,6 +8,9 @@ use Slim\App;
 use Ubix\Middleware\BearerTokenAuthenticationMiddleware;
 use Ubix\Middleware\NormalizedHostMiddleware;
 use Ubix\Middleware\NormalizedIpAddressMiddleware;
+use Ubix\Middleware\CorsMiddleware;
+use Ubix\Middleware\SessionAuthenticationMiddleware;
+use Ubix\Middleware\SessionMiddleware;
 use Ubix\Renderer\JsonErrorRenderer;
 use Ubix\SlimHandler\SlimErrorHandler;
 
@@ -34,7 +37,9 @@ return static function (App $app): void {
     //
     //  Application specific middleware
     //
-    $app->add(BearerTokenAuthenticationMiddleware::class);
+    $app->add(CorsMiddleware::class);
+    $app->add(SessionAuthenticationMiddleware::class);
+    $app->add(SessionMiddleware::class);
     $app->add(NormalizedHostMiddleware::class);
     $app->add(NormalizedIpAddressMiddleware::class);
 
