@@ -66,6 +66,7 @@ final class SessionMiddleware implements Middleware
 
 		$isSecure = (getenv('HTTPS') !== false && getenv('HTTPS') !== 'off') || (getenv('HTTP_X_FORWARDED_PROTO') === 'https');
 		$isSecure = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') || $_SERVER['SERVER_PORT'] == 443;
+		$domain = '.ubixsys.com';
 
 
 		// Invoke session_set_cookie_params() before session_set_save_handler() because the latter will invoke session_get_cookie_params() to get the $domain value
