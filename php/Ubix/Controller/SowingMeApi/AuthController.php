@@ -156,6 +156,38 @@ final class AuthController extends Controller
 	}
 
     /**
+     * Logout the user by destroying the session
+     *
+     * @param Request  $request  The HTTP request object containing client data.
+     * @param Response $response The HTTP response object used to send data back to the client
+     *
+     * @return Response The modified response object with the operation result.
+     */
+    public function logout(Request $request, Response $response): Response
+    {
+        $userId = $_SESSION['user']['id'] ?? null;
+        $username = $_SESSION['user']['username'] ?? null;
+
+        // Clear session data
+        $_SESSION = [];
+
+        // Destroy the session
+        if (session_status() === PHP_SESSION_ACTIVE) {
+            session_destroy();
+        }
+
+        $this->logger->info('User logged out', [
+            'user_id'  => $userId,
+            'username' => $username,
+        ]);
+
+        return $this->renderJson($response, [
+            'status'  => 'success',
+            'message' => 'Logged out successfully',
+        ]);
+    }
+
+    /**
      * Handle OPTIONS request for CORS preflight
      *
      * @param Request  $request  The HTTP request object containing client data.

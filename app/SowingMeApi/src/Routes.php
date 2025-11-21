@@ -11,6 +11,7 @@ return static function (App $app): void {
 	// phpcs:disable Generic.Functions.FunctionCallArgumentSpacing.TooMuchSpaceAfterComma -- disable this rule to allow for vertical spacing of the route parameters
     $app->map(['POST'],    '/auth',        AuthController::class . ':authenticate');
 	$app->map(['GET'],     '/auth',        AuthController::class . ':validateSession');
+	$app->map(['POST'],    '/logout',      AuthController::class . ':logout');
 	$app->map(['OPTIONS'], '/{routes:.*}', AuthController::class . ':options');
 	// phpcs:enable Generic.Functions.FunctionCallArgumentSpacing.TooMuchSpaceAfterComma
 

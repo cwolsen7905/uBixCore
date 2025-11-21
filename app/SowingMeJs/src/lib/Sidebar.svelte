@@ -1,4 +1,6 @@
 <script>
+  import { userData } from '$lib/stores.js';
+
   export let sidebarOpen = true;
   export let search = '';
   export let navLinks = [
@@ -13,6 +15,30 @@
     avatar: 'https://ui-avatars.com/api/?name=John+Doe&background=4a90e2&color=fff'
   };
   let showAccountMenu = false;
+
+  async function handleLogout() {
+    const apiEndpoint = import.meta.env.VITE_ENV === 'production'
+      ? 'https://api.sowingme.com/logout'
+      : import.meta.env.VITE_ENV === 'dev'
+        ? 'https://dev-api.sowingme.com/logout'
+        : 'http://localhost:8888/logout';
+
+    try {
+      await fetch(apiEndpoint, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        credentials: 'include'
+      });
+    } catch (e) {
+      console.error('Logout error:', e);
+    }
+
+    // Clear user data to show login modal
+    userData.set({});
+    showAccountMenu = false;
+  }
 </script>
 
 <style>
@@ -197,9 +223,23 @@
     border-radius: 6px;
     transition: background 0.15s;
   }
-  .account-dropdown a:hover {
+  .account-dropdown a:hover,
+  .account-dropdown button:hover {
     background: #eaf4fd;
     color: #4a90e2;
+  }
+  .account-dropdown button {
+    display: block;
+    width: 100%;
+    padding: 10px 16px;
+    color: #333;
+    background: none;
+    border: none;
+    font-size: 1rem;
+    text-align: left;
+    cursor: pointer;
+    border-radius: 6px;
+    transition: background 0.15s;
   }
   @media (max-width: 700px) {
     .sidebar {
@@ -246,7 +286,7 @@
     <div class="user-info">
       <img class="user-avatar" src={user.avatar} alt="Avatar" />
       {#if sidebarOpen}
-        <span class="user-name">{user.name}</span>
+        <span class="user-name">{$userData?.user?.firstName || $userData?.firstName || ''} {$userData?.user?.lastName || $userData?.lastName || ''}</span>
       {/if}
     </div>
     <div class="account-menu">
@@ -255,7 +295,7 @@
         <div class="account-dropdown">
           <a href="/profile">Profile</a>
           <a href="/account">Account Settings</a>
-          <a href="/logout">Logout</a>
+          <button type="button" on:click={handleLogout}>Logout</button>
         </div>
       {/if}
     </div>
