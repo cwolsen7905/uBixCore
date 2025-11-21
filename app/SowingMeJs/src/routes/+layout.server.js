@@ -9,12 +9,16 @@ export async function load({ fetch, request}) {
   console.log('Fetching user authentication status from API...');
   console.log('Individual cookie header:', cookie);
 
-  // If environment variable ENV == production, use production API endpoint if dev use dev endpoint otherwise use localost
-  const apiEndpoint = env.ENV === 'PROD'
+  // If environment variable ENV == 'PROD' api host is https://api.sowingme.com if ENV == 'DEV' host is https://sowing-me-api.dev.ubixsys.com if ENV == 'STAGING' host is https://sowing-me-api.staging.ubixsys.com else localhost:8888
+  const apiBaseUrl = env.ENV === 'PROD'
 	? 'https://api.sowingme.com/auth'
 	: env.ENV === 'DEV'
-	  ? 'https://dev-api.sowingme.com/auth'
-	  : 'http://localhost:8888/auth';
+	  ? 'https://sowing-me-api.dev.ubixsys.com/auth'
+	  : env.ENV === 'STAGING'
+	    ? 'https://sowing-me-api.staging.ubixsys.com/auth'
+	    : 'http://localhost:8888/auth';
+
+const apiEndpoint = `${apiBaseUrl}/auth`;
   
 
   console.log(`Using API endpoint: ${apiEndpoint}`);
@@ -39,14 +43,6 @@ export async function load({ fetch, request}) {
   
   console.log(`Auth endpoint response status: ${res.status}`);
   console.log('Auth endpoint response data:', data);
-
-
-  // Determine API base URL for client-side use
-  const apiBaseUrl = env.ENV === 'PROD'
-    ? 'https://api.sowingme.com'
-    : env.ENV === 'DEV'
-      ? 'https://dev-api.sowingme.com'
-      : 'http://localhost:8888';
 
   return {
     user: data || null,
