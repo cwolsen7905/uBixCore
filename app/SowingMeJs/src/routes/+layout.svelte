@@ -8,7 +8,8 @@
 
   export let data;
 
-  if( data?.user ) {
+  // Store user data and apiBaseUrl
+  if (data) {
     userData.set(data);
   }
 </script>

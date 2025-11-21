@@ -1,5 +1,7 @@
 /** @type {import('@sveltejs/kit').LayoutServerLoad} */
 
+import { env } from '$env/dynamic/private';
+
 export async function load({ fetch, request}) {
 
   const cookie = request.headers.get('cookie');
@@ -8,9 +10,9 @@ export async function load({ fetch, request}) {
   console.log('Individual cookie header:', cookie);
 
   // If environment variable ENV == production, use production API endpoint if dev use dev endpoint otherwise use localost
-  const apiEndpoint = import.meta.env.VITE_ENV === 'PROD'
+  const apiEndpoint = env.ENV === 'PROD'
 	? 'https://api.sowingme.com/auth'
-	: import.meta.env.VITE_ENV === 'DEV'
+	: env.ENV === 'DEV'
 	  ? 'https://dev-api.sowingme.com/auth'
 	  : 'http://localhost:8888/auth';
   
@@ -39,8 +41,16 @@ export async function load({ fetch, request}) {
   console.log('Auth endpoint response data:', data);
 
 
+  // Determine API base URL for client-side use
+  const apiBaseUrl = env.ENV === 'PROD'
+    ? 'https://api.sowingme.com'
+    : env.ENV === 'DEV'
+      ? 'https://dev-api.sowingme.com'
+      : 'http://localhost:8888';
+
   return {
-    user: data || null
+    user: data || null,
+    apiBaseUrl
   }
 
 }

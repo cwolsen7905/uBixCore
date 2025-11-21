@@ -15,11 +15,9 @@
     errorMessage = '';
     fieldErrors = {};
 
-    const apiEndpoint = import.meta.env.VITE_ENV === 'PROD'
-      ? 'https://api.sowingme.com/auth'
-      : import.meta.env.VITE_ENV === 'DEV'
-        ? 'https://dev-api.sowingme.com/auth'
-        : 'http://localhost:8888/auth';
+    // Get API base URL from store (passed from server)
+    const apiBaseUrl = $userData?.apiBaseUrl || 'http://localhost:8888';
+    const apiEndpoint = `${apiBaseUrl}/auth`;
 
     let res;
     let data;

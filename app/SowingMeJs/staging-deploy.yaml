@@ -36,8 +36,6 @@ spec:
           value: "0"
         - name: ENV
           value: "STAGING"
-        - name: VITE_ENV
-          value: "STAGING"
         - name: APP_NAME
           value: "SowingMeJs"
         image: gitlab.brainchurts.com:5050/ubixsys/ubixcore:staging-node
