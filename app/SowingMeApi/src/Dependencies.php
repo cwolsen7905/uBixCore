@@ -110,7 +110,6 @@ return static function (): Container {
         HttpClient::class                        => autowire(CurlHttpClient::class),
         Logger::class                            => autowire(MonologLogger::class)->constructorParameter('name', $appName)->constructorParameter('handlers', [new StreamHandler(getenv('LOGGER_PATH') . '/' . $appName . '.log', Level::fromName($logLevel), true, 0777)])->constructorParameter('processors', [new UidProcessor()]),
         MessageWriter::class                     => autowire(MessageSqlRepository::class),
-        PendingPlatformUserReader::class         => autowire(PendingPlatformUserSqlRepository::class),
         PerformerReader::class                   => autowire(PerformerSqlRepository::class),
         PerformerStatisticsReader::class         => autowire(PerformerStatisticsSqlRepository::class),
         PlatformUserAgeVerificationWriter::class => autowire(PlatformUserAgeVerificationSqlRepository::class),
@@ -138,10 +137,10 @@ return static function (): Container {
         DealReader::class                        => autowire(DealSqlRepository::class),
         CommissionPlanReader::class              => autowire(CommissionPlanSqlRepository::class),
         CorsMiddleware::class                    => autowire()->constructorParameter('allowedOrigins', [
-            'http://localhost:5173',
-            'http://127.0.0.1:5173',
-            'https://sowingme.com',
-            'https://dev.sowingme.com',
+            '127.0.0.1',
+            'localhost',
+            '.ubixsys.com',
+            '.sowing.me',
         ]),
     ]);
 

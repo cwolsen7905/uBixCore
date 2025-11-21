@@ -59,10 +59,30 @@ final class CorsMiddleware implements Middleware
      *
      * @param string $origin The origin to check
      *
-     * @return bool True if origin is allowed
+     * @return bool True if origin is allowped
      */
     private function isOriginAllowed(string $origin): bool
     {
-        return in_array($origin, $this->allowedOrigins, true);
+        // Parse host from origin URL
+        $parsedUrl = parse_url($origin);
+        $host = $parsedUrl['host'] ?? '';
+
+        if ($host === '') {
+            return false;
+        }
+
+        foreach ($this->allowedOrigins as $allowed) {
+            // Wildcard match (e.g., .ubixsys.com matches any subdomain)
+            if (str_starts_with($allowed, '.')) {
+                if ($host === substr($allowed, 1) || str_ends_with($host, $allowed)) {
+                    return true;
+                }
+            } elseif ($host === $allowed) {
+                // Exact host match
+                return true;
+            }
+        }
+
+        return false;
     }
 }
