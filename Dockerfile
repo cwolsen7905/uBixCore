@@ -22,7 +22,7 @@ COPY --chown=www app/ /web/app/
 COPY --chown=www bin/ /web/bin/
 
 #Temporary fix for dotenv
-COPY --chown=www .env /web/.env
+COPY --chown=www .env_dev /web/.env
 
 RUN composer update --working-dir=/web/
 
