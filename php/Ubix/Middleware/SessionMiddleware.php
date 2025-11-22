@@ -61,7 +61,7 @@ final class SessionMiddleware implements Middleware
 		}
 
 		$isSecure = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') || (isset($_SERVER['SERVER_PORT']) && $_SERVER['SERVER_PORT'] == 443) || (!empty($_SERVER['HTTP_X_FORWARDED_PROTO']) && $_SERVER['HTTP_X_FORWARDED_PROTO'] === 'https');
-
+		$sameSite = $isSecure ? 'None' : 'Lax';
 		// Invoke session_set_cookie_params() before session_set_save_handler() because the latter will invoke session_get_cookie_params() to get the $domain value
         session_set_cookie_params(
 			[
@@ -70,7 +70,7 @@ final class SessionMiddleware implements Middleware
 				'domain'   => $domain,
 				'secure'   => $isSecure,
 				'httponly' => false,
-				'samesite' => 'Lax', // TEMPORARY: because of the way we're serving the app in development
+				'samesite' => $sameSite, // TEMPORARY: because of the way we're serving the app in development
 			]
 		);
 
