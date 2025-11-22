@@ -101,6 +101,7 @@ return static function (): Container {
     $logLevel = in_array($logLevel, $allowedLevels, true) ? $logLevel : 'Info';
     assert(in_array($logLevel, $allowedLevels, true));
 
+	$logFile = getenv('LOGGER_PATH') . '/' . strtolower(getenv('ENV') ?: 'sandbox') . '/' . $appName . '.log';
 
     $container->addDefinitions([
 
@@ -108,9 +109,8 @@ return static function (): Container {
         FilterService::class                     => autowire()->constructorParameter('bearerToken', getenv('VSM_FILTER_API_BEARER_TOKEN_BROADCASTING')),
         GeolocationService::class                => autowire(UbixGeolocationService::class)->constructorParameter('apiProtocolAndHostname', getenv('VSM_GEOLOCATION_API_PROTOCOL_AND_HOSTNAME')),
         HttpClient::class                        => autowire(CurlHttpClient::class),
-        Logger::class                            => autowire(MonologLogger::class)->constructorParameter('name', $appName)->constructorParameter('handlers', [new StreamHandler(getenv('LOGGER_PATH') . '/' . $appName . '.log', Level::fromName($logLevel), true, 0777)])->constructorParameter('processors', [new UidProcessor()]),
+        Logger::class                            => autowire(MonologLogger::class)->constructorParameter('name', $appName)->constructorParameter('handlers', [new StreamHandler($logFile, Level::fromName($logLevel), true, 0777)])->constructorParameter('processors', [new UidProcessor()]),
         MessageWriter::class                     => autowire(MessageSqlRepository::class),
-        PendingPlatformUserReader::class         => autowire(PendingPlatformUserSqlRepository::class),
         PerformerReader::class                   => autowire(PerformerSqlRepository::class),
         PerformerStatisticsReader::class         => autowire(PerformerStatisticsSqlRepository::class),
         PlatformUserAgeVerificationWriter::class => autowire(PlatformUserAgeVerificationSqlRepository::class),
@@ -138,10 +138,10 @@ return static function (): Container {
         DealReader::class                        => autowire(DealSqlRepository::class),
         CommissionPlanReader::class              => autowire(CommissionPlanSqlRepository::class),
         CorsMiddleware::class                    => autowire()->constructorParameter('allowedOrigins', [
-            'http://localhost:5173',
-            'http://127.0.0.1:5173',
-            'https://sowingme.com',
-            'https://dev.sowingme.com',
+            '127.0.0.1',
+            'localhost',
+            '.ubixsys.com',
+            '.sowing.me',
         ]),
     ]);
 

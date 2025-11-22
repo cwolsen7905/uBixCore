@@ -42,7 +42,7 @@ abstract class AbstractSimpleCache
         }
 
         if (preg_match('/[{}\(\)\/\\\\@:]/', $key)) {
-            throw new SimpleCacheInvalidArgumentException('Simple cache key contains a reserved character.', ExceptionCode::SIMPLE_CACHE_KEY_USES_RESERVED_CHARACTERS->value);
+           throw new SimpleCacheInvalidArgumentException('Simple cache key contains a reserved character.', ExceptionCode::SIMPLE_CACHE_KEY_USES_RESERVED_CHARACTERS->value);
         }
 
         if (strlen($key) > self::KEY_MAXIMUM_LENGTH) {
