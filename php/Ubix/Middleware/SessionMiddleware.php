@@ -64,10 +64,7 @@ final class SessionMiddleware implements Middleware
         $secure = true;// getenv('IS_SANDBOX') !== 'true';
 
 
-		$isSecure = (getenv('HTTPS') !== false && getenv('HTTPS') !== 'off') || (getenv('HTTP_X_FORWARDED_PROTO') === 'https');
-
-
-		$isSecure = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') || $_SERVER['SERVER_PORT'] == 443;
+		$is_https = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') || (isset($_SERVER['SERVER_PORT']) && $_SERVER['SERVER_PORT'] == 443) || (!empty($_SERVER['HTTP_X_FORWARDED_PROTO']) && $_SERVER['HTTP_X_FORWARDED_PROTO'] === 'https');
 		$isSecure = true;
 		$domain = '.ubixsys.com';
 
@@ -79,6 +76,7 @@ final class SessionMiddleware implements Middleware
 				'httponly' => false,
 				'samesite' => 'None', // TEMPORARY: because of the way we're serving the app in development
 				'HTTPS'	 => $_SERVER['HTTPS'] ?? 'not set',
+				'is_https' => $is_https,
 			]);
 
 		// Invoke session_set_cookie_params() before session_set_save_handler() because the latter will invoke session_get_cookie_params() to get the $domain value
