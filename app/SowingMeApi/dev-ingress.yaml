@@ -19,7 +19,7 @@ spec:
             name: sowing-me-api
             port:
               number: 8080
-          path: /
+        path: /
         pathType: ImplementationSpecific
   - host: sowing-me-api.dev.ubixsys.com
     http:
