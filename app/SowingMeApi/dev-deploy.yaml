@@ -57,8 +57,8 @@ spec:
         terminationMessagePolicy: File
         tty: true
         volumeMounts:
-        - mountPath: /logs
-          name: logs
+        - mountPath: /log
+          name: log
       dnsPolicy: ClusterFirst
       imagePullSecrets:
       - name: regcred
@@ -67,7 +67,7 @@ spec:
       securityContext: {}
       terminationGracePeriodSeconds: 30
       volumes:
-      - hostPath:
-          path: /logs
-          type: DirectoryOrCreate
-        name: logs
+      - nfs:
+          server: 10.50.0.1
+          path: /data/nfs/logs
+        name: log
