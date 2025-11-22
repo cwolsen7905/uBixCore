@@ -76,7 +76,7 @@ final class SessionMiddleware implements Middleware
 				'domain'   => $domain,
 				'secure'   => $isSecure,
 				'httponly' => false,
-				'samesite' => 'Lax', // TEMPORARY: because of the way we're serving the app in development
+				'samesite' => 'None', // TEMPORARY: because of the way we're serving the app in development
 				'HTTPS'	 => $_SERVER['HTTPS'] ?? 'not set',
 			]);
 
@@ -88,7 +88,7 @@ final class SessionMiddleware implements Middleware
 				'domain'   => $domain,
 				'secure'   => $isSecure,
 				'httponly' => false,
-				'samesite' => 'Lax', // TEMPORARY: because of the way we're serving the app in development
+				'samesite' => 'None', // TEMPORARY: because of the way we're serving the app in development
 			]
 		);
         session_set_save_handler($this->sessionHandler, true);
