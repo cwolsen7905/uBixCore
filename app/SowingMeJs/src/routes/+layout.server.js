@@ -18,31 +18,41 @@ export async function load({ fetch, request}) {
 	    ? 'https://sowing-me-api.staging.ubixsys.com'
 	    : 'http://localhost:8888';
 
-const apiEndpoint = `${apiBaseUrl}/auth`;
-  
+  const apiEndpoint = `${apiBaseUrl}/auth`;
+
 
   console.log(`Using API endpoint: ${apiEndpoint}`);
 
-  // Call your auth endpoint or check cookies/session
-  const res = await fetch(apiEndpoint, {
-    headers: {
-    	'Content-Type': 'application/json',
-		cookie
-    }
-  });
-
-  // Check if res is json data or set data to null
+  // Call your auth endpoint or check cookies/session with 2 second timeout
+  let res;
   let data = null;
-  
+
   try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 2000);
+
+    res = await fetch(apiEndpoint, {
+      headers: {
+        'Content-Type': 'application/json',
+        cookie
+      },
+      signal: controller.signal
+    });
+
+    clearTimeout(timeoutId);
+
     data = await res.json();
 
+    console.log(`Auth endpoint response status: ${res.status}`);
+    console.log('Auth endpoint response data:', data);
   } catch (e) {
-    data = null;
+    console.error('Failed to fetch auth status:', e.message);
+    return {
+      user: null,
+      apiBaseUrl,
+      systemError: true
+    }
   }
-  
-  console.log(`Auth endpoint response status: ${res.status}`);
-  console.log('Auth endpoint response data:', data);
 
   return {
     user: data || null,

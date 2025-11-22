@@ -54,10 +54,10 @@ final class SessionMiddleware implements Middleware
 		// Get the root domain as wildcard for cookie sharing across subdomains
 		$domainParts = explode('.', $_SERVER['HTTP_HOST']);
 		$domainPartsCount = count($domainParts);
-		if ($domainPartsCount >= 2) {
+		if ($domainPartsCount >= 2 && !strstr($_SERVER['HTTP_HOST'], '127.0.0.1')) {
 			$domain = '.' . $domainParts[$domainPartsCount - 2] . '.' . $domainParts[$domainPartsCount - 1];
 		} else {
-			$domain = $_SERVER['HTTP_HOST'];
+			$domain = '';// $_SERVER['HTTP_HOST'];
 		}
 
 		$isSecure = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') || (isset($_SERVER['SERVER_PORT']) && $_SERVER['SERVER_PORT'] == 443) || (!empty($_SERVER['HTTP_X_FORWARDED_PROTO']) && $_SERVER['HTTP_X_FORWARDED_PROTO'] === 'https');
@@ -70,9 +70,10 @@ final class SessionMiddleware implements Middleware
 				'domain'   => $domain,
 				'secure'   => $isSecure,
 				'httponly' => false,
-				'samesite' => 'None', // TEMPORARY: because of the way we're serving the app in development
+				'samesite' => 'Lax', // TEMPORARY: because of the way we're serving the app in development
 			]
 		);
+
         session_set_save_handler($this->sessionHandler, true);
         session_start();
 

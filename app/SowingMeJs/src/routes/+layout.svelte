@@ -43,17 +43,56 @@
     justify-content: center;
     z-index: 1000;
   }
+  .error-page {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    background: #f6f8fa;
+    padding: 2rem;
+    text-align: center;
+  }
+  .error-page h1 {
+    color: #333;
+    margin-bottom: 1rem;
+  }
+  .error-page p {
+    color: #666;
+    margin-bottom: 1.5rem;
+    max-width: 400px;
+  }
+  .error-page button {
+    padding: 0.75rem 1.5rem;
+    background: #007bff;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    font-size: 1rem;
+    cursor: pointer;
+  }
+  .error-page button:hover {
+    background: #0056b3;
+  }
 </style>
 
-<div class="layout" class:blurred={!$userData?.user?.id}>
-  <Sidebar bind:sidebarOpen bind:search />
-  <div class="content">
-    <slot />
+{#if $userData?.systemError}
+  <div class="error-page">
+    <h1>System Unavailable</h1>
+    <p>We're sorry, the system is currently unavailable. Please try again in several minutes.</p>
+    <button on:click={() => location.reload()}>Try Again</button>
   </div>
-</div>
+{:else}
+  <div class="layout" class:blurred={!$userData?.user?.id}>
+    <Sidebar bind:sidebarOpen bind:search />
+    <div class="content">
+      <slot />
+    </div>
+  </div>
 
-{#if !$userData?.user?.id}
-  <div class="modal-overlay">
-    <LoginPage />
-  </div>
+  {#if !$userData?.user?.id}
+    <div class="modal-overlay">
+      <LoginPage />
+    </div>
+  {/if}
 {/if}
