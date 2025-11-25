@@ -59,8 +59,8 @@ spec:
         - mountPath: /mnt/project-neptune
           name: project-neptune
           readOnly: false
-        - mountPath: /logs
-          name: logs
+        - mountPath: /log
+          name: log
       dnsPolicy: ClusterFirst
       imagePullSecrets:
       - name: vsm-gitlab
@@ -76,4 +76,4 @@ spec:
       - hostPath:
           path: /logs
           type: DirectoryOrCreate
-        name: logs
+        name: log
