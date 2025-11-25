@@ -17,7 +17,7 @@ final class User extends Model
      * Constructor
      *
      * @param ?int               $id                  User ID
-     * @param ?string            $username            Username
+     * @param ?string            $displayName         Display name
      * @param ?string            $passwordHash        Password hash
      * @param ?string            $email               Email address
      * @param ?string            $firstName           First name
@@ -32,7 +32,7 @@ final class User extends Model
      */
     public function __construct(
         private ?int $id = null,
-        private ?string $username = null,
+        private ?string $displayName = null,
         private ?string $passwordHash = null,
         private ?string $email = null,
         private ?string $firstName = null,
@@ -70,25 +70,25 @@ final class User extends Model
     }
 
     /**
-     * Get the value of username
+     * Get the value of displayName
      *
-     * @return ?string The value of username
+     * @return ?string The value of displayName
      */
-    public function getUsername(): ?string
+    public function getDisplayName(): ?string
     {
-        return $this->username;
+        return $this->displayName;
     }
 
     /**
-     * Set the value of username
+     * Set the value of displayName
      *
-     * @param ?string $username The value for username
+     * @param ?string $displayName The value for displayName
      *
      * @return void
      */
-    public function setUsername(?string $username): void
+    public function setDisplayName(?string $displayName): void
     {
-        $this->username = $username;
+        $this->displayName = $displayName;
     }
 
     /**
