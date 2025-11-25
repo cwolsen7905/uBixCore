@@ -9,7 +9,6 @@ use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
 use Psr\Log\LoggerInterface as Logger;
 use Ubix\Controller\AbstractController as Controller;
-use Ubix\DataType\Int\AffiliateId;
 use Ubix\Enum\StatusCode;
 use Ubix\Renderer\TemplateRenderer;
 use Ubix\Service\AffiliateService;
@@ -38,8 +37,6 @@ final class SowingMeWebController extends Controller
         protected Logger $logger,
         protected TemplateRenderer $view, // -> Needed Always
         protected JsonService $jsonService, // -> Needed Always
-        protected AttributionService $attributionService,
-        protected AffiliateService $affiliateService,
     ) {
         parent::__construct($logger, $view, $jsonService);
     }

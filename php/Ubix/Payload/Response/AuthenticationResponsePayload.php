@@ -14,7 +14,7 @@ final class AuthenticationResponsePayload extends Payload implements ResponsePay
 {
     public int $id;
 
-    public string $username;
+    public string $displayName;
 
     public string $message;
 
@@ -22,16 +22,16 @@ final class AuthenticationResponsePayload extends Payload implements ResponsePay
      * Constructor
      *
      * @param int    $id       The user ID
-     * @param string $username The username
+     * @param string $displayName The display name
      * @param string $message  Response message
      */
     public function __construct(
         int $id,
-        string $username,
+        string $displayName,
         string $message,
     ) {
         $this->id       = $id;
-        $this->username = $username;
+        $this->displayName = $displayName;
         $this->message  = $message;
     }
 }

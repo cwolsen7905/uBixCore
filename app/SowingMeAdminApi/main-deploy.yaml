@@ -57,8 +57,8 @@ spec:
         terminationMessagePolicy: File
         tty: true
         volumeMounts:
-        - mountPath: /logs
-          name: logs
+        - mountPath: /log
+          name: log
       dnsPolicy: ClusterFirst
       imagePullSecrets:
       - name: regcred
@@ -70,4 +70,4 @@ spec:
       - hostPath:
           path: /logs
           type: DirectoryOrCreate
-        name: logs
+        name: log
