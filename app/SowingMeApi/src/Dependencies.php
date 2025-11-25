@@ -24,6 +24,9 @@ use Symfony\Component\Mailer\MailerInterface;
 use Symfony\Component\Mailer\Transport;
 use Ubix\Enum\Exception\ExceptionCode;
 use Ubix\HttpClient\CurlHttpClient;
+use Ubix\Repository\EmailConfirmationToken\EmailConfirmationTokenReaderInterface as TokenReader;
+use Ubix\Repository\EmailConfirmationToken\EmailConfirmationTokenWriterInterface as TokenWriter;
+use Ubix\Repository\EmailConfirmationToken\EmailConfirmationTokenSqlRepository;
 use Ubix\Repository\User\UserReaderInterface as UserReader;
 use Ubix\Repository\User\UserWriterInterface as UserWriter;
 use Ubix\Repository\User\UserSqlRepository;
@@ -81,12 +84,15 @@ return static function (): Container {
         Psr17Factory::class                      => autowire(Psr17Factory::class),
         RequestFactory::class                    => get(Psr17Factory::class),
         ResponseFactory::class                   => autowire(SlimResponseFactory::class),
+        TokenReader::class                       => autowire(EmailConfirmationTokenSqlRepository::class),
+        TokenWriter::class                       => autowire(EmailConfirmationTokenSqlRepository::class),
         UserReader::class                        => autowire(UserSqlRepository::class),
         UserWriter::class                        => autowire(UserSqlRepository::class),
         SessionAuthenticationMiddleware::class   => autowire()->constructorParameter('excludedRoutes', [
 			['method' => 'POST', 'path' => '/auth'],
 			['method' => 'OPTIONS', 'path' => '/auth'],
-			['method' => 'POST', 'path' => '/register']
+			['method' => 'POST', 'path' => '/register'],
+			['method' => 'GET', 'path' => '/confirm-email']
 		]),
         SessionHandler::class                    => autowire(SimpleCacheLegacySessionHandler::class),
         SimpleCache::class                       => autowire(MemcachedLegacySimpleCache::class)->constructorParameter('servers', $memcacheServers),

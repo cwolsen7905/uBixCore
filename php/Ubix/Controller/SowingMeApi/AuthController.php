@@ -12,10 +12,13 @@ use Ubix\Controller\AbstractController as Controller;
 use Ubix\Enum\StatusCode;
 use Ubix\Enum\User\UserStatus;
 use Ubix\Exception\DtoException;
+use Ubix\Model\EmailConfirmationToken;
 use Ubix\Model\User;
 use Ubix\Payload\Request\AuthenticationRequestPayload;
 use Ubix\Payload\Request\RegistrationRequestPayload;
 use Ubix\Renderer\TemplateRenderer;
+use Ubix\Repository\EmailConfirmationToken\EmailConfirmationTokenReaderInterface as TokenReader;
+use Ubix\Repository\EmailConfirmationToken\EmailConfirmationTokenWriterInterface as TokenWriter;
 use Ubix\Repository\User\UserReaderInterface as UserReader;
 use Ubix\Repository\User\UserWriterInterface as UserWriter;
 use Ubix\Service\EmailService;
@@ -36,6 +39,8 @@ final class AuthController extends Controller
      * @param JsonService        $jsonService        The JSON service
      * @param UserReader         $userReader         The user reader
      * @param UserWriter         $userWriter         The user writer
+     * @param TokenReader        $tokenReader        The email confirmation token reader
+     * @param TokenWriter        $tokenWriter        The email confirmation token writer
      * @param EmailService       $emailService       The email service
      *
      * @return void
@@ -46,6 +51,8 @@ final class AuthController extends Controller
         protected JsonService $jsonService, // -> Needed Always
 		protected UserReader $userReader, // -> Needed for user lookups
 		protected UserWriter $userWriter, // -> Needed for user creation
+		protected TokenReader $tokenReader, // -> Needed for token lookups
+		protected TokenWriter $tokenWriter, // -> Needed for token creation
 		protected EmailService $emailService, // -> Needed for sending emails
     ) {
         parent::__construct($logger, $view, $jsonService);
@@ -222,6 +229,7 @@ final class AuthController extends Controller
 
         // Log the registration attempt
         $this->logger->debug('Registration attempt', [
+            'username'   => $payload->username->value,
             'email'      => $payload->email->value,
             'first_name' => $payload->firstName->value,
             'last_name'  => $payload->lastName->value,
@@ -236,6 +244,21 @@ final class AuthController extends Controller
                     'confirm_password' => ['Passwords do not match'],
                 ],
             ], StatusCode::BAD_REQUEST);
+        }
+
+        // Check if username already exists
+        if ($this->userWriter->usernameExists($payload->username->value)) {
+            $this->logger->info('Registration failed: username already exists', [
+                'username' => $payload->username->value,
+            ]);
+
+            return $this->renderJson($response, [
+                'status'  => 'error',
+                'message' => 'This username is already taken',
+                'fields'  => [
+                    'username' => ['This username is already taken'],
+                ],
+            ], StatusCode::CONFLICT);
         }
 
         // Check if email already exists
@@ -253,16 +276,8 @@ final class AuthController extends Controller
             ], StatusCode::CONFLICT);
         }
 
-        // Generate username from email (before @ symbol)
-        $username = explode('@', $payload->email->value)[0];
-        $originalUsername = $username;
-        $counter = 1;
-
-        // Ensure username is unique by appending a number if needed
-        while ($this->userWriter->usernameExists($username)) {
-            $username = $originalUsername . $counter;
-            $counter++;
-        }
+        // Use the provided username
+        $username = $payload->username->value;
 
         // Create the user
         $user = new User(
@@ -292,12 +307,37 @@ final class AuthController extends Controller
                 'last_name'  => $payload->lastName->value,
             ]);
 
+            // Generate confirmation token
+            $token = bin2hex(random_bytes(32));
+            $expiresAt = new \DateTime('+24 hours');
+
+            $confirmationToken = new EmailConfirmationToken(
+                id: null,
+                userId: $userId,
+                token: $token,
+                expiresAt: $expiresAt,
+                createdAt: new \DateTime(),
+                usedAt: null,
+            );
+
+            try {
+                $this->tokenWriter->createToken($confirmationToken);
+            } catch (Exception $e) {
+                $this->logger->error('Failed to create confirmation token', [
+                    'user_id' => $userId,
+                    'error'   => $e->getMessage(),
+                ]);
+            }
+
             // Send confirmation email
             try {
+                $confirmationUrl = ($_ENV['APP_URL'] ?? 'http://127.0.0.1:5173') . '/confirm-email?token=' . $token;
+
                 $this->emailService->sendRegistrationConfirmation(
                     $payload->email->value,
                     $payload->firstName->value,
-                    $payload->lastName->value
+                    $payload->lastName->value,
+                    $confirmationUrl
                 );
             } catch (Exception $e) {
                 // Log the error but don't fail the registration
