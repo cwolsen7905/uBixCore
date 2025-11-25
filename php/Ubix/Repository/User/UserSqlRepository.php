@@ -13,14 +13,15 @@ use Ubix\Enum\Exception\ExceptionCode;
 use Ubix\Enum\User\UserStatus;
 use Ubix\Model\User;
 use Ubix\Repository\User\UserReaderInterface as UserReader;
+use Ubix\Repository\User\UserWriterInterface as UserWriter;
 use Ubix\Service\Sql\SqlServiceInterface as SqlService;
 
 /**
  * Class UserSqlRepository
  *
- * Implements methods to read user-related data from the database.
+ * Implements methods to read and write user-related data from the database.
  */
-final class UserSqlRepository implements UserReader
+final class UserSqlRepository implements UserReader, UserWriter
 {
     /**
      * UserSqlRepository constructor.
@@ -96,6 +97,112 @@ final class UserSqlRepository implements UserReader
         }
 
         return $this->hydrateUser($result);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public function createUser(User $user): int
+    {
+        $sql = 'INSERT INTO sowingme.users (
+                    username,
+                    password_hash,
+                    email,
+                    first_name,
+                    last_name,
+                    status,
+                    roles,
+                    created_at,
+                    updated_at
+                ) VALUES (
+                    :username,
+                    :password_hash,
+                    :email,
+                    :first_name,
+                    :last_name,
+                    :status,
+                    :roles,
+                    NOW(),
+                    NOW()
+                )';
+
+        $params = [
+            'username'      => $user->getUsername(),
+            'password_hash' => $user->getPasswordHash(),
+            'email'         => $user->getEmail(),
+            'first_name'    => $user->getFirstName(),
+            'last_name'     => $user->getLastName(),
+            'status'        => $user->getStatus()?->value ?? 'pending',
+            'roles'         => $user->getRoles() ?? 'user',
+        ];
+
+        $this->sqlService->query($sql, $params);
+
+        return (int) $this->sqlService->lastInsertId();
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public function updateUser(User $user): bool
+    {
+        $sql = 'UPDATE sowingme.users
+                SET username = :username,
+                    password_hash = :password_hash,
+                    email = :email,
+                    first_name = :first_name,
+                    last_name = :last_name,
+                    status = :status,
+                    roles = :roles,
+                    failed_login_attempts = :failed_login_attempts,
+                    last_failed_login = :last_failed_login,
+                    last_login = :last_login,
+                    updated_at = NOW()
+                WHERE id = :id';
+
+        $params = [
+            'id'                    => $user->getId(),
+            'username'              => $user->getUsername(),
+            'password_hash'         => $user->getPasswordHash(),
+            'email'                 => $user->getEmail(),
+            'first_name'            => $user->getFirstName(),
+            'last_name'             => $user->getLastName(),
+            'status'                => $user->getStatus()?->value,
+            'roles'                 => $user->getRoles(),
+            'failed_login_attempts' => $user->getFailedLoginAttempts(),
+            'last_failed_login'     => $user->getLastFailedLogin()?->format('Y-m-d H:i:s'),
+            'last_login'            => $user->getLastLogin()?->format('Y-m-d H:i:s'),
+        ];
+
+        return $this->sqlService->query($sql, $params);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public function emailExists(string $email): bool
+    {
+        $sql = 'SELECT COUNT(*) as count
+                FROM sowingme.users
+                WHERE email = :email';
+
+        $result = $this->sqlService->getRow($sql, ['email' => $email]);
+
+        return $result !== null && (int) $result['count'] > 0;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public function usernameExists(string $username): bool
+    {
+        $sql = 'SELECT COUNT(*) as count
+                FROM sowingme.users
+                WHERE username = :username';
+
+        $result = $this->sqlService->getRow($sql, ['username' => $username]);
+
+        return $result !== null && (int) $result['count'] > 0;
     }
 
     /**

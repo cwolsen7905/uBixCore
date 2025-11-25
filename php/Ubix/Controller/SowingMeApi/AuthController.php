@@ -9,12 +9,17 @@ use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
 use Psr\Log\LoggerInterface as Logger;
 use Ubix\Controller\AbstractController as Controller;
-use Ubix\Payload\Request\AuthenticationRequestPayload;
-use Ubix\Renderer\TemplateRenderer;
-use Ubix\Service\JsonService;
 use Ubix\Enum\StatusCode;
+use Ubix\Enum\User\UserStatus;
 use Ubix\Exception\DtoException;
+use Ubix\Model\User;
+use Ubix\Payload\Request\AuthenticationRequestPayload;
+use Ubix\Payload\Request\RegistrationRequestPayload;
+use Ubix\Renderer\TemplateRenderer;
 use Ubix\Repository\User\UserReaderInterface as UserReader;
+use Ubix\Repository\User\UserWriterInterface as UserWriter;
+use Ubix\Service\EmailService;
+use Ubix\Service\JsonService;
 
 /**
  * Controller to handle API calls involving models
@@ -30,6 +35,8 @@ final class AuthController extends Controller
      * @param TemplateRenderer   $view               The template renderer
      * @param JsonService        $jsonService        The JSON service
      * @param UserReader         $userReader         The user reader
+     * @param UserWriter         $userWriter         The user writer
+     * @param EmailService       $emailService       The email service
      *
      * @return void
      */
@@ -38,6 +45,8 @@ final class AuthController extends Controller
         protected TemplateRenderer $view, // -> Needed Always
         protected JsonService $jsonService, // -> Needed Always
 		protected UserReader $userReader, // -> Needed for user lookups
+		protected UserWriter $userWriter, // -> Needed for user creation
+		protected EmailService $emailService, // -> Needed for sending emails
     ) {
         parent::__construct($logger, $view, $jsonService);
     }
@@ -185,6 +194,137 @@ final class AuthController extends Controller
             'status'  => 'success',
             'message' => 'Logged out successfully',
         ]);
+    }
+
+    /**
+     * Register a new user account
+     *
+     * @param Request  $request  The HTTP request object containing client data.
+     * @param Response $response The HTTP response object used to send data back to the client
+     *
+     * @return Response The modified response object with the operation result.
+     */
+    public function register(Request $request, Response $response): Response
+    {
+
+        try {
+            $payload = RegistrationRequestPayload::getRequest($request);
+        } catch (DtoException $e) {
+			print "Test2";
+            return $this->renderJson($response, [
+                'fields'     => $e->getDto()->errors ?? [],
+                'message'    => $e->getMessage(),
+                'statusCode' => $e->getCode(),
+            ], StatusCode::BAD_REQUEST);
+        }
+
+		print "Test";
+
+        // Log the registration attempt
+        $this->logger->debug('Registration attempt', [
+            'email'      => $payload->email->value,
+            'first_name' => $payload->firstName->value,
+            'last_name'  => $payload->lastName->value,
+        ]);
+
+        // Validate password confirmation
+        if ($payload->password->value !== $payload->confirmPassword->value) {
+            return $this->renderJson($response, [
+                'status'  => 'error',
+                'message' => 'Passwords do not match',
+                'fields'  => [
+                    'confirm_password' => ['Passwords do not match'],
+                ],
+            ], StatusCode::BAD_REQUEST);
+        }
+
+        // Check if email already exists
+        if ($this->userWriter->emailExists($payload->email->value)) {
+            $this->logger->info('Registration failed: email already exists', [
+                'email' => $payload->email->value,
+            ]);
+
+            return $this->renderJson($response, [
+                'status'  => 'error',
+                'message' => 'An account with this email already exists',
+                'fields'  => [
+                    'email' => ['This email is already registered'],
+                ],
+            ], StatusCode::CONFLICT);
+        }
+
+        // Generate username from email (before @ symbol)
+        $username = explode('@', $payload->email->value)[0];
+        $originalUsername = $username;
+        $counter = 1;
+
+        // Ensure username is unique by appending a number if needed
+        while ($this->userWriter->usernameExists($username)) {
+            $username = $originalUsername . $counter;
+            $counter++;
+        }
+
+        // Create the user
+        $user = new User(
+            id: null,
+            username: $username,
+            passwordHash: password_hash($payload->password->value, PASSWORD_DEFAULT),
+            email: $payload->email->value,
+            firstName: $payload->firstName->value,
+            lastName: $payload->lastName->value,
+            status: UserStatus::PENDING,
+            roles: 'user',
+            failedLoginAttempts: 0,
+            lastFailedLogin: null,
+            lastLogin: null,
+            createdAt: new \DateTime(),
+            updatedAt: new \DateTime(),
+        );
+
+        try {
+            $userId = $this->userWriter->createUser($user);
+
+            $this->logger->info('User registration successful', [
+                'user_id'    => $userId,
+                'email'      => $payload->email->value,
+                'username'   => $username,
+                'first_name' => $payload->firstName->value,
+                'last_name'  => $payload->lastName->value,
+            ]);
+
+            // Send confirmation email
+            try {
+                $this->emailService->sendRegistrationConfirmation(
+                    $payload->email->value,
+                    $payload->firstName->value,
+                    $payload->lastName->value
+                );
+            } catch (Exception $e) {
+                // Log the error but don't fail the registration
+                $this->logger->error('Failed to send registration email', [
+                    'user_id' => $userId,
+                    'email'   => $payload->email->value,
+                    'error'   => $e->getMessage(),
+                ]);
+            }
+
+            return $this->renderJson($response, [
+                'status'  => 'success',
+                'message' => 'Registration successful! Please check your email for confirmation.',
+                'userId'  => $userId,
+            ], StatusCode::CREATED);
+        } catch (Exception $e) {
+            $this->logger->error('User registration failed', [
+                'email' => $payload->email->value,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+
+            return $this->renderJson($response, [
+                'status'  => 'error',
+                'message' => 'Registration failed. Please try again later.',
+            ], StatusCode::INTERNAL_SERVER_ERROR);
+        }
     }
 
     /**
