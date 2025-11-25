@@ -309,8 +309,13 @@
 
             <form onsubmit="handleRegister(event)">
                 <div class="form-group">
-                    <label for="register-name">Full Name</label>
-                    <input type="text" id="register-name" name="name" required placeholder="Your full name">
+                    <label for="register-first-name">First Name</label>
+                    <input type="text" id="register-first-name" name="first_name" required placeholder="Your first name">
+                </div>
+
+                <div class="form-group">
+                    <label for="register-last-name">Last Name</label>
+                    <input type="text" id="register-last-name" name="last_name" required placeholder="Your last name">
                 </div>
 
                 <div class="form-group">
@@ -373,7 +378,8 @@
 
     function handleRegister(event) {
         event.preventDefault();
-        const name = document.getElementById('register-name').value;
+        const firstName = document.getElementById('register-first-name').value;
+        const lastName = document.getElementById('register-last-name').value;
         const email = document.getElementById('register-email').value;
         const password = document.getElementById('register-password').value;
         const confirm = document.getElementById('register-confirm').value;
@@ -384,7 +390,7 @@
         }
 
         // TODO: Implement actual registration logic
-        console.log('Register attempt:', { name, email });
+        console.log('Register attempt:', { firstName, lastName, email });
         alert('Registration functionality coming soon!');
     }
 

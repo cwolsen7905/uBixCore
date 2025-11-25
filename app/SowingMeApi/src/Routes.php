@@ -12,6 +12,7 @@ return static function (App $app): void {
     $app->map(['POST'],    '/auth',        AuthController::class . ':authenticate');
 	$app->map(['GET'],     '/auth',        AuthController::class . ':validateSession');
 	$app->map(['POST'],    '/logout',      AuthController::class . ':logout');
+	$map->map(['POST'],    '/register',    AuthController::class . ':register');
 	$app->map(['OPTIONS'], '/{routes:.*}', AuthController::class . ':options');
 	// phpcs:enable Generic.Functions.FunctionCallArgumentSpacing.TooMuchSpaceAfterComma
 
