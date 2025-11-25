@@ -430,7 +430,7 @@
         submitBtn.textContent = 'Creating account...';
 
         try {
-            const response = await fetch('/register', {
+            const response = await fetch('{$apiHostname}/register', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
