@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Ubix\Payload\Request;
 
+use Ubix\DataType\String\Email;
 use Ubix\DataType\String\Password;
-use Ubix\DataType\String\Username;
 use Ubix\Payload\AbstractPayload as Payload;
 use Ubix\Payload\RequestPayloadInterface as RequestPayload;
 
@@ -14,7 +14,7 @@ use Ubix\Payload\RequestPayloadInterface as RequestPayload;
  */
 final class AuthenticationRequestPayload extends Payload implements RequestPayload
 {
-    public Username $username;
+    public Email $email;
 
     public Password $password;
 
@@ -23,16 +23,16 @@ final class AuthenticationRequestPayload extends Payload implements RequestPaylo
     /**
      * Constructor
      *
-     * @param ?string $username The username
+     * @param ?string $email The email
      * @param ?string $password The password
      * @param ?bool   $debug    Optional debug flag
      */
     public function __construct(
-        ?string $username,
+        ?string $email,
         ?string $password,
         ?bool $debug = null,
     ) {
-        $this->validateAndMapField('username', 'username', $username);
+        $this->validateAndMapField('email', 'email', $email);
         $this->validateAndMapField('password', 'password', $password);
         $this->validateAndMapField('debug', 'debug', $debug);
 

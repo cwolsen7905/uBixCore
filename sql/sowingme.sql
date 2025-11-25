@@ -21,7 +21,7 @@ DROP TABLE IF EXISTS `users`;
 /*!40101 SET character_set_client = utf8mb4 */;
 CREATE TABLE `users` (
   `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
-  `username` varchar(32) NOT NULL,
+  `display_name` varchar(128) NOT NULL,
   `password_hash` varchar(255) NOT NULL,
   `email` varchar(255) NOT NULL,
   `first_name` varchar(100) DEFAULT NULL,
@@ -34,7 +34,7 @@ CREATE TABLE `users` (
   `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `updated_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
-  UNIQUE KEY `username` (`username`),
+  UNIQUE KEY `display_name` (`display_name`),
   UNIQUE KEY `email` (`email`),
   KEY `status` (`status`),
   KEY `created_at` (`created_at`)

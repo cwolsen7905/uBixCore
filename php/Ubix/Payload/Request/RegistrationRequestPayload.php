@@ -8,7 +8,7 @@ use Ubix\DataType\String\Email;
 use Ubix\DataType\String\FirstName;
 use Ubix\DataType\String\LastName;
 use Ubix\DataType\String\Password;
-use Ubix\DataType\String\Username;
+use Ubix\DataType\String\DisplayName;
 use Ubix\Payload\AbstractPayload as Payload;
 use Ubix\Payload\RequestPayloadInterface as RequestPayload;
 
@@ -17,7 +17,7 @@ use Ubix\Payload\RequestPayloadInterface as RequestPayload;
  */
 final class RegistrationRequestPayload extends Payload implements RequestPayload
 {
-    public Username $username;
+    public DisplayName $displayName;
 
     public FirstName $firstName;
 
@@ -32,7 +32,7 @@ final class RegistrationRequestPayload extends Payload implements RequestPayload
     /**
      * Constructor
      *
-     * @param ?string $username        The username
+     * @param ?string $displayName        The display name
      * @param ?string $firstName       The first name
      * @param ?string $lastName        The last name
      * @param ?string $email           The email address
@@ -40,7 +40,7 @@ final class RegistrationRequestPayload extends Payload implements RequestPayload
      * @param ?string $confirmPassword The password confirmation
      */
     public function __construct(
-        ?string $username,
+        ?string $displayName,
         ?string $firstName,
         ?string $lastName,
         ?string $email,
@@ -48,7 +48,7 @@ final class RegistrationRequestPayload extends Payload implements RequestPayload
         ?string $confirmPassword,
     ) {
 
-        $this->validateAndMapField('username', 'username', $username);
+        $this->validateAndMapField('displayName', 'displayName', $displayName);
         $this->validateAndMapField('firstName', 'firstName', $firstName);
         $this->validateAndMapField('lastName', 'lastName', $lastName);
         $this->validateAndMapField('email', 'email', $email);

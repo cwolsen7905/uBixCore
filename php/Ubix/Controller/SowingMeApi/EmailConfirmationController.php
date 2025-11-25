@@ -130,7 +130,7 @@ final class EmailConfirmationController extends Controller
                 // Auto-login the user
                 $_SESSION['user'] = [
                     'id'        => $user->getId(),
-                    'username'  => $user->getUsername(),
+                    'displayName'  => $user->getDisplayName(),
                     'email'     => $user->getEmail(),
                     'roles'     => $user->getRoles(),
                     'firstName' => $user->getFirstName(),
@@ -142,7 +142,7 @@ final class EmailConfirmationController extends Controller
                     'message' => 'Your account is already confirmed',
                     'user'    => [
                         'id'        => $user->getId(),
-                        'username'  => $user->getUsername(),
+                        'displayName'  => $user->getDisplayName(),
                         'email'     => $user->getEmail(),
                         'firstName' => $user->getFirstName(),
                         'lastName'  => $user->getLastName(),
@@ -160,7 +160,7 @@ final class EmailConfirmationController extends Controller
             // Auto-login the user
             $_SESSION['user'] = [
                 'id'        => $user->getId(),
-                'username'  => $user->getUsername(),
+                'displayName'  => $user->getDisplayName(),
                 'email'     => $user->getEmail(),
                 'roles'     => $user->getRoles(),
                 'firstName' => $user->getFirstName(),
@@ -178,7 +178,7 @@ final class EmailConfirmationController extends Controller
                 'message' => 'Your email has been confirmed successfully!',
                 'user'    => [
                     'id'        => $user->getId(),
-                    'username'  => $user->getUsername(),
+                    'displayName'  => $user->getDisplayName(),
                     'email'     => $user->getEmail(),
                     'firstName' => $user->getFirstName(),
                     'lastName'  => $user->getLastName(),

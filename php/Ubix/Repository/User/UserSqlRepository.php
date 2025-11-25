@@ -8,7 +8,8 @@ use DateTime;
 use Exception;
 use Psr\Log\LoggerInterface as Logger;
 use Ubix\DataType\Int\UserId;
-use Ubix\DataType\String\Username;
+use Ubix\DataType\String\Email;
+use Ubix\DataType\String\DisplayName;
 use Ubix\Enum\Exception\ExceptionCode;
 use Ubix\Enum\User\UserStatus;
 use Ubix\Model\User;
@@ -42,7 +43,7 @@ final class UserSqlRepository implements UserReader, UserWriter
     {
         $sql = 'SELECT
                     id,
-                    username,
+                    display_name,
                     password_hash,
                     email,
                     first_name,
@@ -70,11 +71,11 @@ final class UserSqlRepository implements UserReader, UserWriter
     /**
      * {@inheritDoc}
      */
-    public function getUserByUsername(Username $username): User
+    public function getUserByEmail(Email $email): User
     {
         $sql = 'SELECT
                     id,
-                    username,
+                    display_name,
                     password_hash,
                     email,
                     first_name,
@@ -87,10 +88,10 @@ final class UserSqlRepository implements UserReader, UserWriter
                     created_at,
                     updated_at
                 FROM sowingme.users
-                WHERE username = :username
+                WHERE email = :email
                 LIMIT 1';
 
-        $result = $this->sqlService->getRow($sql, ['username' => $username->value]);
+        $result = $this->sqlService->getRow($sql, ['email' => $email->value]);
 
         if ($result === null || empty($result)) {
             throw new Exception('User not found', ExceptionCode::USER_NOT_FOUND->value);
@@ -105,7 +106,7 @@ final class UserSqlRepository implements UserReader, UserWriter
     public function createUser(User $user): int
     {
         $sql = 'INSERT INTO sowingme.users (
-                    username,
+                    display_name,
                     password_hash,
                     email,
                     first_name,
@@ -115,7 +116,7 @@ final class UserSqlRepository implements UserReader, UserWriter
                     created_at,
                     updated_at
                 ) VALUES (
-                    :username,
+                    :display_name,
                     :password_hash,
                     :email,
                     :first_name,
@@ -127,7 +128,7 @@ final class UserSqlRepository implements UserReader, UserWriter
                 )';
 
         $params = [
-            'username'      => $user->getUsername(),
+            'display_name'  => $user->getDisplayName(),
             'password_hash' => $user->getPasswordHash(),
             'email'         => $user->getEmail(),
             'first_name'    => $user->getFirstName(),
@@ -147,7 +148,7 @@ final class UserSqlRepository implements UserReader, UserWriter
     public function updateUser(User $user): bool
     {
         $sql = 'UPDATE sowingme.users
-                SET username = :username,
+                SET display_name = :display_name,
                     password_hash = :password_hash,
                     email = :email,
                     first_name = :first_name,
@@ -162,7 +163,7 @@ final class UserSqlRepository implements UserReader, UserWriter
 
         $params = [
             'id'                    => $user->getId(),
-            'username'              => $user->getUsername(),
+            'display_name'          => $user->getDisplayName(),
             'password_hash'         => $user->getPasswordHash(),
             'email'                 => $user->getEmail(),
             'first_name'            => $user->getFirstName(),
@@ -180,13 +181,13 @@ final class UserSqlRepository implements UserReader, UserWriter
     /**
      * {@inheritDoc}
      */
-    public function emailExists(string $email): bool
+    public function emailExists(Email $email): bool
     {
         $sql = 'SELECT COUNT(*) as count
                 FROM sowingme.users
                 WHERE email = :email';
 
-        $result = $this->sqlService->getRow($sql, ['email' => $email]);
+        $result = $this->sqlService->getRow($sql, ['email' => $email->value]);
 
         return $result !== null && (int) $result['count'] > 0;
     }
@@ -194,13 +195,13 @@ final class UserSqlRepository implements UserReader, UserWriter
     /**
      * {@inheritDoc}
      */
-    public function usernameExists(string $username): bool
+    public function displayNameExists(DisplayName $displayName): bool
     {
         $sql = 'SELECT COUNT(*) as count
                 FROM sowingme.users
-                WHERE username = :username';
+                WHERE display_name = :display_name';
 
-        $result = $this->sqlService->getRow($sql, ['username' => $username]);
+        $result = $this->sqlService->getRow($sql, ['display_name' => $displayName->value]);
 
         return $result !== null && (int) $result['count'] > 0;
     }
@@ -216,7 +217,7 @@ final class UserSqlRepository implements UserReader, UserWriter
     {
         return new User(
             id: (int) $result['id'],
-            username: $result['username'],
+            displayName: $result['display_name'],
             passwordHash: $result['password_hash'],
             email: $result['email'],
             firstName: $result['first_name'],

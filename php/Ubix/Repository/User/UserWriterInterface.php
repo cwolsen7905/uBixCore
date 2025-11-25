@@ -35,22 +35,4 @@ interface UserWriterInterface
      * @throws Exception If the user update fails
      */
     public function updateUser(User $user): bool;
-
-    /**
-     * Check if email already exists
-     *
-     * @param string $email The email to check
-     *
-     * @return bool True if email exists
-     */
-    public function emailExists(string $email): bool;
-
-    /**
-     * Check if username already exists
-     *
-     * @param string $username The username to check
-     *
-     * @return bool True if username exists
-     */
-    public function usernameExists(string $username): bool;
 }

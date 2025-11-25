@@ -6,13 +6,12 @@ namespace Ubix\DataType\String;
 
 use Symfony\Component\Validator\Constraints\Length;
 use Symfony\Component\Validator\Constraints\NotBlank;
-use Symfony\Component\Validator\Constraints\Regex;
 use Ubix\DataType\String\AbstractStringDataType as StringDataType;
 
 /**
- * Object for creating and validating Username strings
+ * Object for creating and validating DisplayName strings
  */
-class Username extends StringDataType
+class DisplayName extends StringDataType
 {
     /**
      * Constructor
@@ -21,8 +20,7 @@ class Username extends StringDataType
      */
     public function __construct(
         #[NotBlank]
-        #[Length(min: 3, max: 32)]
-        #[Regex(pattern: '/^\S+$/', message: 'Username cannot contain spaces.')]
+        #[Length(min: 1, max: 128)]
         private string $input,
     ) {
         $this->validate();

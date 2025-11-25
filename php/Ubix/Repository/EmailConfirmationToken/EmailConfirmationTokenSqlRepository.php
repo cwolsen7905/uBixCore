@@ -120,7 +120,7 @@ final class EmailConfirmationTokenSqlRepository implements TokenReader, TokenWri
                 SET used_at = NOW()
                 WHERE id = :id';
 
-        return $this->sqlService->query($sql, ['id' => $tokenId]);
+        return $this->sqlService->query($sql, ['id' => $tokenId]) == 0 ? false : true;
     }
 
     /**

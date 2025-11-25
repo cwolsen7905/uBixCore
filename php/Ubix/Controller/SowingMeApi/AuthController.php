@@ -81,39 +81,39 @@ final class AuthController extends Controller
 
 		// Log the payload for debugging
 		$this->logger->debug('Authentication payload', [
-			'username' => $payload->username->value,
+			'email' => $payload->email->value,
 			'password_length' => strlen($payload->password->value),
 			'debug' => $payload->debug?->value,
 		]);	
 
-        // Lookup the user by username or return a json error response status 401
+        // Lookup the user by email or return a json error response status 401
         try {
-            $user = $this->userReader->getUserByUsername($payload->username);
+            $user = $this->userReader->getUserByEmail($payload->email);
         } catch (Exception $e) {
             $this->logger->info('Authentication failed: user not found', [
-                'username' => $payload->username->value,
+                'email' => $payload->email->value,
             ]);
 
             return $this->renderJson($response, [
-                'message' => 'Invalid username or password',
+                'message' => 'Invalid displayName or password',
             ], StatusCode::UNAUTHORIZED);
         }
 
         // Verify password
         if (!password_verify($payload->password->value, $user->getPasswordHash() ?? '')) {
             $this->logger->info('Authentication failed: invalid password', [
-                'username' => $payload->username->value,
+                'displayName' => $payload->displayName->value,
             ]);
 
             return $this->renderJson($response, [
-                'message' => 'Invalid username or password',
+                'message' => 'Invalid displayName or password',
             ], StatusCode::UNAUTHORIZED);
         }
 
         // Check user status
         if ($user->getStatus()?->value !== 'active') {
             $this->logger->info('Authentication failed: user not active', [
-                'username' => $payload->username->value,
+                'displayName' => $payload->displayName->value,
                 'status'   => $user->getStatus()?->value,
             ]);
 
@@ -125,7 +125,7 @@ final class AuthController extends Controller
         // Set session data
         $_SESSION['user'] = [
             'id'       => $user->getId(),
-            'username' => $user->getUsername(),
+            'displayName' => $user->getDisplayName(),
             'email'    => $user->getEmail(),
             'roles'    => $user->getRoles(),
 			'firstName' => $user->getFirstName(),
@@ -134,7 +134,7 @@ final class AuthController extends Controller
 
         $this->logger->info('Authentication successful', [
             'user_id'  => $user->getId(),
-            'username' => $user->getUsername(),
+            'displayName' => $user->getDisplayName(),
         ]);
 
         return $this->renderJson($response, [
@@ -142,7 +142,7 @@ final class AuthController extends Controller
             'message' => 'Authentication successful',
             'user'    => [
                 'id'        => $user->getId(),
-                'username'  => $user->getUsername(),
+                'displayName'  => $user->getDisplayName(),
                 'email'     => $user->getEmail(),
                 'firstName' => $user->getFirstName(),
                 'lastName'  => $user->getLastName(),
@@ -162,7 +162,7 @@ final class AuthController extends Controller
 	{
 		$data = [
 			'id'        => $_SESSION['user']['id'] ?? null,
-			'username'  => $_SESSION['user']['username'] ?? null,
+			'displayName'  => $_SESSION['user']['displayName'] ?? null,
 			'email'     => $_SESSION['user']['email'] ?? null,
 			'firstName' => $_SESSION['user']['firstName'] ?? null,
 			'lastName'  => $_SESSION['user']['lastName'] ?? null
@@ -182,7 +182,7 @@ final class AuthController extends Controller
     public function logout(Request $request, Response $response): Response
     {
         $userId = $_SESSION['user']['id'] ?? null;
-        $username = $_SESSION['user']['username'] ?? null;
+        $displayName = $_SESSION['user']['displayName'] ?? null;
 
         // Clear session data
         $_SESSION = [];
@@ -194,7 +194,7 @@ final class AuthController extends Controller
 
         $this->logger->info('User logged out', [
             'user_id'  => $userId,
-            'username' => $username,
+            'displayName' => $displayName,
         ]);
 
         return $this->renderJson($response, [
@@ -229,7 +229,7 @@ final class AuthController extends Controller
 
         // Log the registration attempt
         $this->logger->debug('Registration attempt', [
-            'username'   => $payload->username->value,
+            'displayName'  => $payload->displayName->value,
             'email'      => $payload->email->value,
             'first_name' => $payload->firstName->value,
             'last_name'  => $payload->lastName->value,
@@ -246,23 +246,23 @@ final class AuthController extends Controller
             ], StatusCode::BAD_REQUEST);
         }
 
-        // Check if username already exists
-        if ($this->userWriter->usernameExists($payload->username->value)) {
-            $this->logger->info('Registration failed: username already exists', [
-                'username' => $payload->username->value,
+        // Check if displayName already exists
+        if ($this->userReader->displayNameExists($payload->displayName)) {
+            $this->logger->info('Registration failed: displayName already exists', [
+                'displayName' => $payload->displayName->value,
             ]);
 
             return $this->renderJson($response, [
                 'status'  => 'error',
-                'message' => 'This username is already taken',
+                'message' => 'This displayName is already taken',
                 'fields'  => [
-                    'username' => ['This username is already taken'],
+                    'displayName' => ['This displayName is already taken'],
                 ],
             ], StatusCode::CONFLICT);
         }
 
         // Check if email already exists
-        if ($this->userWriter->emailExists($payload->email->value)) {
+        if ($this->userReader->emailExists($payload->email->value)) {
             $this->logger->info('Registration failed: email already exists', [
                 'email' => $payload->email->value,
             ]);
@@ -276,13 +276,13 @@ final class AuthController extends Controller
             ], StatusCode::CONFLICT);
         }
 
-        // Use the provided username
-        $username = $payload->username->value;
+        // Use the provided displayName
+        $displayName = $payload->displayName->value;
 
         // Create the user
         $user = new User(
             id: null,
-            username: $username,
+            displayName: $displayName,
             passwordHash: password_hash($payload->password->value, PASSWORD_DEFAULT),
             email: $payload->email->value,
             firstName: $payload->firstName->value,
@@ -302,7 +302,7 @@ final class AuthController extends Controller
             $this->logger->info('User registration successful', [
                 'user_id'    => $userId,
                 'email'      => $payload->email->value,
-                'username'   => $username,
+                'display_name'   => $payload->displayName->value,
                 'first_name' => $payload->firstName->value,
                 'last_name'  => $payload->lastName->value,
             ]);

@@ -34,7 +34,7 @@
           'Content-Type': 'application/json'
         },
         credentials: 'include',
-        body: JSON.stringify({ 'username': username, 'password': password })
+        body: JSON.stringify({ 'email': email, 'password': password })
       });
 
       data = await res.json();
@@ -336,17 +336,17 @@
   {:else}
     <form on:submit|preventDefault={handleLogin}>
       <div class="form-group">
-        <label for="username">Username</label>
+        <label for="email">Email</label>
         <input
-          type="text"
-          id="username"
-          bind:value={username}
-          name="username"
+          type="email"
+          id="email"
+          bind:value={email}
+          name="email"
           required
-          class:has-error={fieldErrors.username}
+          class:has-error={fieldErrors.email}
         />
-        {#if fieldErrors.username}
-          <div class="field-error">{fieldErrors.username}</div>
+        {#if fieldErrors.email}
+          <div class="field-error">{fieldErrors.email}</div>
         {/if}
       </div>
       <div class="form-group">
