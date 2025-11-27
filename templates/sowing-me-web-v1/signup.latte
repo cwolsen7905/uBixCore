@@ -357,6 +357,9 @@
 
 {block scripts}
 <script>
+    // API hostname passed from the controller
+    const apiHostname = {$apiHostname|noescape};
+
     function showForm(formType) {
         // Update tabs
         document.querySelectorAll('.auth-tab').forEach(tab => tab.classList.remove('active'));
@@ -382,7 +385,7 @@
         submitBtn.textContent = 'Signing in...';
 
         try {
-            const response = await fetch('/auth', {
+            const response = await fetch(`${apiHostname}/auth`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
