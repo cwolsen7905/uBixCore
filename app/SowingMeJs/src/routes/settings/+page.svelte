@@ -49,6 +49,25 @@
     console.log('Saving basics:', { displayName, email, country, state, postalCode });
     alert('Settings saved!');
   }
+
+  // Example memberships data (will be dynamic in the future)
+  const memberships = [
+    {
+      id: 1,
+      creatorName: 'Jane Smith',
+      avatar: 'https://ui-avatars.com/api/?name=Jane+Smith&background=e91e63&color=fff'
+    },
+    {
+      id: 2,
+      creatorName: 'Alex Johnson',
+      avatar: 'https://ui-avatars.com/api/?name=Alex+Johnson&background=9c27b0&color=fff'
+    },
+    {
+      id: 3,
+      creatorName: 'Sarah Williams',
+      avatar: 'https://ui-avatars.com/api/?name=Sarah+Williams&background=ff9800&color=fff'
+    }
+  ];
 </script>
 
 <style>
@@ -282,6 +301,47 @@
     border-radius: 0 0 8px 8px;
   }
 
+  .memberships-heading {
+    font-size: 1.1rem;
+    font-weight: 600;
+    margin-bottom: 16px;
+    color: #333;
+  }
+
+  .membership-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .membership-item {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 12px;
+    background: #f9f9f9;
+    border-radius: 8px;
+    transition: background 0.2s;
+  }
+
+  .membership-item:hover {
+    background: #f0f0f0;
+  }
+
+  .membership-avatar {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    object-fit: cover;
+    flex-shrink: 0;
+  }
+
+  .membership-name {
+    font-size: 1rem;
+    font-weight: 500;
+    color: #333;
+  }
+
   @media (max-width: 600px) {
     .form-row {
       grid-template-columns: 1fr;
@@ -385,9 +445,15 @@
       </div>
 
     {:else if activeTab === 'memberships'}
-      <div class="coming-soon">
-        <h3>Memberships</h3>
-        <p>Coming soon...</p>
+      <h2 class="section-title">Memberships</h2>
+
+      <div class="membership-list">
+        {#each memberships as membership (membership.id)}
+          <div class="membership-item">
+            <img src={membership.avatar} alt={membership.creatorName} class="membership-avatar" />
+            <span class="membership-name">{membership.creatorName}</span>
+          </div>
+        {/each}
       </div>
 
     {:else if activeTab === 'billing-history'}
