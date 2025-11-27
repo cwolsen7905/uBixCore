@@ -36,6 +36,25 @@
     userData.set({});
     showAccountMenu = false;
   }
+
+  // Example memberships data (will be dynamic in the future)
+  const memberships = [
+    {
+      id: 1,
+      creatorName: 'Jane Smith',
+      avatar: 'https://ui-avatars.com/api/?name=Jane+Smith&background=e91e63&color=fff'
+    },
+    {
+      id: 2,
+      creatorName: 'Alex Johnson',
+      avatar: 'https://ui-avatars.com/api/?name=Alex+Johnson&background=9c27b0&color=fff'
+    },
+    {
+      id: 3,
+      creatorName: 'Sarah Williams',
+      avatar: 'https://ui-avatars.com/api/?name=Sarah+Williams&background=ff9800&color=fff'
+    }
+  ];
 </script>
 
 <style>
@@ -238,6 +257,63 @@
     border-radius: 6px;
     transition: background 0.15s;
   }
+  .memberships-section {
+    padding: 16px 20px;
+    border-top: 1px solid #eee;
+  }
+  .sidebar.collapsed .memberships-section {
+    padding: 16px 8px;
+  }
+  .memberships-heading {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #888;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 12px;
+    padding-left: 4px;
+  }
+  .sidebar.collapsed .memberships-heading {
+    display: none;
+  }
+  .membership-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .membership-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 8px;
+    border-radius: 6px;
+    text-decoration: none;
+    color: #333;
+    transition: background 0.15s;
+    cursor: pointer;
+  }
+  .sidebar.collapsed .membership-item {
+    justify-content: center;
+    padding: 8px 4px;
+  }
+  .membership-item:hover {
+    background: #eaf4fd;
+  }
+  .membership-avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    object-fit: cover;
+    flex-shrink: 0;
+  }
+  .membership-name {
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: #333;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
   @media (max-width: 700px) {
     .sidebar {
       position: fixed;
@@ -279,6 +355,21 @@
       </a>
     {/each}
   </nav>
+  <div class="memberships-section">
+    {#if sidebarOpen}
+      <div class="memberships-heading">Memberships</div>
+    {/if}
+    <div class="membership-list">
+      {#each memberships as membership (membership.id)}
+        <a href="/creator/{membership.id}" class="membership-item">
+          <img src={membership.avatar} alt={membership.creatorName} class="membership-avatar" />
+          {#if sidebarOpen}
+            <span class="membership-name">{membership.creatorName}</span>
+          {/if}
+        </a>
+      {/each}
+    </div>
+  </div>
   <div class="user-section">
     <div class="user-info">
       <img class="user-avatar" src={user.avatar} alt="Avatar" />
