@@ -54,7 +54,7 @@ final class SlimErrorHandler extends ErrorHandler
 
             $body = $this->engine->renderToString($template, [
                 'code'            => $this->statusCode,
-                'debug'           => true; // $this->displayErrorDetails,
+                'debug'           => $this->displayErrorDetails,
                 'file'            => $this->exception->getFile(),
                 'lastUrl'         => $lastUrl,
                 'line'            => $this->exception->getLine(),
