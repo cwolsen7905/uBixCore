@@ -9,7 +9,7 @@ const getSystemTheme = () => {
   return 'light';
 };
 
-// Get initial theme preference from localStorage or default to 'system'
+// Get initial theme preference from localStorage or default to 'light'
 const getInitialThemePreference = () => {
   if (browser) {
     const stored = localStorage.getItem('themePreference');
@@ -17,7 +17,7 @@ const getInitialThemePreference = () => {
       return stored;
     }
   }
-  return 'system';
+  return 'light';
 };
 
 // Get the actual theme to apply based on preference
