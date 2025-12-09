@@ -307,6 +307,9 @@
   .account-menu {
     position: relative;
   }
+  .sidebar.collapsed .account-menu {
+    display: none;
+  }
   .dots {
     cursor: pointer;
     font-size: 1.5rem;
