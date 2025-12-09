@@ -22,8 +22,4 @@ enum CustomerFacingExceptionCode: int
     case APPLICATION_PERSONAL_DATA_PENDING_REVIEW_FOR_MODEL_SIGNUP_API = 1000001;
     case APPLICATION_REJECTED_FOR_MODEL_SIGNUP_API                     = 1000005;
 
-    //
-    // AffiliateApi app
-    //
-    case ATTRIBUTION_FAILED_TEMPORARY_CODE = 400; // TEMPORARY: This needs to be reassigned
 }

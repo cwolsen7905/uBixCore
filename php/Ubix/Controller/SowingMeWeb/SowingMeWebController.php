@@ -68,6 +68,17 @@ final class SowingMeWebController extends Controller
      */
     public function signup(Request $request, Response $response): Response
     {
+        // Determine API hostname based on ENV environment variable
+        $env = getenv('ENV') ?: '';
+        $apiHostname = match ($env) {
+            'PROD'    => 'https://api.sowing.me',
+            'STAGING' => 'https://api-sowing-me.staging.ubixsys.com',
+            'DEV'     => 'https://api-sowing-me.dev.ubixsys.com',
+            default   => 'http://localhost',
+        };
+
+        $this->sendToTemplate('apiHostname', $apiHostname);
+
         return $this->renderTemplate(
 			$response,
 			'signup.latte',
