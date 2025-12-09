@@ -32,22 +32,22 @@
     max-width: 1400px;
     margin: 0 auto;
     padding: 40px 20px;
-    background: #fff;
+    background: var(--color-bg-primary);
     min-height: 100vh;
-    color: #333;
+    color: var(--color-text-primary);
   }
 
   .page-title {
     font-size: 2.5rem;
     font-weight: 700;
-    color: #333;
+    color: var(--color-text-primary);
     margin: 0 0 32px 0;
   }
 
   .tabs {
     display: flex;
     gap: 0;
-    border-bottom: 1px solid #e5e5e5;
+    border-bottom: 1px solid var(--color-border-light);
     margin-bottom: 24px;
   }
 
@@ -56,7 +56,7 @@
     background: none;
     border: none;
     font-size: 1rem;
-    color: #888;
+    color: var(--color-text-tertiary);
     cursor: pointer;
     position: relative;
     transition: color 0.2s;
@@ -64,11 +64,11 @@
   }
 
   .tab:hover {
-    color: #333;
+    color: var(--color-text-primary);
   }
 
   .tab.active {
-    color: #4a90e2;
+    color: var(--color-accent-primary);
   }
 
   .tab.active::after {
@@ -78,7 +78,7 @@
     left: 0;
     right: 0;
     height: 2px;
-    background: #4a90e2;
+    background: var(--color-accent-primary);
   }
 
   .toolbar {
@@ -92,9 +92,9 @@
     align-items: center;
     gap: 8px;
     padding: 12px 20px;
-    background: #fff;
-    color: #333;
-    border: 1px solid #d0d0d0;
+    background: var(--color-bg-primary);
+    color: var(--color-text-primary);
+    border: 1px solid var(--color-border-medium);
     border-radius: 8px;
     font-size: 0.95rem;
     cursor: pointer;
@@ -103,8 +103,8 @@
   }
 
   .filter-button:hover {
-    background: #f5f5f5;
-    border-color: #b0b0b0;
+    background: var(--color-bg-hover);
+    border-color: var(--color-border-dark);
   }
 
   .filter-icon {
@@ -121,7 +121,7 @@
     left: 16px;
     top: 50%;
     transform: translateY(-50%);
-    color: #888;
+    color: var(--color-text-tertiary);
     font-size: 1.1rem;
     pointer-events: none;
   }
@@ -129,9 +129,9 @@
   .search-input {
     width: 100%;
     padding: 12px 16px 12px 48px;
-    background: #fff;
-    color: #333;
-    border: 1px solid #d0d0d0;
+    background: var(--color-bg-primary);
+    color: var(--color-text-primary);
+    border: 1px solid var(--color-border-medium);
     border-radius: 8px;
     font-size: 0.95rem;
     transition: border-color 0.2s;
@@ -139,11 +139,11 @@
 
   .search-input:focus {
     outline: none;
-    border-color: #4a90e2;
+    border-color: var(--color-accent-primary);
   }
 
   .search-input::placeholder {
-    color: #999;
+    color: var(--color-text-placeholder);
   }
 
   .empty-state {
@@ -158,7 +158,7 @@
   .empty-icon {
     width: 80px;
     height: 80px;
-    background: #f0f0f0;
+    background: var(--color-bg-tertiary);
     border-radius: 50%;
     display: flex;
     align-items: center;
@@ -168,19 +168,19 @@
 
   .empty-icon-content {
     font-size: 2rem;
-    color: #888;
+    color: var(--color-text-tertiary);
   }
 
   .empty-title {
     font-size: 1.75rem;
     font-weight: 700;
-    color: #333;
+    color: var(--color-text-primary);
     margin: 0 0 12px 0;
   }
 
   .empty-description {
     font-size: 1rem;
-    color: #666;
+    color: var(--color-text-secondary);
     margin: 0 0 32px 0;
     max-width: 500px;
     line-height: 1.5;
@@ -188,7 +188,7 @@
 
   .create-post-button {
     padding: 14px 32px;
-    background: #4a90e2;
+    background: var(--color-accent-primary);
     color: #fff;
     border: none;
     border-radius: 8px;
@@ -199,7 +199,7 @@
   }
 
   .create-post-button:hover {
-    background: #357abd;
+    background: var(--color-accent-hover);
   }
 
   @media (max-width: 768px) {

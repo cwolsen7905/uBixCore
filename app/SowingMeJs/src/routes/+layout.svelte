@@ -4,6 +4,7 @@
   import Sidebar from '$lib/Sidebar.svelte';
   import CreatorSidebar from '$lib/CreatorSidebar.svelte';
   import { userData } from '$lib/stores.js';
+  import '$lib/styles/theme.css';
 
   let sidebarOpen = true;
   let search = '';
@@ -23,7 +24,7 @@
   .layout {
     display: flex;
     min-height: 100vh;
-    background: #f6f8fa;
+    background: var(--color-bg-tertiary);
   }
   .layout.blurred {
     filter: blur(5px);
@@ -54,22 +55,22 @@
     align-items: center;
     justify-content: center;
     min-height: 100vh;
-    background: #f6f8fa;
+    background: var(--color-bg-tertiary);
     padding: 2rem;
     text-align: center;
   }
   .error-page h1 {
-    color: #333;
+    color: var(--color-text-primary);
     margin-bottom: 1rem;
   }
   .error-page p {
-    color: #666;
+    color: var(--color-text-secondary);
     margin-bottom: 1.5rem;
     max-width: 400px;
   }
   .error-page button {
     padding: 0.75rem 1.5rem;
-    background: #007bff;
+    background: var(--color-accent-primary);
     color: white;
     border: none;
     border-radius: 4px;
@@ -77,7 +78,7 @@
     cursor: pointer;
   }
   .error-page button:hover {
-    background: #0056b3;
+    background: var(--color-accent-hover);
   }
 </style>
 

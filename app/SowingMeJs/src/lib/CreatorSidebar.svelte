@@ -1,5 +1,6 @@
 <script>
   import { userData, activeRole } from '$lib/stores.js';
+  import { themePreference, setThemePreference } from '$lib/themeStore.js';
 
   export let sidebarOpen = true;
   export let navLinks = [
@@ -360,6 +361,53 @@
     background: #e5e5e5;
     margin: 4px 0;
   }
+  .menu-section-title {
+    padding: 10px 16px 6px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: #888;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  .theme-option {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 16px;
+    color: #333;
+    background: none;
+    border: none;
+    font-size: 1rem;
+    text-align: left;
+    cursor: pointer;
+    border-radius: 6px;
+    transition: background 0.15s;
+    width: 100%;
+  }
+  .theme-option:hover {
+    background: #f5f5f5;
+    color: #4a90e2;
+  }
+  .theme-option.active {
+    background: #f5f5f5;
+    color: #4a90e2;
+  }
+  .theme-indicator {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    border: 2px solid currentColor;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .theme-indicator.active::after {
+    content: '';
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: currentColor;
+  }
   @media (max-width: 700px) {
     .sidebar {
       position: fixed;
@@ -461,8 +509,34 @@
           <span class="dots" on:click|stopPropagation={() => showAccountMenu = !showAccountMenu} title="Account options">&#8942;</span>
           {#if showAccountMenu}
             <div class="account-dropdown">
-              <a href="/profile">Profile</a>
-              <a href="/account">Account Settings</a>
+              <div class="menu-section-title">Appearance</div>
+              <button
+                class="theme-option"
+                class:active={$themePreference === 'light'}
+                on:click|stopPropagation={() => { setThemePreference('light'); showAccountMenu = false; }}
+              >
+                <span class="theme-indicator" class:active={$themePreference === 'light'}></span>
+                Light
+              </button>
+              <button
+                class="theme-option"
+                class:active={$themePreference === 'dark'}
+                on:click|stopPropagation={() => { setThemePreference('dark'); showAccountMenu = false; }}
+              >
+                <span class="theme-indicator" class:active={$themePreference === 'dark'}></span>
+                Dark
+              </button>
+              <button
+                class="theme-option"
+                class:active={$themePreference === 'system'}
+                on:click|stopPropagation={() => { setThemePreference('system'); showAccountMenu = false; }}
+              >
+                <span class="theme-indicator" class:active={$themePreference === 'system'}></span>
+                System
+              </button>
+              <div class="role-divider"></div>
+              <a href="/profile" on:click={() => showAccountMenu = false}>Profile</a>
+              <a href="/account" on:click={() => showAccountMenu = false}>Account Settings</a>
               <button type="button" on:click={handleLogout}>Logout</button>
             </div>
           {/if}
