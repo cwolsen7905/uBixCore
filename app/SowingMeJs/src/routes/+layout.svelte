@@ -1,6 +1,8 @@
 <script>
+  import { page } from '$app/stores';
   import LoginPage from '$lib/LoginPage.svelte';
   import Sidebar from '$lib/Sidebar.svelte';
+  import CreatorSidebar from '$lib/CreatorSidebar.svelte';
   import { userData } from '$lib/stores.js';
 
   let sidebarOpen = true;
@@ -12,6 +14,9 @@
   if (data) {
     userData.set(data);
   }
+
+  // Determine if we're in creator mode based on the route
+  $: isCreatorMode = $page.url.pathname.startsWith('/creator');
 </script>
 
 <style>
@@ -84,7 +89,11 @@
   </div>
 {:else}
   <div class="layout" class:blurred={!$userData?.user?.id}>
-    <Sidebar bind:sidebarOpen bind:search />
+    {#if isCreatorMode}
+      <CreatorSidebar bind:sidebarOpen />
+    {:else}
+      <Sidebar bind:sidebarOpen bind:search />
+    {/if}
     <div class="content">
       <slot />
     </div>

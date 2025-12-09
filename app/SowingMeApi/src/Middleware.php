@@ -5,7 +5,6 @@ declare(strict_types=1);
 use Psr\Container\ContainerInterface as Container;
 use Psr\Log\LoggerInterface as Logger;
 use Slim\App;
-use Ubix\Middleware\BearerTokenAuthenticationMiddleware;
 use Ubix\Middleware\NormalizedHostMiddleware;
 use Ubix\Middleware\NormalizedIpAddressMiddleware;
 use Ubix\Middleware\CorsMiddleware;
