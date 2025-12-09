@@ -74,6 +74,7 @@
     transition: width 0.2s;
     position: relative;
     height: 100vh;
+    border-right: 1px solid #e5e5e5;
   }
   .sidebar.collapsed {
     width: 64px;
@@ -97,7 +98,7 @@
   .logo {
     padding: 20px;
     text-align: left;
-    border-bottom: 1px solid #eee;
+    border-bottom: 1px solid #e5e5e5;
   }
   .logo a {
     display: block;
@@ -126,11 +127,11 @@
     align-items: center;
     gap: 12px;
     padding: 12px 20px;
-    color: #333;
+    color: #666;
     text-decoration: none;
     border-radius: 6px;
     font-size: 0.95rem;
-    transition: background 0.15s;
+    transition: background 0.15s, color 0.15s;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -140,8 +141,8 @@
     justify-content: center;
   }
   .nav-link:hover {
-    background: #eaf4fd;
-    color: #4a90e2;
+    background: #f5f5f5;
+    color: #333;
   }
   .nav-icon {
     font-size: 1.2rem;
@@ -152,7 +153,7 @@
   }
   .create-section {
     padding: 16px 20px;
-    border-top: 1px solid #eee;
+    border-top: 1px solid #e5e5e5;
     position: relative;
   }
   .sidebar.collapsed .create-section {
@@ -193,7 +194,7 @@
     right: 20px;
     margin-bottom: 8px;
     background: #fff;
-    border: 1px solid #eee;
+    border: 1px solid #e5e5e5;
     border-radius: 8px;
     box-shadow: 0 4px 12px rgba(0,0,0,0.1);
     z-index: 10;
@@ -216,8 +217,7 @@
     border-radius: 6px;
   }
   .create-menu-item:hover {
-    background: #eaf4fd;
-    color: #4a90e2;
+    background: #f5f5f5;
   }
   .create-menu-item:first-child {
     border-radius: 8px 8px 0 0;
@@ -227,7 +227,7 @@
   }
   .user-section {
     padding: 20px;
-    border-top: 1px solid #eee;
+    border-top: 1px solid #e5e5e5;
     background: #fff;
   }
   .sidebar.collapsed .user-section {
@@ -310,10 +310,10 @@
     color: #888;
     padding: 4px;
     border-radius: 50%;
-    transition: background 0.15s;
+    transition: background 0.15s, color 0.15s;
   }
   .dots:hover {
-    background: #eaf4fd;
+    background: #f5f5f5;
     color: #4a90e2;
   }
   .account-dropdown {
@@ -322,9 +322,9 @@
     bottom: 100%;
     margin-bottom: 8px;
     background: #fff;
-    border: 1px solid #eee;
+    border: 1px solid #e5e5e5;
     border-radius: 8px;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
     min-width: 140px;
     z-index: 10;
   }
@@ -339,7 +339,7 @@
   }
   .account-dropdown a:hover,
   .account-dropdown button:hover {
-    background: #eaf4fd;
+    background: #f5f5f5;
     color: #4a90e2;
   }
   .account-dropdown button {
@@ -357,7 +357,7 @@
   }
   .role-divider {
     height: 1px;
-    background: #eee;
+    background: #e5e5e5;
     margin: 4px 0;
   }
   @media (max-width: 700px) {

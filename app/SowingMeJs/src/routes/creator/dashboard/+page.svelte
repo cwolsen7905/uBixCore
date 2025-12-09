@@ -49,6 +49,9 @@
     max-width: 1200px;
     margin: 0 auto;
     padding: 40px 20px;
+    background: #fff;
+    min-height: 100vh;
+    color: #333;
   }
 
   .creator-header {
@@ -67,7 +70,7 @@
     display: flex;
     justify-content: center;
     gap: 8px;
-    border-bottom: 2px solid #eee;
+    border-bottom: 1px solid #e5e5e5;
     padding-bottom: 2px;
     margin-bottom: 32px;
   }
@@ -77,7 +80,7 @@
     background: none;
     border: none;
     font-size: 1rem;
-    color: #666;
+    color: #888;
     cursor: pointer;
     position: relative;
     transition: color 0.2s;
@@ -85,7 +88,7 @@
   }
 
   .nav-tab:hover {
-    color: #4a90e2;
+    color: #333;
   }
 
   .nav-tab.active {
@@ -109,9 +112,9 @@
     justify-content: space-between;
     margin-bottom: 32px;
     padding: 20px;
-    background: #fff;
+    background: #f9f9f9;
     border-radius: 8px;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    border: 1px solid #e5e5e5;
   }
 
   .page-title {
@@ -129,18 +132,19 @@
 
   .edit-btn {
     padding: 10px 20px;
-    background: #4a90e2;
-    color: #fff;
-    border: none;
+    background: #fff;
+    color: #333;
+    border: 1px solid #d0d0d0;
     border-radius: 6px;
     font-size: 0.95rem;
     font-weight: 600;
     cursor: pointer;
-    transition: background 0.2s;
+    transition: background 0.2s, border-color 0.2s;
   }
 
   .edit-btn:hover {
-    background: #357abd;
+    background: #f5f5f5;
+    border-color: #b0b0b0;
   }
 
   .menu-toggle {
@@ -150,20 +154,21 @@
   .dots-btn {
     width: 36px;
     height: 36px;
-    background: #f5f5f5;
-    border: none;
+    background: #fff;
+    border: 1px solid #d0d0d0;
     border-radius: 6px;
     cursor: pointer;
     font-size: 1.2rem;
-    color: #666;
+    color: #333;
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: background 0.2s;
+    transition: background 0.2s, border-color 0.2s;
   }
 
   .dots-btn:hover {
-    background: #e8e8e8;
+    background: #f5f5f5;
+    border-color: #b0b0b0;
   }
 
   .page-dropdown {
@@ -172,7 +177,7 @@
     right: 0;
     margin-top: 8px;
     background: #fff;
-    border: 1px solid #eee;
+    border: 1px solid #e5e5e5;
     border-radius: 8px;
     box-shadow: 0 4px 12px rgba(0,0,0,0.1);
     min-width: 180px;
@@ -194,7 +199,6 @@
 
   .dropdown-item:hover {
     background: #f5f5f5;
-    color: #4a90e2;
   }
 
   .dropdown-item:first-child {
@@ -206,10 +210,10 @@
   }
 
   .welcome-section {
-    background: #fff;
+    background: #f9f9f9;
     border-radius: 8px;
     padding: 32px;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    border: 1px solid #e5e5e5;
     margin-bottom: 24px;
   }
 
@@ -227,9 +231,10 @@
   }
 
   .setup-steps {
-    background: #f9f9f9;
+    background: #fff;
     border-radius: 8px;
     padding: 24px;
+    border: 1px solid #e5e5e5;
   }
 
   .setup-header {
@@ -250,9 +255,9 @@
     align-items: flex-start;
     gap: 16px;
     padding: 16px;
-    background: #fff;
+    background: #f9f9f9;
     border-radius: 6px;
-    border: 1px solid #eee;
+    border: 1px solid #e5e5e5;
     transition: border-color 0.2s;
   }
 
@@ -263,7 +268,7 @@
   .step-checkbox {
     width: 24px;
     height: 24px;
-    border: 2px solid #ddd;
+    border: 2px solid #d0d0d0;
     border-radius: 4px;
     flex-shrink: 0;
     margin-top: 2px;

@@ -32,22 +32,22 @@
     max-width: 1400px;
     margin: 0 auto;
     padding: 40px 20px;
-    background: #000;
+    background: #fff;
     min-height: 100vh;
-    color: #fff;
+    color: #333;
   }
 
   .page-title {
     font-size: 2.5rem;
     font-weight: 700;
-    color: #fff;
+    color: #333;
     margin: 0 0 32px 0;
   }
 
   .tabs {
     display: flex;
     gap: 0;
-    border-bottom: 1px solid #333;
+    border-bottom: 1px solid #e5e5e5;
     margin-bottom: 24px;
   }
 
@@ -56,7 +56,7 @@
     background: none;
     border: none;
     font-size: 1rem;
-    color: #999;
+    color: #888;
     cursor: pointer;
     position: relative;
     transition: color 0.2s;
@@ -64,7 +64,7 @@
   }
 
   .tab:hover {
-    color: #fff;
+    color: #333;
   }
 
   .tab.active {
@@ -92,9 +92,9 @@
     align-items: center;
     gap: 8px;
     padding: 12px 20px;
-    background: #1a1a1a;
-    color: #fff;
-    border: 1px solid #333;
+    background: #fff;
+    color: #333;
+    border: 1px solid #d0d0d0;
     border-radius: 8px;
     font-size: 0.95rem;
     cursor: pointer;
@@ -103,8 +103,8 @@
   }
 
   .filter-button:hover {
-    background: #252525;
-    border-color: #444;
+    background: #f5f5f5;
+    border-color: #b0b0b0;
   }
 
   .filter-icon {
@@ -121,7 +121,7 @@
     left: 16px;
     top: 50%;
     transform: translateY(-50%);
-    color: #999;
+    color: #888;
     font-size: 1.1rem;
     pointer-events: none;
   }
@@ -129,9 +129,9 @@
   .search-input {
     width: 100%;
     padding: 12px 16px 12px 48px;
-    background: #1a1a1a;
-    color: #fff;
-    border: 1px solid #333;
+    background: #fff;
+    color: #333;
+    border: 1px solid #d0d0d0;
     border-radius: 8px;
     font-size: 0.95rem;
     transition: border-color 0.2s;
@@ -143,7 +143,7 @@
   }
 
   .search-input::placeholder {
-    color: #666;
+    color: #999;
   }
 
   .empty-state {
@@ -158,7 +158,7 @@
   .empty-icon {
     width: 80px;
     height: 80px;
-    background: #333;
+    background: #f0f0f0;
     border-radius: 50%;
     display: flex;
     align-items: center;
@@ -168,19 +168,19 @@
 
   .empty-icon-content {
     font-size: 2rem;
-    color: #fff;
+    color: #888;
   }
 
   .empty-title {
     font-size: 1.75rem;
     font-weight: 700;
-    color: #fff;
+    color: #333;
     margin: 0 0 12px 0;
   }
 
   .empty-description {
     font-size: 1rem;
-    color: #999;
+    color: #666;
     margin: 0 0 32px 0;
     max-width: 500px;
     line-height: 1.5;
@@ -188,8 +188,8 @@
 
   .create-post-button {
     padding: 14px 32px;
-    background: #fff;
-    color: #000;
+    background: #4a90e2;
+    color: #fff;
     border: none;
     border-radius: 8px;
     font-size: 1rem;
@@ -199,7 +199,7 @@
   }
 
   .create-post-button:hover {
-    background: #f0f0f0;
+    background: #357abd;
   }
 
   @media (max-width: 768px) {
