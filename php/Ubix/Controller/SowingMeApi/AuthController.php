@@ -146,6 +146,7 @@ final class AuthController extends Controller
                 'email'     => $user->getEmail(),
                 'firstName' => $user->getFirstName(),
                 'lastName'  => $user->getLastName(),
+                'roles'     => $user->getRoles(),
             ],
         ]);
     }
@@ -165,7 +166,8 @@ final class AuthController extends Controller
 			'displayName'  => $_SESSION['user']['displayName'] ?? null,
 			'email'     => $_SESSION['user']['email'] ?? null,
 			'firstName' => $_SESSION['user']['firstName'] ?? null,
-			'lastName'  => $_SESSION['user']['lastName'] ?? null
+			'lastName'  => $_SESSION['user']['lastName'] ?? null,
+			'roles'     => $_SESSION['user']['roles'] ?? null
 		];
 
 		return $this->renderJson($response, $data);

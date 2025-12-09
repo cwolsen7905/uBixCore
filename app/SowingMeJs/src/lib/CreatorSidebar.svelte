@@ -2,19 +2,22 @@
   import { userData, activeRole } from '$lib/stores.js';
 
   export let sidebarOpen = true;
-  export let search = '';
   export let navLinks = [
-    { href: '/', label: 'Home', icon: '🏠' },
-    { href: '/explore', label: 'Explore', icon: '🔍' },
-    { href: '/chats', label: 'Chats', icon: '💬' },
-    { href: '/notifications', label: 'Notifications', icon: '🔔' },
-    { href: '/settings', label: 'Settings', icon: '⚙️' }
+    { href: '/creator/dashboard', label: 'Dashboard', icon: '📊' },
+    { href: '/creator/library', label: 'Library', icon: '📚' },
+    { href: '/creator/audience', label: 'Audience', icon: '👥' },
+    { href: '/creator/insights', label: 'Insights', icon: '📈' },
+    { href: '/creator/payouts', label: 'Payouts', icon: '💰' },
+    { href: '/creator/chats', label: 'Chats', icon: '💬' },
+    { href: '/creator/notifications', label: 'Notifications', icon: '🔔' },
+    { href: '/creator/settings', label: 'Settings', icon: '⚙️' }
   ];
   export let user = {
     name: 'John Doe',
     avatar: 'https://ui-avatars.com/api/?name=John+Doe&background=4a90e2&color=fff'
   };
   let showAccountMenu = false;
+  let showCreateMenu = false;
   let hasMultipleRoles = false;
 
   // Check if user has multiple roles
@@ -26,10 +29,10 @@
     hasMultipleRoles = rolesLower.includes('creator') && (rolesLower.includes('user') || rolesLower.includes('member'));
   }
 
-  function switchToCreatorMode() {
-    activeRole.set('creator');
+  function switchToMemberMode() {
+    activeRole.set('member');
     showAccountMenu = false;
-    window.location.href = '/creator/dashboard';
+    window.location.href = '/';
   }
 
   async function handleLogout() {
@@ -53,24 +56,11 @@
     showAccountMenu = false;
   }
 
-  // Example memberships data (will be dynamic in the future)
-  const memberships = [
-    {
-      id: 1,
-      creatorName: 'Jane Smith',
-      avatar: 'https://ui-avatars.com/api/?name=Jane+Smith&background=e91e63&color=fff'
-    },
-    {
-      id: 2,
-      creatorName: 'Alex Johnson',
-      avatar: 'https://ui-avatars.com/api/?name=Alex+Johnson&background=9c27b0&color=fff'
-    },
-    {
-      id: 3,
-      creatorName: 'Sarah Williams',
-      avatar: 'https://ui-avatars.com/api/?name=Sarah+Williams&background=ff9800&color=fff'
-    }
-  ];
+  function handleCreateOption(option) {
+    console.log('Create option selected:', option);
+    showCreateMenu = false;
+    // TODO: Navigate to create page or open modal
+  }
 </script>
 
 <style>
@@ -82,6 +72,7 @@
     flex-direction: column;
     transition: width 0.2s;
     position: relative;
+    height: 100vh;
   }
   .sidebar.collapsed {
     width: 64px;
@@ -121,24 +112,6 @@
   .sidebar.collapsed .logo {
     padding: 12px 8px;
   }
-  .search {
-    padding: 24px 20px 12px 20px;
-    border-bottom: 1px solid #eee;
-  }
-  .sidebar.collapsed .search {
-    padding: 24px 8px 12px 8px;
-  }
-  .search input {
-    width: 100%;
-    padding: 8px 12px;
-    border-radius: 6px;
-    border: 1px solid #ccc;
-    font-size: 1rem;
-  }
-  .sidebar.collapsed .search input {
-    padding: 8px 4px;
-    text-align: center;
-  }
   .nav {
     flex: 1;
     padding: 16px 0;
@@ -176,14 +149,87 @@
   .nav-label {
     flex: 1;
   }
+  .create-section {
+    padding: 16px 20px;
+    border-top: 1px solid #eee;
+    position: relative;
+  }
+  .sidebar.collapsed .create-section {
+    padding: 16px 8px;
+  }
+  .create-button {
+    width: 100%;
+    padding: 12px 16px;
+    background: #4a90e2;
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    transition: background 0.2s;
+    box-shadow: 0 2px 6px rgba(74, 144, 226, 0.3);
+  }
+  .create-button:hover {
+    background: #357abd;
+  }
+  .sidebar.collapsed .create-button {
+    padding: 12px 8px;
+    font-size: 1.5rem;
+  }
+  .create-icon {
+    font-size: 1.2rem;
+    font-weight: 700;
+  }
+  .create-menu {
+    position: absolute;
+    bottom: 100%;
+    left: 20px;
+    right: 20px;
+    margin-bottom: 8px;
+    background: #fff;
+    border: 1px solid #eee;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    z-index: 10;
+  }
+  .sidebar.collapsed .create-menu {
+    left: 8px;
+    right: 8px;
+  }
+  .create-menu-item {
+    display: block;
+    width: 100%;
+    padding: 12px 16px;
+    background: none;
+    border: none;
+    text-align: left;
+    font-size: 0.95rem;
+    color: #333;
+    cursor: pointer;
+    transition: background 0.15s;
+    border-radius: 6px;
+  }
+  .create-menu-item:hover {
+    background: #eaf4fd;
+    color: #4a90e2;
+  }
+  .create-menu-item:first-child {
+    border-radius: 8px 8px 0 0;
+  }
+  .create-menu-item:last-child {
+    border-radius: 0 0 8px 8px;
+  }
   .user-section {
     padding: 20px;
     border-top: 1px solid #eee;
     display: flex;
     align-items: center;
     justify-content: space-between;
-    position: sticky;
-    bottom: 0;
     background: #fff;
   }
   .sidebar.collapsed .user-section {
@@ -273,63 +319,6 @@
     border-radius: 6px;
     transition: background 0.15s;
   }
-  .memberships-section {
-    padding: 16px 20px;
-    border-top: 1px solid #eee;
-  }
-  .sidebar.collapsed .memberships-section {
-    padding: 16px 8px;
-  }
-  .memberships-heading {
-    font-size: 0.85rem;
-    font-weight: 600;
-    color: #888;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-    margin-bottom: 12px;
-    padding-left: 4px;
-  }
-  .sidebar.collapsed .memberships-heading {
-    display: none;
-  }
-  .membership-list {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-  }
-  .membership-item {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    padding: 8px;
-    border-radius: 6px;
-    text-decoration: none;
-    color: #333;
-    transition: background 0.15s;
-    cursor: pointer;
-  }
-  .sidebar.collapsed .membership-item {
-    justify-content: center;
-    padding: 8px 4px;
-  }
-  .membership-item:hover {
-    background: #eaf4fd;
-  }
-  .membership-avatar {
-    width: 32px;
-    height: 32px;
-    border-radius: 50%;
-    object-fit: cover;
-    flex-shrink: 0;
-  }
-  .membership-name {
-    font-size: 0.9rem;
-    font-weight: 500;
-    color: #333;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
   @media (max-width: 700px) {
     .sidebar {
       position: fixed;
@@ -350,16 +339,13 @@
     {/if}
   </div>
   <div class="logo">
-    <a href="/">
+    <a href="/creator/dashboard">
       {#if sidebarOpen}
         <img src="https://sowing.me/assets/horizontal_logo_white.png" alt="Sowing.me" />
       {:else}
         <img src="https://sowing.me/assets/horizontal_logo_white_small.png" alt="Sowing.me" class="logo-small" />
       {/if}
     </a>
-  </div>
-  <div class="search">
-    <input type="text" bind:value={search} placeholder={sidebarOpen ? "Search..." : "🔍"} />
   </div>
   <nav class="nav">
     {#each navLinks as link}
@@ -371,20 +357,23 @@
       </a>
     {/each}
   </nav>
-  <div class="memberships-section">
-    {#if sidebarOpen}
-      <div class="memberships-heading">Memberships</div>
+  <div class="create-section">
+    {#if showCreateMenu}
+      <div class="create-menu">
+        <button class="create-menu-item" on:click={() => handleCreateOption('post')}>
+          📝 Post
+        </button>
+        <button class="create-menu-item" on:click={() => handleCreateOption('product')}>
+          🛍️ Product
+        </button>
+      </div>
     {/if}
-    <div class="membership-list">
-      {#each memberships as membership (membership.id)}
-        <a href="/creator/{membership.id}" class="membership-item">
-          <img src={membership.avatar} alt={membership.creatorName} class="membership-avatar" />
-          {#if sidebarOpen}
-            <span class="membership-name">{membership.creatorName}</span>
-          {/if}
-        </a>
-      {/each}
-    </div>
+    <button class="create-button" on:click={() => showCreateMenu = !showCreateMenu}>
+      <span class="create-icon">+</span>
+      {#if sidebarOpen}
+        <span>Create</span>
+      {/if}
+    </button>
   </div>
   <div class="user-section">
     <div class="user-info">
@@ -400,7 +389,7 @@
           <a href="/profile">Profile</a>
           <a href="/account">Account Settings</a>
           {#if hasMultipleRoles}
-            <button type="button" on:click={switchToCreatorMode}>Switch to Creator</button>
+            <button type="button" on:click={switchToMemberMode}>Switch to Member</button>
           {/if}
           <button type="button" on:click={handleLogout}>Logout</button>
         </div>
