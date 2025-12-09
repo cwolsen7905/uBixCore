@@ -13,10 +13,6 @@
     { href: '/creator/notifications', label: 'Notifications', icon: '🔔' },
     { href: '/creator/settings', label: 'Settings', icon: '⚙️' }
   ];
-  export let user = {
-    name: 'John Doe',
-    avatar: 'https://ui-avatars.com/api/?name=John+Doe&background=4a90e2&color=fff'
-  };
   let showAccountMenu = false;
   let showCreateMenu = false;
   let hasMultipleRoles = false;
@@ -30,6 +26,12 @@
     const rolesLower = rolesString.toLowerCase();
     hasMultipleRoles = rolesLower.includes('creator') && (rolesLower.includes('user') || rolesLower.includes('member'));
   }
+
+  // Generate avatar URLs based on user data
+  $: memberName = `${$userData?.user?.firstName || $userData?.firstName || ''} ${$userData?.user?.lastName || $userData?.lastName || ''}`.trim();
+  $: creatorName = $userData?.user?.creatorName || $userData?.creatorName || 'Creator';
+  $: memberAvatar = `https://ui-avatars.com/api/?name=${encodeURIComponent(memberName)}&background=4a90e2&color=fff`;
+  $: creatorAvatar = `https://ui-avatars.com/api/?name=${encodeURIComponent(creatorName)}&background=4a90e2&color=fff`;
 
   function switchToMemberMode() {
     activeRole.set('member');
@@ -68,14 +70,14 @@
 <style>
   .sidebar {
     width: 260px;
-    background: #fff;
-    box-shadow: 2px 0 8px rgba(0,0,0,0.04);
+    background: var(--color-bg-primary);
+    box-shadow: var(--shadow-sm);
     display: flex;
     flex-direction: column;
     transition: width 0.2s;
     position: relative;
     height: 100vh;
-    border-right: 1px solid #e5e5e5;
+    border-right: 1px solid var(--color-border-light);
   }
   .sidebar.collapsed {
     width: 64px;
@@ -99,7 +101,7 @@
   .logo {
     padding: 20px;
     text-align: left;
-    border-bottom: 1px solid #e5e5e5;
+    border-bottom: 1px solid var(--color-border-light);
   }
   .logo a {
     display: block;
@@ -128,7 +130,7 @@
     align-items: center;
     gap: 12px;
     padding: 12px 20px;
-    color: #666;
+    color: var(--color-text-secondary);
     text-decoration: none;
     border-radius: 6px;
     font-size: 0.95rem;
@@ -142,8 +144,8 @@
     justify-content: center;
   }
   .nav-link:hover {
-    background: #f5f5f5;
-    color: #333;
+    background: var(--color-bg-hover);
+    color: var(--color-text-primary);
   }
   .nav-icon {
     font-size: 1.2rem;
@@ -154,7 +156,7 @@
   }
   .create-section {
     padding: 16px 20px;
-    border-top: 1px solid #e5e5e5;
+    border-top: 1px solid var(--color-border-light);
     position: relative;
   }
   .sidebar.collapsed .create-section {
@@ -163,7 +165,7 @@
   .create-button {
     width: 100%;
     padding: 12px 16px;
-    background: #4a90e2;
+    background: var(--color-accent-primary);
     color: #fff;
     border: none;
     border-radius: 8px;
@@ -178,7 +180,7 @@
     box-shadow: 0 2px 6px rgba(74, 144, 226, 0.3);
   }
   .create-button:hover {
-    background: #357abd;
+    background: var(--color-accent-hover);
   }
   .sidebar.collapsed .create-button {
     padding: 12px 8px;
@@ -194,10 +196,10 @@
     left: 20px;
     right: 20px;
     margin-bottom: 8px;
-    background: #fff;
-    border: 1px solid #e5e5e5;
+    background: var(--color-bg-primary);
+    border: 1px solid var(--color-border-light);
     border-radius: 8px;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    box-shadow: var(--shadow-md);
     z-index: 10;
   }
   .sidebar.collapsed .create-menu {
@@ -212,13 +214,13 @@
     border: none;
     text-align: left;
     font-size: 0.95rem;
-    color: #333;
+    color: var(--color-text-primary);
     cursor: pointer;
     transition: background 0.15s;
     border-radius: 6px;
   }
   .create-menu-item:hover {
-    background: #f5f5f5;
+    background: var(--color-bg-hover);
   }
   .create-menu-item:first-child {
     border-radius: 8px 8px 0 0;
@@ -228,8 +230,8 @@
   }
   .user-section {
     padding: 20px;
-    border-top: 1px solid #e5e5e5;
-    background: #fff;
+    border-top: 1px solid var(--color-border-light);
+    background: var(--color-bg-primary);
   }
   .sidebar.collapsed .user-section {
     padding: 12px 8px;
@@ -250,7 +252,7 @@
     border-radius: 6px;
   }
   .user-row:hover {
-    background: #f5f5f5;
+    background: var(--color-bg-hover);
   }
   .sidebar.collapsed .user-row {
     flex-direction: column;
@@ -273,7 +275,7 @@
     height: 40px;
     border-radius: 50%;
     object-fit: cover;
-    border: 2px solid #4a90e2;
+    border: 2px solid var(--color-accent-primary);
     flex-shrink: 0;
   }
   .sidebar.collapsed .user-avatar {
@@ -290,7 +292,7 @@
   }
   .user-name {
     font-weight: 500;
-    color: #333;
+    color: var(--color-text-primary);
     font-size: 1rem;
     white-space: nowrap;
     overflow: hidden;
@@ -298,7 +300,7 @@
   }
   .user-role {
     font-size: 0.75rem;
-    color: #888;
+    color: var(--color-text-tertiary);
     text-transform: uppercase;
     letter-spacing: 0.5px;
   }
@@ -308,31 +310,31 @@
   .dots {
     cursor: pointer;
     font-size: 1.5rem;
-    color: #888;
+    color: var(--color-text-tertiary);
     padding: 4px;
     border-radius: 50%;
     transition: background 0.15s, color 0.15s;
   }
   .dots:hover {
-    background: #f5f5f5;
-    color: #4a90e2;
+    background: var(--color-bg-hover);
+    color: var(--color-accent-primary);
   }
   .account-dropdown {
     position: absolute;
     right: 0;
     bottom: 100%;
     margin-bottom: 8px;
-    background: #fff;
-    border: 1px solid #e5e5e5;
+    background: var(--color-bg-primary);
+    border: 1px solid var(--color-border-light);
     border-radius: 8px;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    box-shadow: var(--shadow-md);
     min-width: 140px;
     z-index: 10;
   }
   .account-dropdown a {
     display: block;
     padding: 10px 16px;
-    color: #333;
+    color: var(--color-text-primary);
     text-decoration: none;
     font-size: 1rem;
     border-radius: 6px;
@@ -340,14 +342,14 @@
   }
   .account-dropdown a:hover,
   .account-dropdown button:hover {
-    background: #f5f5f5;
-    color: #4a90e2;
+    background: var(--color-bg-hover);
+    color: var(--color-accent-primary);
   }
   .account-dropdown button {
     display: block;
     width: 100%;
     padding: 10px 16px;
-    color: #333;
+    color: var(--color-text-primary);
     background: none;
     border: none;
     font-size: 1rem;
@@ -358,14 +360,14 @@
   }
   .role-divider {
     height: 1px;
-    background: #e5e5e5;
+    background: var(--color-border-light);
     margin: 4px 0;
   }
   .menu-section-title {
     padding: 10px 16px 6px;
     font-size: 0.75rem;
     font-weight: 600;
-    color: #888;
+    color: var(--color-text-tertiary);
     text-transform: uppercase;
     letter-spacing: 0.5px;
   }
@@ -374,7 +376,7 @@
     align-items: center;
     gap: 8px;
     padding: 10px 16px;
-    color: #333;
+    color: var(--color-text-primary);
     background: none;
     border: none;
     font-size: 1rem;
@@ -385,12 +387,12 @@
     width: 100%;
   }
   .theme-option:hover {
-    background: #f5f5f5;
-    color: #4a90e2;
+    background: var(--color-bg-hover);
+    color: var(--color-accent-primary);
   }
   .theme-option.active {
-    background: #f5f5f5;
-    color: #4a90e2;
+    background: var(--color-bg-hover);
+    color: var(--color-accent-primary);
   }
   .theme-indicator {
     width: 12px;
@@ -469,10 +471,10 @@
       <!-- Creator Role Row -->
       <div class="user-row" on:click={() => { showRoleExpanded = false; }}>
         <div class="user-info">
-          <img class="user-avatar" src={user.avatar} alt="Avatar" />
+          <img class="user-avatar" src={creatorAvatar} alt="Avatar" />
           {#if sidebarOpen}
             <div class="user-details">
-              <span class="user-name">{$userData?.user?.creatorName || $userData?.creatorName || 'Creator'}</span>
+              <span class="user-name">{creatorName}</span>
               <span class="user-role">Creator</span>
             </div>
           {/if}
@@ -484,10 +486,10 @@
       <!-- Member Role Row -->
       <div class="user-row" on:click={switchToMemberMode}>
         <div class="user-info">
-          <img class="user-avatar" src={user.avatar} alt="Avatar" />
+          <img class="user-avatar" src={memberAvatar} alt="Avatar" />
           {#if sidebarOpen}
             <div class="user-details">
-              <span class="user-name">{$userData?.user?.firstName || $userData?.firstName || ''} {$userData?.user?.lastName || $userData?.lastName || ''}</span>
+              <span class="user-name">{memberName}</span>
               <span class="user-role">Member</span>
             </div>
           {/if}
@@ -497,10 +499,10 @@
       <!-- Single Row (collapsed or single role) -->
       <div class="user-row" on:click={() => { if (hasMultipleRoles) showRoleExpanded = true; }}>
         <div class="user-info">
-          <img class="user-avatar" src={user.avatar} alt="Avatar" />
+          <img class="user-avatar" src={creatorAvatar} alt="Avatar" />
           {#if sidebarOpen}
             <div class="user-details">
-              <span class="user-name">{$userData?.user?.creatorName || $userData?.creatorName || 'Creator'}</span>
+              <span class="user-name">{creatorName}</span>
               <span class="user-role">Creator</span>
             </div>
           {/if}
