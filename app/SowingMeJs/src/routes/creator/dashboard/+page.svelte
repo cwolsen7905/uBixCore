@@ -348,7 +348,7 @@
 <div class="dashboard-container">
   <div class="creator-header">
     <h1 class="creator-name">
-      {$userData?.user?.firstName || $userData?.firstName || 'Creator'} {$userData?.user?.lastName || $userData?.lastName || 'Name'}
+      {$userData?.user?.creatorName || $userData?.creatorName || 'Creator Name'}
     </h1>
 
     <nav class="nav-tabs">
