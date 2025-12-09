@@ -16,6 +16,7 @@
   };
   let showAccountMenu = false;
   let hasMultipleRoles = false;
+  let showRoleExpanded = false;
 
   // Check if user has multiple roles
   $: userRoles = $userData?.user?.roles || $userData?.roles || 'user';
@@ -179,25 +180,46 @@
   .user-section {
     padding: 20px;
     border-top: 1px solid #eee;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
     position: sticky;
     bottom: 0;
     background: #fff;
   }
   .sidebar.collapsed .user-section {
     padding: 12px 8px;
+  }
+  .user-section.expanded {
+    padding: 12px 20px;
+  }
+  .sidebar.collapsed .user-section.expanded {
+    padding: 12px 8px;
+  }
+  .user-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 0;
+    cursor: pointer;
+    transition: background 0.15s;
+    border-radius: 6px;
+  }
+  .user-row:hover {
+    background: #f5f5f5;
+  }
+  .sidebar.collapsed .user-row {
     flex-direction: column;
-    gap: 8px;
+    gap: 4px;
+    padding: 8px 4px;
   }
   .user-info {
     display: flex;
     align-items: center;
     gap: 12px;
+    flex: 1;
   }
   .sidebar.collapsed .user-info {
-    gap: 0;
+    flex-direction: column;
+    gap: 4px;
+    text-align: center;
   }
   .user-avatar {
     width: 40px;
@@ -205,10 +227,19 @@
     border-radius: 50%;
     object-fit: cover;
     border: 2px solid #4a90e2;
+    flex-shrink: 0;
   }
   .sidebar.collapsed .user-avatar {
     width: 32px;
     height: 32px;
+  }
+  .user-details {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+  }
+  .sidebar.collapsed .user-details {
+    align-items: center;
   }
   .user-name {
     font-weight: 500;
@@ -217,7 +248,12 @@
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    max-width: 100px;
+  }
+  .user-role {
+    font-size: 0.75rem;
+    color: #888;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
   }
   .account-menu {
     position: relative;
@@ -272,6 +308,11 @@
     cursor: pointer;
     border-radius: 6px;
     transition: background 0.15s;
+  }
+  .role-divider {
+    height: 1px;
+    background: #eee;
+    margin: 4px 0;
   }
   .memberships-section {
     padding: 16px 20px;
@@ -386,25 +427,58 @@
       {/each}
     </div>
   </div>
-  <div class="user-section">
-    <div class="user-info">
-      <img class="user-avatar" src={user.avatar} alt="Avatar" />
-      {#if sidebarOpen}
-        <span class="user-name">{$userData?.user?.firstName || $userData?.firstName || ''} {$userData?.user?.lastName || $userData?.lastName || ''}</span>
-      {/if}
-    </div>
-    <div class="account-menu">
-      <span class="dots" on:click={() => showAccountMenu = !showAccountMenu} title="Account options">&#8942;</span>
-      {#if showAccountMenu}
-        <div class="account-dropdown">
-          <a href="/profile">Profile</a>
-          <a href="/account">Account Settings</a>
-          {#if hasMultipleRoles}
-            <button type="button" on:click={switchToCreatorMode}>Switch to Creator</button>
+  <div class="user-section" class:expanded={showRoleExpanded && hasMultipleRoles}>
+    {#if hasMultipleRoles && showRoleExpanded}
+      <!-- Member Role Row -->
+      <div class="user-row" on:click={() => { showRoleExpanded = false; }}>
+        <div class="user-info">
+          <img class="user-avatar" src={user.avatar} alt="Avatar" />
+          {#if sidebarOpen}
+            <div class="user-details">
+              <span class="user-name">{$userData?.user?.firstName || $userData?.firstName || ''} {$userData?.user?.lastName || $userData?.lastName || ''}</span>
+              <span class="user-role">Member</span>
+            </div>
           {/if}
-          <button type="button" on:click={handleLogout}>Logout</button>
         </div>
-      {/if}
-    </div>
+      </div>
+
+      <div class="role-divider"></div>
+
+      <!-- Creator Role Row -->
+      <div class="user-row" on:click={switchToCreatorMode}>
+        <div class="user-info">
+          <img class="user-avatar" src={user.avatar} alt="Avatar" />
+          {#if sidebarOpen}
+            <div class="user-details">
+              <span class="user-name">{$userData?.user?.creatorName || $userData?.creatorName || 'Creator'}</span>
+              <span class="user-role">Creator</span>
+            </div>
+          {/if}
+        </div>
+      </div>
+    {:else}
+      <!-- Single Row (collapsed or single role) -->
+      <div class="user-row" on:click={() => { if (hasMultipleRoles) showRoleExpanded = true; }}>
+        <div class="user-info">
+          <img class="user-avatar" src={user.avatar} alt="Avatar" />
+          {#if sidebarOpen}
+            <div class="user-details">
+              <span class="user-name">{$userData?.user?.firstName || $userData?.firstName || ''} {$userData?.user?.lastName || $userData?.lastName || ''}</span>
+              <span class="user-role">Member</span>
+            </div>
+          {/if}
+        </div>
+        <div class="account-menu">
+          <span class="dots" on:click|stopPropagation={() => showAccountMenu = !showAccountMenu} title="Account options">&#8942;</span>
+          {#if showAccountMenu}
+            <div class="account-dropdown">
+              <a href="/profile">Profile</a>
+              <a href="/account">Account Settings</a>
+              <button type="button" on:click={handleLogout}>Logout</button>
+            </div>
+          {/if}
+        </div>
+      </div>
+    {/if}
   </div>
 </aside>

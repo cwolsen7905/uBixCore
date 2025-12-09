@@ -22,6 +22,7 @@ final class User extends Model
      * @param ?string            $email               Email address
      * @param ?string            $firstName           First name
      * @param ?string            $lastName            Last name
+     * @param ?string            $creatorName         Creator name
      * @param ?UserStatus        $status              User status
      * @param ?string            $roles               User roles
      * @param ?int               $failedLoginAttempts Failed login attempts count
@@ -37,6 +38,7 @@ final class User extends Model
         private ?string $email = null,
         private ?string $firstName = null,
         private ?string $lastName = null,
+        private ?string $creatorName = null,
         private ?UserStatus $status = null,
         private ?string $roles = null,
         private ?int $failedLoginAttempts = null,
@@ -177,6 +179,28 @@ final class User extends Model
     public function setLastName(?string $lastName): void
     {
         $this->lastName = $lastName;
+    }
+
+    /**
+     * Get the value of creatorName
+     *
+     * @return ?string The value of creatorName
+     */
+    public function getCreatorName(): ?string
+    {
+        return $this->creatorName;
+    }
+
+    /**
+     * Set the value of creatorName
+     *
+     * @param ?string $creatorName The value for creatorName
+     *
+     * @return void
+     */
+    public function setCreatorName(?string $creatorName): void
+    {
+        $this->creatorName = $creatorName;
     }
 
     /**
