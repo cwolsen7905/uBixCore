@@ -21,3 +21,5 @@ vendor/*
 var
 *.log
 db
+.env
+.env_*
