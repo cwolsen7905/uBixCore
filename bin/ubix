@@ -28,8 +28,12 @@ require_once __DIR__ . '/../vendor/autoload.php';
 //
 //  Resolve database credentials from uBix Vault when configured (a no-op
 //  unless VAULT_ADDR is set — local dev keeps using the git-ignored .env).
+//  Guarded so a missing bootstrap never fatals the CLI; Vault is opt-in.
 //
-(require __DIR__ . '/../bootstrap/vault.php')();
+$vaultBootstrap = __DIR__ . '/../php/Ubix/Bootstrap/vault.php';
+if (is_file($vaultBootstrap)) {
+    (require $vaultBootstrap)();
+}
 
 //
 //  Temporary error output for sandbox testing
