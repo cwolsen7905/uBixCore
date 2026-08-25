@@ -221,7 +221,7 @@ class ClassStructureForkSniff implements Sniff
 
         $groupsOrder        = $this->getNormalizedGroups();
         $groupLastMemberPtr = $rootScopeToken['scope_opener'];
-        $expectedGroup      = null;
+        $expectedGroup      = ''; // NULL is deprecated in php 8.5, using empty string instead
         $groupsFirstMembers = [];
         $groupSpans         = [];
 

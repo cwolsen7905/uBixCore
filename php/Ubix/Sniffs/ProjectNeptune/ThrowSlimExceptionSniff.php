@@ -1,5 +1,5 @@
 <?php
-namespace Ubix\Sniffs\UbixCore;
+namespace Ubix\Sniffs\ProjectNeptune;
 
 use PHP_CodeSniffer\Files\File;
 use PHP_CodeSniffer\Sniffs\Sniff;

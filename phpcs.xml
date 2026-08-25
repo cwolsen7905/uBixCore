@@ -2,7 +2,7 @@
 <ruleset name="ProjectNeptune">
 
     <!-- Tell phpcs where to find the custom sniffs -->
-    <config name="installed_paths" value="php/Vsm,vendor/slevomat/coding-standard" />
+    <config name="installed_paths" value="php/Ubix,vendor/slevomat/coding-standard" />
 
 
     <!-- Sniff all the folders with PHP code -->
@@ -14,8 +14,8 @@
 
 
     <!-- Exclusions -->
-    <exclude-pattern>php/Vsm/External/GoogleAuthenticator.php</exclude-pattern> <!-- This is temporary until we can spin it off into an open source project -->
-    <exclude-pattern>php/Vsm/Sniffs/**/*.php</exclude-pattern> <!-- We are not subjecting custom phpcs sniffs to a full machine code review -->
+    <exclude-pattern>php/Ubix/External/GoogleAuthenticator.php</exclude-pattern> <!-- This is temporary until we can spin it off into an open source project -->
+    <exclude-pattern>php/Ubix/Sniffs/**/*.php</exclude-pattern> <!-- We are not subjecting custom phpcs sniffs to a full machine code review -->
 
     <!--
         //////////////////////////////////////
@@ -25,8 +25,8 @@
         //////////////////////////////////////
         // TODO: make phpcs check all Dependencies.php files for any missing definitions
         // TODO: why are the keys in Dependencies.php not flagging for being non-alphabetical?
-        // TODO: make phpcs confirm all exceptions thrown (excluding Slim exceptions? maybe others?) include an exception code from \Vsm\Enum\Exception\ExceptionCode
-        // TODO: should I extend the `Vsm.ProjectNeptune.ConcreteClassTestCase` rule to look for a @coversDefaultClass tag and if found ensure that is the class being passed into $this->testClassFollowingVsmStandards()?
+        // TODO: make phpcs confirm all exceptions thrown (excluding Slim exceptions? maybe others?) include an exception code from \Ubix\Enum\Exception\ExceptionCode
+        // TODO: should I extend the `Ubix.ProjectNeptune.ConcreteClassTestCase` rule to look for a @coversDefaultClass tag and if found ensure that is the class being passed into $this->testClassFollowingUbixStandards()?
         // TODO: make phpcs enforce `(optional)` and `(default: x)` at the end of parameter descriptions when applicable - also simply any variable names in default, e.g. `(default: self::ICON_DEFAULT)` would transform to `(default: ':robot_face:')`
         // TODO: make phpcs ban `SELECT *`?
         // TODO: make phpcs flag `array<type>` in PHPDOC and prefer `type[]` instead
@@ -38,7 +38,7 @@
         // TODO: make phpcs enforce arrow alignment with match cases
         // TODO: go through the whole framework and implement php enums where applicable... and flag these scenarios with phpcs if possible?
         // TODO: go through all the DateTime::modify() calls some are using seconds instead of days, e.g. `modify('+86400 seconds')` can be refactored to `modify('+1 days')`
-        // TODO: audit the codebase's @var comments and make sure we are flagging optional keys as such (this means a question mark after the key name) especially for API's where returned results are out of our control and \Vsm\Repository\ProspectApplication\ProspectApplicationSqlRepository
+        // TODO: audit the codebase's @var comments and make sure we are flagging optional keys as such (this means a question mark after the key name) especially for API's where returned results are out of our control and \Ubix\Repository\ProspectApplication\ProspectApplicationSqlRepository
         // TODO: can I validate *BOTH* @see tags for SQL repository option DTO's?
         // TODO: should I force PHP_EOL instead of "\r\n" or "\n"? if not in all circumstances then maybe in some circumstances?
         // TODO: ban Enum::from() and force Enum::tryFrom() instead with phpcs? consider consequences before coding
@@ -47,7 +47,7 @@
         // TODO: analyze the effort to allow single line @var comments, e.g. /** @var int $number */
         // TODO: make is_null auto fixable with phpcs
         // TODO: ban echo and print in Symfony Commands
-        // TODO: change Vsm.ProjectNeptune.DisallowAssertEquals.Found to allow assertEquals so long as the first two parameters are both objects
+        // TODO: change Ubix.ProjectNeptune.DisallowAssertEquals.Found to allow assertEquals so long as the first two parameters are both objects
         // TODO: check to ensure all models, DTOs, data types and enums use unique short names
         // TODO: it's a bug that we allow for two `@coversDefaultClass` tags in the classes in tests/
         // TODO: should the description of individual properties in model constructors be forced into the PHPDoc descriptions of getters and setters? probably yes
@@ -56,11 +56,11 @@
     -->
 
     <!-- Andrew's OpenAPI Experiment (START) -->
-    <exclude-pattern>php/Vsm/Console/Command/App/GenerateOpenapiCommand.php</exclude-pattern>
-    <exclude-pattern>php/Vsm/SlimApp/RecordingApp.php</exclude-pattern>
+    <exclude-pattern>php/Ubix/Console/Command/App/GenerateOpenapiCommand.php</exclude-pattern>
+    <exclude-pattern>php/Ubix/SlimApp/RecordingApp.php</exclude-pattern>
     <!-- Andrew's OpenAPI Experiment (END) -->
 
-    <exclude-pattern>php/Vsm/Console/Cron/*.php</exclude-pattern> <!-- // TODO: this is temporary until Chris/Aric finalize their classes -->
+    <exclude-pattern>php/Ubix/Console/Cron/*.php</exclude-pattern> <!-- // TODO: this is temporary until Chris/Aric finalize their classes -->
 
     <!-- Bootstrap the Composer autoload file -->
     <arg name="bootstrap" value="vendor/autoload.php" />
@@ -72,7 +72,7 @@
     <arg name="cache" value=".phpcs.cache" />
 
     <!-- Rule to interpret phpstan command as php since it lacks an extension -->
-    <arg name="filter" value="php/Vsm/Filters/ExtensionlessPhpScriptsFilter.php" />
+    <arg name="filter" value="php/Ubix/Filters/ExtensionlessPhpScriptsFilter.php" />
 
     <!-- Review all .php files -->
     <arg name="extensions" value="php" />
@@ -125,8 +125,8 @@
     <rule ref="Generic.PHP.ForbiddenFunctions">
         <properties>
             <property name="forbiddenFunctions" type="array">
-                <element key="base64_decode" value="\Vsm\Service\Base64Service::decode" />
-                <element key="curl_init" value="\Vsm\HttpClient\CurlHttpClient::sendRequest" />
+                <element key="base64_decode" value="\Ubix\Service\Base64Service::decode" />
+                <element key="curl_init" value="\Ubix\HttpClient\CurlHttpClient::sendRequest" />
                 <element key="date" value="new \DateTime" />
                 <element key="debug_backtrace" value="null" />
                 <element key="debug_print_backtrace" value="null" />
@@ -142,13 +142,13 @@
                 <element key="hrtime" value="null" />
                 <element key="is_a" value="instanceof" /> <!-- If is_a() is used this rule will produce a `The use of function is_a() is forbidden; use instanceof() instead` error implying instanceof is a function when it is not, if we want to change that we would need to fork/extend this rule which I opted not to do but you can in the future if you'd like the challenge -->
                 <element key="is_null" value="null" />
-                <element key="json_decode" value="\Vsm\Service\JsonService::decode" />
-                <element key="json_encode" value="\Vsm\Service\JsonService::encode" />
+                <element key="json_decode" value="\Ubix\Service\JsonService::decode" />
+                <element key="json_encode" value="\Ubix\Service\JsonService::encode" />
                 <element key="memory_get_peak_usage" value="null" />
                 <element key="memory_get_usage" value="null" />
                 <element key="phpinfo" value="null" />
                 <element key="print_r" value="null" />
-                <element key="setcookie" value="\Vsm\Service\CookieService::set" />
+                <element key="setcookie" value="\Ubix\Service\CookieService::set" />
                 <element key="show_source" value="null" />
                 <element key="sizeof" value="count" />
                 <element key="strtotime" value="new \DateTime" />
@@ -213,17 +213,17 @@
     <rule ref="SlevomatCodingStandard.Classes.DisallowStringExpressionPropertyFetch" />
     <rule ref="SlevomatCodingStandard.Classes.EnumCaseSpacing" />
     <rule ref="SlevomatCodingStandard.Classes.ForbiddenPublicProperty">
-        <exclude-pattern>php/Vsm/DataType/*</exclude-pattern>
-        <exclude-pattern>php/Vsm/Payload/*</exclude-pattern>
+        <exclude-pattern>php/Ubix/DataType/*</exclude-pattern>
+        <exclude-pattern>php/Ubix/Payload/*</exclude-pattern>
     </rule>
     <rule ref="SlevomatCodingStandard.Classes.MethodSpacing" />
     <rule ref="SlevomatCodingStandard.Classes.PropertyDeclaration" />
     <rule ref="SlevomatCodingStandard.Classes.PropertySpacing" />
     <rule ref="SlevomatCodingStandard.Classes.RequireAbstractOrFinal">
-        <exclude-pattern>php/Vsm/DataType/*</exclude-pattern>
+        <exclude-pattern>php/Ubix/DataType/*</exclude-pattern>
     </rule>
     <rule ref="SlevomatCodingStandard.Classes.RequireConstructorPropertyPromotion">
-        <exclude-pattern>php/Vsm/Payload/*</exclude-pattern>
+        <exclude-pattern>php/Ubix/Payload/*</exclude-pattern>
     </rule>
     <rule ref="SlevomatCodingStandard.Classes.RequireSelfReference" />
     <rule ref="SlevomatCodingStandard.Classes.TraitUseDeclaration" />
@@ -313,7 +313,7 @@
     <rule ref="SlevomatCodingStandard.TypeHints.LongTypeHints" />
     <rule ref="SlevomatCodingStandard.TypeHints.LongTypeHints.UsedLongTypeHint">
         <!-- NOT_IMPLEMENTED: Need to fork to add special rules for custom data types. -->
-        <exclude-pattern>php/Vsm/Model/*</exclude-pattern>
+        <exclude-pattern>php/Ubix/Model/*</exclude-pattern>
     </rule>
     <rule ref="SlevomatCodingStandard.TypeHints.NullableTypeForNullDefaultValue" />
     <rule ref="SlevomatCodingStandard.TypeHints.NullTypeHintOnLastPosition" />
@@ -386,7 +386,7 @@
     </rule>
     <rule ref="Squiz.Commenting.FunctionComment.IncorrectTypeHint">
             <!-- NOT_IMPLEMENTED: Need to fork to add special rules for custom data types. -->
-            <exclude-pattern>php/Vsm/Model/*</exclude-pattern>
+            <exclude-pattern>php/Ubix/Model/*</exclude-pattern>
     </rule>
     <rule ref="Squiz.Commenting.InlineComment">
         <exclude name="Squiz.Commenting.InlineComment.DocBlock" />
@@ -450,8 +450,8 @@
     <rule ref="Squiz.WhiteSpace.ScopeKeywordSpacing" />
     <rule ref="Squiz.WhiteSpace.SemicolonSpacing" />
     <rule ref="Squiz.WhiteSpace.SuperfluousWhitespace" />
-    <rule ref="Vsm.Arrays.MultilineArrayArrowAlignment" />
-    <rule ref="Vsm.Classes.ClassStructureFork"> <!-- this is a fork of SlevomatCodingStandard.Classes.ClassStructure -->
+    <rule ref="Ubix.Arrays.MultilineArrayArrowAlignment" />
+    <rule ref="Ubix.Classes.ClassStructureFork"> <!-- this is a fork of SlevomatCodingStandard.Classes.ClassStructure -->
         <properties>
             <property name="groups" type="array">
                 <element value="uses" />
@@ -486,16 +486,16 @@
                 <element value="private static methods" />
             </property>
         </properties>
-        <exclude name="Vsm.Classes.ClassStructureFork.IncorrectAlphabeticalOrder" /> <!-- this flags correctly but is annoying to have to fix manually so excluding for now until I can get the auto-fixing working -->
+        <exclude name="Ubix.Classes.ClassStructureFork.IncorrectAlphabeticalOrder" /> <!-- this flags correctly but is annoying to have to fix manually so excluding for now until I can get the auto-fixing working -->
     </rule>
-    <!-- <rule ref="Vsm.Classes.ProtectedInFinalClass" /> THIS IS TOO RESTRICTIVE AND AUTO-FIXES SOME INHERITED PROTECTED STUFF THAT NEEDS TO REMAIN PROTECTED - MAY HAVE TO REMOVE ENTIRELY! -->
-    <rule ref="Vsm.Commenting.EnumShortDescription" />
-    <rule ref="Vsm.Commenting.FunctionCommentThrowTag" /> <!-- this is a fork of Squiz.Commenting.FunctionCommentThrowTag -->
-    <rule ref="Vsm.Commenting.InterfaceShortDescription" />
-    <!-- <rule ref="Vsm.ErrorHandling.RequirePreviousException" /> WIP! -->
-    <rule ref="Vsm.Formatting.NamedArgumentAlignment" />
-    <rule ref="Vsm.Functions.ConstructorMustBeMultiline" />
-    <rule ref="Vsm.Imports.UseAlias">
+    <!-- <rule ref="Ubix.Classes.ProtectedInFinalClass" /> THIS IS TOO RESTRICTIVE AND AUTO-FIXES SOME INHERITED PROTECTED STUFF THAT NEEDS TO REMAIN PROTECTED - MAY HAVE TO REMOVE ENTIRELY! -->
+    <rule ref="Ubix.Commenting.EnumShortDescription" />
+    <rule ref="Ubix.Commenting.FunctionCommentThrowTag" /> <!-- this is a fork of Squiz.Commenting.FunctionCommentThrowTag -->
+    <rule ref="Ubix.Commenting.InterfaceShortDescription" />
+    <!-- <rule ref="Ubix.ErrorHandling.RequirePreviousException" /> WIP! -->
+    <rule ref="Ubix.Formatting.NamedArgumentAlignment" />
+    <rule ref="Ubix.Functions.ConstructorMustBeMultiline" />
+    <rule ref="Ubix.Imports.UseAlias">
         <properties>
             <property name="aliasOverrides" type="array">
                 <element key="DateTimeInterface" value="DateTimeInterface" />
@@ -508,56 +508,56 @@
                 <element key="Psr\SimpleCache\CacheInterface" value="SimpleCache" />
                 <element key="Slim\Psr7\Factory\ResponseFactory" value="SlimResponseFactory" />
                 <element key="Symfony\Component\Console\Command\Command" value="SymfonyCommand" />
-				<element key="Vsm\Payload\AbstractRequestPayload" value="Payload" />
-				<element key="Vsm\Payload\AbstractResponsePayload" value="Payload" />
-                <element key="Vsm\SimpleCache\AbstractSimpleCache" value="AbstractSimpleCache" />
-                <element key="Vsm\Tests\VsmConcreteClassOrEnumTestCaseInterface" value="IVsmConcreteClassOrEnumTestCase" />
+				<element key="Ubix\Payload\AbstractRequestPayload" value="Payload" />
+				<element key="Ubix\Payload\AbstractResponsePayload" value="Payload" />
+                <element key="Ubix\SimpleCache\AbstractSimpleCache" value="AbstractSimpleCache" />
+                <element key="Ubix\Tests\UbixConcreteClassOrEnumTestCaseInterface" value="IUbixConcreteClassOrEnumTestCase" />
             </property>
         </properties>
     </rule>
-    <rule ref="Vsm.Namespaces.DisallowFullyQualifiedClassNames"/>
-    <rule ref="Vsm.ProjectNeptune.BannedVariableNames" />
-    <rule ref="Vsm.ProjectNeptune.ConcreteClassTestCase" />
-    <rule ref="Vsm.ProjectNeptune.ConstructorMethodBan"/>
-    <rule ref="Vsm.ProjectNeptune.DemandCustomDataTypes">
-        <include-pattern>php/Vsm/Service/AffiliateService.php</include-pattern>
-        <include-pattern>php/Vsm/Service/AttributionService.php</include-pattern>
+    <rule ref="Ubix.Namespaces.DisallowFullyQualifiedClassNames"/>
+    <rule ref="Ubix.ProjectNeptune.BannedVariableNames" />
+    <rule ref="Ubix.ProjectNeptune.ConcreteClassTestCase" />
+    <rule ref="Ubix.ProjectNeptune.ConstructorMethodBan"/>
+    <rule ref="Ubix.ProjectNeptune.DemandCustomDataTypes">
+        <include-pattern>php/Ubix/Service/AffiliateService.php</include-pattern>
+        <include-pattern>php/Ubix/Service/AttributionService.php</include-pattern>
     </rule>
-    <rule ref="Vsm.ProjectNeptune.DisallowAssertEquals" />
-    <rule ref="Vsm.ProjectNeptune.DisallowPhpInput" />
-    <rule ref="Vsm.ProjectNeptune.ModelGetterSetter"> <!-- should I refactor to be more generic and use <include-pattern> to limit to models? yes -->
-        <exclude-pattern>php/Vsm/Model/AbstractModel.php</exclude-pattern>
+    <rule ref="Ubix.ProjectNeptune.DisallowAssertEquals" />
+    <rule ref="Ubix.ProjectNeptune.DisallowPhpInput" />
+    <rule ref="Ubix.ProjectNeptune.ModelGetterSetter"> <!-- should I refactor to be more generic and use <include-pattern> to limit to models? yes -->
+        <exclude-pattern>php/Ubix/Model/AbstractModel.php</exclude-pattern>
     </rule>
-    <rule ref="Vsm.ProjectNeptune.ModelPropertiesType">
-        <include-pattern>php/Vsm/Model/Affiliate.php</include-pattern>
-        <include-pattern>php/Vsm/Model/AffiliateCode.php</include-pattern>
-        <include-pattern>php/Vsm/Model/AffiliateCommissionPlan.php</include-pattern>
-        <include-pattern>php/Vsm/Model/AttributionLog.php</include-pattern>
-        <include-pattern>php/Vsm/Model/Deal.php</include-pattern>
-        <include-pattern>php/Vsm/Model/Transaction.php</include-pattern>
+    <rule ref="Ubix.ProjectNeptune.ModelPropertiesType">
+        <include-pattern>php/Ubix/Model/Affiliate.php</include-pattern>
+        <include-pattern>php/Ubix/Model/AffiliateCode.php</include-pattern>
+        <include-pattern>php/Ubix/Model/AffiliateCommissionPlan.php</include-pattern>
+        <include-pattern>php/Ubix/Model/AttributionLog.php</include-pattern>
+        <include-pattern>php/Ubix/Model/Deal.php</include-pattern>
+        <include-pattern>php/Ubix/Model/Transaction.php</include-pattern>
     </rule>
-    <rule ref="Vsm.ProjectNeptune.RouteSorting">
+    <rule ref="Ubix.ProjectNeptune.RouteSorting">
         <include-pattern>app/*/src/Routes.php</include-pattern>
     </rule>
-    <rule ref="Vsm.ProjectNeptune.SeeTestCase">
+    <rule ref="Ubix.ProjectNeptune.SeeTestCase">
         <include-pattern>php/**/*.php</include-pattern>
-        <exclude-pattern>php/Vsm/Filters/*.php</exclude-pattern>
+        <exclude-pattern>php/Ubix/Filters/*.php</exclude-pattern>
     </rule>
-    <rule ref="Vsm.ProjectNeptune.ThrowSlimException">
+    <rule ref="Ubix.ProjectNeptune.ThrowSlimException">
         <exclude-pattern>app/*/src/Routes.php</exclude-pattern>
     </rule>
-    <rule ref="Vsm.ProjectNeptune.Variables">
-        <exclude-pattern>php/Vsm/Payload/*</exclude-pattern>
+    <rule ref="Ubix.ProjectNeptune.Variables">
+        <exclude-pattern>php/Ubix/Payload/*</exclude-pattern>
     </rule>
-    <rule ref="Vsm.ProjectNeptune.VsmConcreteClassOrEnumTestCase">
+    <rule ref="Ubix.ProjectNeptune.UbixConcreteClassOrEnumTestCase">
         <include-pattern>tests/**/*.php</include-pattern>
     </rule>
-    <rule ref="Vsm.Strings.PreferEmptyStringComparison" />    
-    <rule ref="Vsm.Strings.PreferStartsEndsWith" />
-    <rule ref="Vsm.TypeHints.RequireDateTimeInterface" />
-    <rule ref="Vsm.TypeHints.RequireQuestionMarkNullable" />
+    <rule ref="Ubix.Strings.PreferEmptyStringComparison" />    
+    <rule ref="Ubix.Strings.PreferStartsEndsWith" />
+    <rule ref="Ubix.TypeHints.RequireDateTimeInterface" />
+    <rule ref="Ubix.TypeHints.RequireQuestionMarkNullable" />
     <!--
-    <rule ref="Vsm.WhiteSpace.ContinuationIndent" /> DOESN'T WORK
+    <rule ref="Ubix.WhiteSpace.ContinuationIndent" /> DOESN'T WORK
     -->
 
     <!--
@@ -569,8 +569,8 @@
         <severity>0</severity>
     </rule>
     <!--
-    <rule ref="Vsm.TypeHints.ReturnTypeHintFork">
-        <exclude name="Vsm.TypeHints.ReturnTypeHintFork.MissingTraversableTypeHintSpecification" />
+    <rule ref="Ubix.TypeHints.ReturnTypeHintFork">
+        <exclude name="Ubix.TypeHints.ReturnTypeHintFork.MissingTraversableTypeHintSpecification" />
     </rule>
     -->
 

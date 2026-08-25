@@ -1,6 +1,6 @@
 <?php declare(strict_types=1);
 
-namespace Ubix\Sniffs\UbixCore;
+namespace Ubix\Sniffs\ProjectNeptune;
 
 use PHP_CodeSniffer\Files\File;
 use PHP_CodeSniffer\Sniffs\Sniff;
