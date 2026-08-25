@@ -2,7 +2,8 @@ FROM gitlab.brainchurts.com:5050/k8s/baseimages/nginx-php84-fpm-memcache:dev
 
 USER root
 
-RUN mkdir -p /web && \
+RUN apk add --no-cache git && \
+    mkdir -p /web && \
     chown -R www:www /web && \
     chmod -R 0755 /web
 
