@@ -24,6 +24,12 @@ require_once '../vendor/autoload.php';
 (Dotenv::createUnsafeImmutable(__DIR__ . '/../'))->load();
 
 //
+//  Resolve database credentials from uBix Vault when configured (a no-op
+//  unless VAULT_ADDR is set — local dev keeps using the git-ignored .env).
+//
+(require __DIR__ . '/../bootstrap/vault.php')();
+
+//
 //  Temporary error output for sandbox testing
 //
 if (getenv('IS_SANDBOX') === 'true' || getenv('IS_DEV') === 'true') {
