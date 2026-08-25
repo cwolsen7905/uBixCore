@@ -27,6 +27,7 @@ use Ubix\DataTransferObject\DtoInterface as Dto;
 use Ubix\DataTransferObject\GeolocationLookup;
 use Ubix\Enum\AgeVerification\AgeVerificationRequirement;
 use Ubix\Enum\MachineCodeReview\MachineCodeReviewTool;
+use Ubix\Enum\Migration\DestructiveStatementKind;
 use Ubix\Model\AbstractModel as Model;
 use Ubix\SimpleCache\AbstractSimpleCache;
 use Ubix\Tests\AbstractTestCase as TestCase;
@@ -492,6 +493,10 @@ abstract class AbstractUbixConcreteClassOrEnumTestCase extends TestCase
 
                     case MachineCodeReviewTool::class: // TEMPORARY: this is hacky, we need to do something about PHP-DI for PHPUnit
                         $value = MachineCodeReviewTool::PHPUNIT;
+                        break;
+
+                    case DestructiveStatementKind::class: // TEMPORARY: this is hacky, we need to do something about PHP-DI for PHPUnit
+                        $value = DestructiveStatementKind::DROP_TABLE;
                         break;
                 }
 

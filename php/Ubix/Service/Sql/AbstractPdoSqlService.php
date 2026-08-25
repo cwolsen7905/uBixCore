@@ -47,6 +47,8 @@ abstract class AbstractPdoSqlService implements SqlService
      */
     public function query(string $sql, array $parameters = [], bool $allowParameterReuse = false): int
     {
+        $this->ensureInitialized();
+
         // TEMPORARY: Ignore TRUNCATE statements during PHPUnit tests just until we are comfortable.
         if (stripos($sql, 'TRUNCATE') !== false && $this->writePdoConstructorParameters->username !== 'root') {
             // During PHPUnit tests we want to ignore TRUNCATE statements as they can cause issues with foreign key constraints
@@ -81,11 +83,16 @@ abstract class AbstractPdoSqlService implements SqlService
 
     /**
      * {@inheritDoc}
+     *
+     * @return Generator<int, array<string, bool|int|float|string|null>, never, void> Yields each row from the result set as an array
      */
     public function getRows(string $sql, array $parameters = [], bool $allowParameterReuse = false): Generator
     {
         $pdoStatement = $this->getPdoStatement(false, $sql, $parameters, $allowParameterReuse);
         while (($row = $pdoStatement->fetch()) !== false) {
+            /**
+             * @var array<string, bool|int|float|string|null> $row
+             */
             yield $row;
         }
     }
@@ -143,6 +150,55 @@ abstract class AbstractPdoSqlService implements SqlService
     }
 
     /**
+     * Hook for subclasses that resolve their connection parameters
+     * lazily — invoked before every `getPdo()` call (and at the top of
+     * `query()`, which reads the write parameters before connecting).
+     * The default implementation is a no-op for subclasses that
+     * initialise eagerly in their constructor (e.g. `MysqlPdoSqlService`).
+     *
+     * `MigrationPdoSqlService` overrides this hook so that
+     * `MYSQL_WRITE_*` / `MYSQL_MIGRATION_*` env vars set by a migration /
+     * seed command at `execute()` time (via
+     * `MigrationConnectionTargetService`) take effect before the first PDO
+     * connect — the alternative would have been to read env in the
+     * constructor, which runs at container-build time before any CLI
+     * option is parsed.
+     *
+     * @return void
+     */
+    protected function ensureInitialized(): void
+    {
+        // No-op default. Subclasses with lazy init override.
+    }
+
+    /**
+     * Apply the active `DATABASE_PREFIX` to a connection's home schema (DSN
+     * `dbname`).
+     *
+     * Under a prefix (test-DB isolation) the PDO connection's home schema
+     * must resolve to a schema that actually EXISTS, so it has to point at
+     * the prefixed schema too — otherwise it pins the unprefixed schema,
+     * which does not exist on an ephemeral prefixed test instance, and the
+     * connection fails with `SQLSTATE[HY000] [1049] Unknown database`.
+     *
+     * Empty prefix (dev / staging / prod runtime) is a no-op. An empty
+     * `$database` (an intentionally schemaless connection) is left empty —
+     * prefixing it would produce a bogus bare-prefix name.
+     *
+     * @param string $database Resolved connection database (may be empty)
+     *
+     * @return string `$database` with the active `DATABASE_PREFIX` applied, or unchanged when empty
+     */
+    protected function applyDatabasePrefix(string $database): string
+    {
+        if ($database === '') {
+            return '';
+        }
+
+        return (string) getenv('DATABASE_PREFIX') . $database;
+    }
+
+    /**
      * Initialize the readPdoConstructorParameter and writePdoConstructorParameter objects
      *
      * @param string             $readDsn       For reads: The Data Source Name, or DSN, contains the information required to connect to the database
@@ -194,6 +250,8 @@ abstract class AbstractPdoSqlService implements SqlService
      */
     private function getPdo(bool $useWrite = false): PDO
     {
+        $this->ensureInitialized();
+
         try {
             $singletonKey = md5(serialize($useWrite ? $this->writePdoConstructorParameters : $this->readPdoConstructorParameters));
 

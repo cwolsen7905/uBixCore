@@ -15,4 +15,5 @@ enum Env: string
     case SANDBOX = 'sandbox';
     case PROD    = 'prod';
     case STAGING = 'staging';
+    case TEST    = 'test';
 }

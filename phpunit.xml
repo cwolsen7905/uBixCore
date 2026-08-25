@@ -26,6 +26,7 @@
 
 	<php>
     	<env name="PHPUNIT_RUNNING" value="1"/>
+    	<env name="SLACK_API_ENDPOINT" value="https://slack.example/api"/>
 	</php>
 
 </phpunit>
