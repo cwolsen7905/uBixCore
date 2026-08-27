@@ -23,3 +23,6 @@ var
 db
 .env
 .env_*
+
+# Never commit rendered k8s Secret manifests (use Vault / sealed-secrets)
+config/devops/*-secret.yaml
