@@ -23,8 +23,8 @@ Status: `Todo` · `Build` · `Done` · `Dropped`.
 | CP-01 | `lint-and-test` stage: static-checks (phpcs+phpstan), phpunit (test DB via `database:resetSchema`), js-lint; `Dockerfile_Test` layered on the runtime image | Done | `allow_failure: true` until CP-05 |
 | CP-02 | Discord notify: `bin/lib/notify.sh`, `.notify_failure` → alerts, `deploy.sh` → ops | Done | webhooks from vault by branch |
 | CP-03 | `.githooks/pre-push` running `ubix code:review -n`; `code:review` exits FAILURE on violations | Done | install: `git config core.hooksPath .githooks` |
-| CP-04 | GitLab CI variables `TEST_MYSQL_WRITE_*` for the phpunit job (currently falls back to baked `.env`) | Todo | needs a unit-test DB/schema decision (neptune uses per-pipeline `t<id>_` prefixes — resetSchema here has no `--prefix` yet) |
-| CP-05 | Drive `code:review` to green (baseline 2026-08-27: phpcs 858, phpstan 1344, phpunit 1 = 2203; 774 auto-fixable) then flip `allow_failure` off + make the hook blocking | Todo | run `ubix code:review` and accept auto-fix first |
+| CP-04 | GitLab CI variables `TEST_MYSQL_WRITE_*` for the phpunit job (currently falls back to baked `.env`); 28 DB-backed migration/SQL tests error in the container today | Todo | needs a unit-test DB/schema decision (neptune uses per-pipeline `t<id>_` prefixes — resetSchema here has no `--prefix` yet) |
+| CP-05 | Drive `code:review` to green — 37 `testFollowingUbixStandards` failures + ~10 concrete classes without a test case (CorsMiddleware, SessionAuthenticationMiddleware, User, EmailConfirmationToken, EmailService, UserId, UserOptions, SchemaMigrationOptions, UbixDatabase, Bootstrap/vault.php) (baseline 2026-08-27: phpcs 858, phpstan 1344, phpunit 1 = 2203; 774 auto-fixable) then flip `allow_failure` off + make the hook blocking | Todo | run `ubix code:review` and accept auto-fix first |
 | CP-06 | Fix sniff namespace typo: expected docblocks read `\Ubis\…` instead of `\Ubix\…` (`UbixConcreteClassOrEnumTestCase`-family sniff) | Todo | inflates CP-05 count |
 | CP-07 | neptune-sync the MCR/CLI: `code:review --phpunit=off --record`, `database:resetSchema --target/--prefix`, `dropSchemas`, CHANGELOG lint | Todo | via `/neptune-sync` |
 | CP-08 | `migrate-verify` + `migrate-apply` jobs, `destructive-pr-detect` → alerts | Todo | runner exists (`docs/projects/migrations/`) |
@@ -34,6 +34,7 @@ Status: `Todo` · `Build` · `Done` · `Dropped`.
 | CP-13 | GitLab registry cleanup policy for `ubixsys/ubixcore` (expire `<ref>-<sha>` tags older than N days, keep `dev|staging|main`) + default artifact expiry — the VM-side monthly GC only reclaims what the policy untags | Todo | GitLab UI/API |
 | CP-12 | `environment:` on deploy jobs (enables GitLab env-scoped vars) | Done | dev / staging / main |
 | CP-14 | `bin/rollback.sh` onto immutable `<ref>-<sha>` tags → ops | Todo | |
+| CP-16 | PHP 8.5: all Dockerfiles on `nginx-php85-fpm-memcache` (suite identical to 8.4: 323 tests, same 28E/35F; phpstan +43 sniff-only `T_*` notes → add phpcs constant stub to phpstan bootstrap) | Build | needs baseimages `:latest` for staging/main (promotion) |
 | CP-15 | Registry: **offline GC is unsafe here** (drops multi-arch child manifests — 2026-08-28 incident). Path forward: GitLab cleanup policies + registry metadata DB / online GC | Todo | monthly GC cron disabled on the VM |
 
 ## Status log

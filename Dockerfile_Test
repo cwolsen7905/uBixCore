@@ -10,7 +10,7 @@ FROM ${RUNTIME_IMAGE}
 USER root
 # pcntl/posix: phpunit time limits + posix_kill teardown.
 # mariadb-client: `bin/ubix database:resetSchema` shells out to `mysql`.
-RUN apk add --no-cache php84-pcntl php84-posix mariadb-client
+RUN apk add --no-cache php85-pcntl php85-posix mariadb-client
 
 USER www
 COPY --chown=www tests/       /web/tests/
