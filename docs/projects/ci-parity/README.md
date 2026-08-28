@@ -31,8 +31,11 @@ Status: `Todo` · `Build` · `Done` · `Dropped`.
 | CP-09 | `promote-to-staging` / `promote-to-main` / `rollback.sh` with immutable `<ref>-<sha>` tags → ops | Todo | tags already produced by `.build` |
 | CP-10 | `claude-review-mr` job → reviews channel; needs `secret/ubixcore/anthropic.ci_api_key` | Todo | |
 | CP-11 | `CHANGELOG.md` + deletion guard in pre-push | Todo | ubixcore has no CHANGELOG yet |
+| CP-13 | GitLab registry cleanup policy for `ubixsys/ubixcore` (expire `<ref>-<sha>` tags older than N days, keep `dev|staging|main`) + default artifact expiry — the VM-side monthly GC only reclaims what the policy untags | Todo | GitLab UI/API |
 | CP-12 | `environment:` on deploy jobs (enables GitLab env-scoped vars) | Todo | |
 
 ## Status log
+
+- **2026-08-28** — GitLab VM ran out of disk (push `unpacker error`); grown to 249G, registry GC + buildx prune freed ~70G, maintenance cron installed on the VM (see memory `gitlab-vm-ops`). `feat/ci-parity` pushed.
 
 - **2026-08-27** — Branch `feat/ci-parity` in worktree `../ubixcore-worktrees/ci-parity`. Vault: `secret/ubixcore/discord` on dev+prod; `ubixcore-ci-ro` policy + 1y tokens; GitLab vars added by the user. CP-01..03 built. `code:review` baseline 2203 violations → gate advisory.
