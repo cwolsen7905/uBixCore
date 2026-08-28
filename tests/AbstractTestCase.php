@@ -67,7 +67,7 @@ abstract class AbstractTestCase extends TestCase
             /**
              * @var callable(): Container $containerBuilder
              */
-            $containerBuilder = require __DIR__ . '/../app/AffiliateApi/src/Dependencies.php';
+            $containerBuilder = require __DIR__ . '/../app/UbixCli/src/Dependencies.php';
             $container        = $containerBuilder();
             assert($container instanceof Container);
             self::$container = $container;

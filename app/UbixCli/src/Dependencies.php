@@ -23,6 +23,8 @@ use Ubix\Repository\SchemaMigration\SchemaMigrationWriterInterface as SchemaMigr
 use Ubix\Service\Migration\MigrationFileScannerService;
 use Ubix\Service\SlackService;
 use Ubix\Service\Sql\MigrationPdoSqlService;
+use Ubix\Service\Sql\MysqlPdoSqlService;
+use Ubix\Service\Sql\SqlServiceInterface as SqlService;
 use Ubix\SimpleCache\MemcachedLegacySimpleCache;
 
 use function DI\autowire;
@@ -52,6 +54,7 @@ return static function (): Container {
         //  bin/ubix, but the services they inject need these bindings.
         //
         MigrationFileScannerService::class  => autowire(MigrationFileScannerService::class)->constructorParameter('migrationsPath', $migrationsPath),
+        SqlService::class                    => autowire(MysqlPdoSqlService::class),
         SchemaMigrationSqlRepository::class  => autowire(SchemaMigrationSqlRepository::class)->constructorParameter('sqlService', get(MigrationPdoSqlService::class)),
         SchemaMigrationReader::class        => get(SchemaMigrationSqlRepository::class),
         SchemaMigrationWriter::class        => get(SchemaMigrationSqlRepository::class),
