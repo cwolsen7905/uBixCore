@@ -22,26 +22,17 @@ final class ResetSchemaCommand extends Command
 {
     private const SQL_PATH = __DIR__ . '/../../../../../sql/';
 
+    /**
+     * Schemas (re)built from sql/<name>.sql per environment. Every environment
+     * uses the single `sowingme` baseline; the TEST_MYSQL_WRITE_* connection is
+     * always the target (this command never touches a runtime database).
+     */
     private const MYSQL_DATABASES = [
-        'dev'     => [],
-        'prod'    => [],
-        'sandbox' => [
-            'ADSERVER',
-            'BILLING',
-            'CHAT_SYSTEM_LOG',
-            'CHAT_SYSTEM',
-            'FLIRT_REWARDS',
-            'flirt4free',
-            'MAILINGS',
-            'MESSAGING',
-            'ntl_db',
-            'STUDIOS_STATS',
-            'STUDIOS',
-            'SYSTEMS',
-            'VSCASH_STATS',
-            'VSCASH',
-        ],
-        'staging' => [],
+        'dev'     => ['sowingme'],
+        'prod'    => ['sowingme'],
+        'sandbox' => ['sowingme'],
+        'staging' => ['sowingme'],
+        'test'    => ['sowingme'],
     ];
 
     /**
@@ -79,6 +70,12 @@ final class ResetSchemaCommand extends Command
         $output->writeln('Rebuilding the database schema for environment: ' . $env->value);
 
         // Execute the build commands
+        if (!array_key_exists($env->value, self::MYSQL_DATABASES)) {
+            $output->writeln('<error>No schema list configured for environment: ' . $env->value . '</error>');
+
+            return Command::FAILURE;
+        }
+
         foreach (self::MYSQL_DATABASES[$env->value] as $database) {
             // Create database if it does not exist
             $command = 'mysql --user=' . $mysqlUser . ' --password=' . $mysqlPassword . ' --port=' . $mysqlPort . ' --host=' . $mysqlHost . " -e 'CREATE DATABASE IF NOT EXISTS " . $database . "'";
