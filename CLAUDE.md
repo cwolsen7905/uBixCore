@@ -2,6 +2,15 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## Agent coordination & concurrent sessions — read first
+
+Multiple agent sessions can run in this repo at the same time and lack the ambient coordination (Slack, standups) that keeps humans from colliding. Two rules keep them from clobbering each other; follow both **every session, without waiting to be asked**:
+
+- **`AGENTS-COORD.md`** (repo root, **untracked** per-sandbox state — seed once with `cp AGENTS-COORD.template.md AGENTS-COORD.md` if missing) is the live coordination contract. **Before you create a branch, edit a shared file, or merge**, register your lane: add a row to its §1 lane table with a distinct branch prefix and an append-only §6 log entry claiming the paths/shared files you'll touch. Shared files (claim before editing): root `README.md`, `CLAUDE.md`, `AGENTS-COORD.md`, the framework trees `php/Ubix/*` / `js/Ubix/*`, and per-app `app/<App>/src/{Routes,Dependencies}.php`. Assume concurrency unless the log clearly shows you're solo; if you truly are solo, still register your lane, work in the main checkout, and skip the worktree overhead.
+- **One `git worktree` per concurrent session** — a shared working directory is unsafe (one session's `git checkout`/`rebase` swaps files out from under another's uncommitted edits). Raw form: `git fetch origin && git worktree add ../ubixcore-worktrees/<lane> -b <prefix>/<slice> origin/dev`; `git worktree remove` when landed. (The `php bin/ubix code:worktree` bootstrap from neptune is **not yet ported** — use the raw form until it lands.)
+
+Full rules — branch topology (`dev` is MR-only), sync/merge flow, the serialized merge window, and the disposition convention — are in **`docs/standards/branching-and-git-workflow.md`** (§ Concurrent Agent Sessions). `AGENTS-COORD.md` is this sandbox's living instance of that standard; the standard wins if they disagree.
+
 ## Project Overview
 
 uBix Core is a PHP/JavaScript monorepo containing shared infrastructure, multiple API services, web applications, and CLI tools. Originally named "Project Neptune."

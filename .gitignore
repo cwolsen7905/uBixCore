@@ -26,3 +26,6 @@ db
 
 # Never commit rendered k8s Secret manifests (use Vault / sealed-secrets)
 config/devops/*-secret.yaml
+
+# Live multi-agent coordination state — per-sandbox, seed from AGENTS-COORD.template.md
+AGENTS-COORD.md
