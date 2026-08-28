@@ -4,15 +4,17 @@
 
 Status vocabulary per row: `Todo` · `Docs` (SRS/spec in progress) · `Build` · `Review` · `Done` · `Dropped`. Flip the cell in the same commit as the work. Effort legend in charter §4.4.
 
+**Surface docs:** all 21 surfaces now have **v0.1 SRS + TDS drafted** (2026-08-27) — see the [surface index](../../surfaces/README.md) and the whole-product foundation in [`platform/`](platform/README.md). Rows below track **build**, not doc-writing; the `SRS + tech spec` rows are therefore marked `Docs`.
+
 ## M0 — Foundation cleanup
 
 | ID | Task | Effort | Status | Notes |
 |---|---|---|---|---|
 | M0-01 | Remove neptune leftovers: `broadcasting/*` routes in both JS apps, `AttributionLog`, `Transaction` model (replace with Sowing.me ledger later), `DuplicateProspect` repo, admin `explore` page | S | Todo | Verify nothing imports them; delete tests alongside |
-| M0-02 | Decide Q2 (creator entity) + write `docs/data-models/core-entities.md` (ERD for users/creators/tiers/subscriptions/posts/transactions) | S | Todo | Charter §5 proposal is the starting point |
-| M0-03 | SRS + tech spec for `authentication` (`docs/surfaces/authentication/`) — current session flow, lockout, password reset, roles | S | Todo | |
-| M0-04 | SRS + tech spec for `registration` — supporter vs creator sign-up, onboarding wizard | S | Todo | Email confirmation already built; document it |
-| M0-05 | SRS + tech spec for `creator-profile` | S | Todo | |
+| M0-02 | Decide Q2 (creator entity) + write `docs/data-models/core-entities.md` (ERD for users/creators/tiers/subscriptions/posts/transactions) | S | Docs | ERD [drafted](../../data-models/core-entities.md); Q2 default (separate `creators`) adopted pending final sign-off |
+| M0-03 | SRS + tech spec for `authentication` (`docs/surfaces/authentication/`) — current session flow, lockout, password reset, roles | S | Docs | |
+| M0-04 | SRS + tech spec for `registration` — supporter vs creator sign-up, onboarding wizard | S | Docs | Email confirmation already built; document it |
+| M0-05 | SRS + tech spec for `creator-profile` | S | Docs | |
 | M0-06 | Migration: `creators` table + `users.roles` cleanup | S | Todo | `bin/ubix migrate:*`; after M0-02 |
 | M0-07 | CI: confirm phpunit/phpstan/phpcs + vitest run green on `dev` for all SowingMe apps | S | Todo | Baseline before build |
 
@@ -55,3 +57,4 @@ Status vocabulary per row: `Todo` · `Docs` (SRS/spec in progress) · `Build` ·
 | M3-03 | Messaging | L | Todo | |
 | M3-04 | Organisation / church accounts | L | Todo | |
 | M3-05 | Analytics dashboard | M | Todo | |
+| M3-06 | Live streaming: WHIP browser ingest → MediaMTX on k8s → WHEP/LL-HLS playback, restream, VOD | XL | Planning | Surface: [`docs/surfaces/live-streaming/`](../../surfaces/live-streaming/README.md) (SRS+tech-spec+arch); Phase 0 spike is startable now |

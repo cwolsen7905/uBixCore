@@ -92,6 +92,28 @@ bin/ubix         # Main CLI entry point with command auto-discovery
 - Strict PHPUnit (fails on risky tests, warnings, deprecations)
 - Test cases enforce VSM standards via custom base classes
 
+## Product & surface documentation (SRS / TDS / ADS)
+
+Sowing.me is documented at **two altitudes**, both using the same three-doc model (authored against `docs/standards/web-development-delivery-framework.md`: Charter → SRS → SDD). The acronyms map onto the repo's existing filenames:
+
+| Acronym | File | Answers | Owns |
+|---|---|---|---|
+| **SRS** — Software Requirements Spec | `srs.md` | **What & why** | Numbered functional (`FR-*`) + non-functional (`NFR-*`) requirements, personas, acceptance criteria, open questions |
+| **TDS** — Technical Design Spec | `technical-spec.md` | **How in code** | Domain model (tables via the migration runner), API surface, DTO/DataType/Repository design, clients, `## Requirement traceability` mapping each `FR-*` to what realises it |
+| **ADS** — Architecture Design Spec | `architecture.md` | **How as a system** | Topology, data/security architecture, sequences, capacity, failure modes, technology decisions/ADRs (the SDD) |
+
+`technical-spec.md` is the neptune-inherited house name (see `docs/README.md`); `architecture.md` is added when a system design warrants its own SDD. A `README.md` in each folder gives the read order and status.
+
+**Altitude 1 — Platform** (`docs/projects/sowing-me/platform/`): the whole product — every persona and capability domain of a Patreon-class membership platform *rebuilt for Christian creators* (memberships, content, payments, payouts, discovery, community) **plus** faith-native domains (church/organization accounts, tithing/giving, prayer, devotional content). The platform ADS is the foundation every surface plugs into; it is written so features can be added later without rework. Start here for cross-cutting shape.
+
+**Altitude 2 — Surface** (`docs/surfaces/<slug>/`): one capability slice drills down under the platform trio, inheriting its conventions. First worked example: `docs/surfaces/live-streaming/` (roadmap M3-06).
+
+**Keeping them in sync — required:**
+- The trio moves **together** at each altitude. A requirement change in `srs.md` updates the traceability in `technical-spec.md`, any system impact in `architecture.md`, and bumps each doc's **Document control** version table.
+- A surface must not contradict the platform ADS; a change that does re-versions the platform doc in the same commit.
+- Write a surface's SRS + TDS **before its first migration** (charter §7 success criteria).
+- A roadmap status flip + the matching `status.md` entry land in the **same commit** as the code.
+
 ## Key Entry Points
 
 - **PHP CLI**: `bin/ubix` - Console app with auto-discovered commands
