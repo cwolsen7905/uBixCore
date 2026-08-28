@@ -28,13 +28,17 @@ Status: `Todo` · `Build` · `Done` · `Dropped`.
 | CP-06 | Fix sniff namespace typo: expected docblocks read `\Ubis\…` instead of `\Ubix\…` (`UbixConcreteClassOrEnumTestCase`-family sniff) | Todo | inflates CP-05 count |
 | CP-07 | neptune-sync the MCR/CLI: `code:review --phpunit=off --record`, `database:resetSchema --target/--prefix`, `dropSchemas`, CHANGELOG lint | Todo | via `/neptune-sync` |
 | CP-08 | `migrate-verify` + `migrate-apply` jobs, `destructive-pr-detect` → alerts | Todo | runner exists (`docs/projects/migrations/`) |
-| CP-09 | `promote-to-staging` / `promote-to-main` / `rollback.sh` with immutable `<ref>-<sha>` tags → ops | Todo | tags already produced by `.build` |
+| CP-09 | `promote-to-staging` / `promote-to-main` (auto, destructive-halt + manual ack jobs) via `bin/promote.sh` → ops/alerts | Done | main is AUTO until live — flip `promote-to-main` to `when: manual` at launch. `rollback.sh` still Todo (CP-14). Needs `GITLAB_PROMOTE_TOKEN` |
 | CP-10 | `claude-review-mr` job → reviews channel; needs `secret/ubixcore/anthropic.ci_api_key` | Todo | |
 | CP-11 | `CHANGELOG.md` + deletion guard in pre-push | Todo | ubixcore has no CHANGELOG yet |
 | CP-13 | GitLab registry cleanup policy for `ubixsys/ubixcore` (expire `<ref>-<sha>` tags older than N days, keep `dev|staging|main`) + default artifact expiry — the VM-side monthly GC only reclaims what the policy untags | Todo | GitLab UI/API |
-| CP-12 | `environment:` on deploy jobs (enables GitLab env-scoped vars) | Todo | |
+| CP-12 | `environment:` on deploy jobs (enables GitLab env-scoped vars) | Done | dev / staging / main |
+| CP-14 | `bin/rollback.sh` onto immutable `<ref>-<sha>` tags → ops | Todo | |
+| CP-15 | Registry: **offline GC is unsafe here** (drops multi-arch child manifests — 2026-08-28 incident). Path forward: GitLab cleanup policies + registry metadata DB / online GC | Todo | monthly GC cron disabled on the VM |
 
 ## Status log
+
+- **2026-08-28** — !72 merged. Registry GC incident (see memory `gitlab-vm-ops`): all multi-arch images rebuilt via baseimages `dev` push. `feat/ci-promotion`: CP-09 + CP-12 built, `CI_JOB_TOKEN` ARG/ENV removed from runtime Dockerfiles (cache-buster + secret in image history).
 
 - **2026-08-28** — GitLab VM ran out of disk (push `unpacker error`); grown to 249G, registry GC + buildx prune freed ~70G, maintenance cron installed on the VM (see memory `gitlab-vm-ops`). `feat/ci-parity` pushed.
 
