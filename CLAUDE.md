@@ -79,7 +79,7 @@ bin/ubix         # Main CLI entry point with command auto-discovery
 
 ## Technology Stack
 
-**PHP 8.3+**: Slim 4.5, PHP-DI 7, Latte 3, Monolog 3, Symfony 7.3 components (Validation, Serialization, Cache, Console, Mailer), Guzzle 7.8, AWS SDK v3
+**PHP 8.5 (base image `k8s/baseimages/nginx-php85-fpm-memcache`; code must stay 8.4-compatible until the 8.4 image is retired)**: Slim 4.5, PHP-DI 7, Latte 3, Monolog 3, Symfony 7.3 components (Validation, Serialization, Cache, Console, Mailer), Guzzle 7.8, AWS SDK v3
 
 **JavaScript**: Svelte 5, SvelteKit 2, Vite 7, Tailwind CSS, TypeScript 5.3
 
