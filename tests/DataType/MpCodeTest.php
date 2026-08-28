@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Ubix\Tests\DataTransferObject;
+namespace Ubix\Tests\DataType;
 
 use Ubix\DataType\String\MpCode;
 use Ubix\Tests\AbstractUbixConcreteClassOrEnumTestCase as UbixConcreteClassOrEnumTestCase;
