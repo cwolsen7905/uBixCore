@@ -74,7 +74,7 @@ build-main:
     - |
       docker run --rm --workdir /web \
         "$CI_REGISTRY_IMAGE:$CI_COMMIT_SHA-test" \
-        sh -c "set -e && vendor/bin/phpcs --no-cache && vendor/bin/phpstan analyse --no-progress --memory-limit=2G"
+        sh -c "set -e && vendor/bin/phpcs --no-cache && vendor/bin/phpstan analyse --no-progress --memory-limit=2G app bin php public tests"
 
 # PHPUnit against the unit-test MariaDB. TEST_MYSQL_WRITE_* come from GitLab
 # CI variables (fallback: the .env baked into the image).
