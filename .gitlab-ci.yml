@@ -12,6 +12,7 @@ stages:
   - build
   - lint-and-test
   - deploy
+  - promote
   - notify
 
 .registry_login:
@@ -120,9 +121,46 @@ phpunit-staging:       { extends: .phpunit,       only: [staging] }
   script:
     - bash bin/deploy.sh $CI_COMMIT_REF_SLUG
 
-deploy-dev:     { extends: .deploy, only: [dev] }
-deploy-staging: { extends: .deploy, only: [staging] }
-deploy-main:    { extends: .deploy, only: [main, master] }
+deploy-dev:     { extends: .deploy, only: [dev],          environment: { name: dev } }
+deploy-staging: { extends: .deploy, only: [staging],      environment: { name: staging } }
+deploy-main:    { extends: .deploy, only: [main, master], environment: { name: main } }
+
+# ---------------------------------------------------------------------------
+# promote — dev → staging → main, automatic after a green deploy (auto-to-main
+# until the platform is live; CP-09). bin/promote.sh halts on a Destructive:
+# migration; the *-destructive manual jobs acknowledge and proceed.
+# Needs the GITLAB_PROMOTE_TOKEN CI variable.
+# ---------------------------------------------------------------------------
+.promote:
+  stage: promote
+  tags: [shell]
+  variables: { GIT_DEPTH: "0" }
+
+promote-to-staging:
+  extends: .promote
+  needs: [{ job: deploy-dev, artifacts: false }]
+  rules: [{ if: '$CI_COMMIT_BRANCH == "dev"', when: on_success }]
+  script: [bash bin/promote.sh staging]
+
+promote-to-staging-destructive:
+  extends: .promote
+  needs: [{ job: deploy-dev, artifacts: false }]
+  rules: [{ if: '$CI_COMMIT_BRANCH == "dev"', when: manual, allow_failure: true }]
+  variables: { GIT_DEPTH: "0", PROMOTE_ACK_DESTRUCTIVE: "1" }
+  script: [bash bin/promote.sh staging]
+
+promote-to-main:
+  extends: .promote
+  needs: [{ job: deploy-staging, artifacts: false }]
+  rules: [{ if: '$CI_COMMIT_BRANCH == "staging"', when: on_success }]
+  script: [bash bin/promote.sh main]
+
+promote-to-main-destructive:
+  extends: .promote
+  needs: [{ job: deploy-staging, artifacts: false }]
+  rules: [{ if: '$CI_COMMIT_BRANCH == "staging"', when: manual, allow_failure: true }]
+  variables: { GIT_DEPTH: "0", PROMOTE_ACK_DESTRUCTIVE: "1" }
+  script: [bash bin/promote.sh main]
 
 deploy-composer:
   stage: deploy

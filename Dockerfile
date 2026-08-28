@@ -12,8 +12,6 @@ COPY config/devops/nginx.conf /etc/nginx/nginx.conf
 
 USER www
 
-ARG CI_JOB_TOKEN
-ENV CI_JOB_TOKEN=$CI_JOB_TOKEN
 
 COPY --chown=www composer.json /web/
 COPY --chown=www public/ /web/public/
