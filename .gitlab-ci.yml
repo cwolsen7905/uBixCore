@@ -1,75 +1,156 @@
-before_script:
-  - docker login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD" $CI_REGISTRY
+# uBix Core pipeline. Shape ported from project-neptune (2026-08-27, ci-parity
+# slice 1): build → lint-and-test → deploy → notify. Notifications go to Discord
+# (#ubixcore-ops / #ubixcore-alerts) via bin/lib/notify.sh, which reads the
+# webhooks from ubixvault with the read-only CI tokens UBIXVAULT_CI_TOKEN_DEV /
+# UBIXVAULT_CI_TOKEN_PROD (masked GitLab variables).
+#
+# lint-and-test is allow_failure while the gate is driven to green
+# (docs/projects/ci-parity/README.md, row CP-05) — flip to blocking there.
 
 stages:
   - test
   - build
+  - lint-and-test
   - deploy
-  
-deploy-composer:
-  stage: deploy
-  tags:
-  - shell
+  - notify
+
+.registry_login:
+  before_script:
+    - docker login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD" $CI_REGISTRY
+
+# ---------------------------------------------------------------------------
+# build
+# ---------------------------------------------------------------------------
+# Runtime image (multi-arch, `:<ref>` mutable tag + `:<ref>-<sha>` immutable),
+# a `-test` image layered on it (amd64 only — it never deploys), and the node
+# image for app/SowingMeJs.
+.build:
+  extends: .registry_login
+  stage: build
+  tags: [shell]
   script:
-  - '/usr/bin/curl --header "Job-Token: $CI_JOB_TOKEN" --data tag=$CI_COMMIT_TAG "${CI_API_V4_URL}/projects/$CI_PROJECT_ID/packages/composer"'
-  only:
-  - tags
+    - |
+      set -euo pipefail
+      RUNTIME_REF="${CI_REGISTRY_IMAGE}:${CI_COMMIT_REF_SLUG}"
+      RUNTIME_SHA_REF="${CI_REGISTRY_IMAGE}:${CI_COMMIT_REF_SLUG}-${CI_COMMIT_SHA}"
+      TEST_REF="${CI_REGISTRY_IMAGE}:${CI_COMMIT_SHA}-test"
+      NODE_REF="${CI_REGISTRY_IMAGE}:${CI_COMMIT_REF_SLUG}-node"
+      REF_CAP="$(printf '%s' "$CI_COMMIT_REF_SLUG" | cut -c1 | tr '[:lower:]' '[:upper:]')$(printf '%s' "$CI_COMMIT_REF_SLUG" | cut -c2-)"
+
+      docker buildx build --platform linux/amd64,linux/arm64 --push \
+        -t "$RUNTIME_REF" -t "$RUNTIME_SHA_REF" -f "$RUNTIME_DOCKERFILE" .
+      docker buildx build --platform linux/amd64 --push \
+        --build-arg RUNTIME_IMAGE="$RUNTIME_SHA_REF" \
+        -t "$TEST_REF" -f Dockerfile_Test .
+      docker buildx build --platform linux/amd64,linux/arm64 --push \
+        -t "$NODE_REF" -f "Dockerfile_Node_${REF_CAP}" .
 
 build-dev:
-  tags:
-  - shell
-  stage: build
-  script:
-  - docker buildx build --platform linux/amd64,linux/arm64 --push -t "$CI_REGISTRY_IMAGE:$CI_COMMIT_REF_SLUG" .
-  - docker buildx build --platform linux/amd64,linux/arm64 --push -t "${CI_REGISTRY_IMAGE}:${CI_COMMIT_REF_SLUG}-node" . -f Dockerfile_Node_${CI_COMMIT_REF_SLUG^}
-  only:
-    - dev
-
-deploy-dev:
-  stage: deploy
-  tags:
-  - shell
-  script:
-  - bash bin/deploy.sh $CI_COMMIT_REF_SLUG
-  only:
-  - dev
+  extends: .build
+  variables: { RUNTIME_DOCKERFILE: Dockerfile }
+  only: [dev]
 
 build-staging:
-  tags:
-  - shell
-  stage: build
-  script:
-  - docker buildx build --platform linux/amd64,linux/arm64 --push -t "$CI_REGISTRY_IMAGE:$CI_COMMIT_REF_SLUG" -f Dockerfile_${CI_COMMIT_REF_SLUG^} .
-  - docker buildx build --platform linux/amd64,linux/arm64 --push -t "${CI_REGISTRY_IMAGE}:${CI_COMMIT_REF_SLUG}-node" . -f Dockerfile_Node_${CI_COMMIT_REF_SLUG^}
-  only:
-  - staging
-
-deploy-staging:
-  stage: deploy
-  tags:
-  - shell
-  script:
-  - bash bin/deploy.sh $CI_COMMIT_REF_SLUG
-  only:
-  - staging
+  extends: .build
+  variables: { RUNTIME_DOCKERFILE: Dockerfile_Staging }
+  only: [staging]
 
 build-main:
-  tags:
-  - shell
-  stage: build
-  script:
-  - docker buildx build --platform linux/amd64,linux/arm64 --push -t "$CI_REGISTRY_IMAGE:$CI_COMMIT_REF_SLUG" -f Dockerfile_${CI_COMMIT_REF_SLUG^} .
-  - docker buildx build --platform linux/amd64,linux/arm64 --push -t "${CI_REGISTRY_IMAGE}:${CI_COMMIT_REF_SLUG}-node" . -f Dockerfile_Node_${CI_COMMIT_REF_SLUG^}
-  only:
-    - main
-    - master
+  extends: .build
+  variables: { RUNTIME_DOCKERFILE: Dockerfile_Main }
+  only: [main, master]
 
-deploy-main:
-  stage: deploy
-  tags:
-  - shell
+# ---------------------------------------------------------------------------
+# lint-and-test
+# ---------------------------------------------------------------------------
+.static_checks:
+  extends: .registry_login
+  stage: lint-and-test
+  tags: [shell]
+  timeout: 15 minutes
+  allow_failure: true   # CP-05: flip to blocking once the gate is green
   script:
-  - bash bin/deploy.sh $CI_COMMIT_REF_SLUG
-  only:
-  - main
-  - master
+    - |
+      docker run --rm --workdir /web \
+        "$CI_REGISTRY_IMAGE:$CI_COMMIT_SHA-test" \
+        sh -c "set -e && vendor/bin/phpcs --no-cache && vendor/bin/phpstan analyse --no-progress --memory-limit=2G"
+
+# PHPUnit against the unit-test MariaDB. TEST_MYSQL_WRITE_* come from GitLab
+# CI variables (fallback: the .env baked into the image).
+.phpunit:
+  extends: .registry_login
+  stage: lint-and-test
+  tags: [shell]
+  timeout: 30 minutes
+  allow_failure: true   # CP-05
+  script:
+    - |
+      docker run --rm --workdir /web \
+        -e TEST_MYSQL_WRITE_HOST -e TEST_MYSQL_WRITE_PORT \
+        -e TEST_MYSQL_WRITE_USERNAME -e TEST_MYSQL_WRITE_PASSWORD \
+        "$CI_REGISTRY_IMAGE:$CI_COMMIT_SHA-test" \
+        sh -c "set -e && php bin/ubix database:resetSchema -n && vendor/bin/phpunit"
+
+# eslint + prettier + svelte-check for the SvelteKit app, in the node image the
+# build stage pushed (its `npm install` includes devDeps).
+.js_lint:
+  extends: .registry_login
+  stage: lint-and-test
+  tags: [shell]
+  timeout: 20 minutes
+  allow_failure: true   # CP-05
+  script:
+    - |
+      docker run --rm --workdir /app "${CI_REGISTRY_IMAGE}:${CI_COMMIT_REF_SLUG}-node" \
+        sh -c "set -e && npm run lint && npm run check"
+
+static-checks-dev: { extends: .static_checks, only: [dev] }
+phpunit-dev:       { extends: .phpunit,       only: [dev] }
+js-lint-dev:       { extends: .js_lint,       only: [dev] }
+static-checks-staging: { extends: .static_checks, only: [staging] }
+phpunit-staging:       { extends: .phpunit,       only: [staging] }
+
+# ---------------------------------------------------------------------------
+# deploy
+# ---------------------------------------------------------------------------
+# bin/deploy.sh posts its own success/failure note to #ubixcore-ops.
+.deploy:
+  stage: deploy
+  tags: [shell]
+  script:
+    - bash bin/deploy.sh $CI_COMMIT_REF_SLUG
+
+deploy-dev:     { extends: .deploy, only: [dev] }
+deploy-staging: { extends: .deploy, only: [staging] }
+deploy-main:    { extends: .deploy, only: [main, master] }
+
+deploy-composer:
+  stage: deploy
+  tags: [shell]
+  script:
+    - '/usr/bin/curl --header "Job-Token: $CI_JOB_TOKEN" --data tag=$CI_COMMIT_TAG "${CI_API_V4_URL}/projects/$CI_PROJECT_ID/packages/composer"'
+  only: [tags]
+
+# ---------------------------------------------------------------------------
+# notify — red pipeline → #ubixcore-alerts
+# ---------------------------------------------------------------------------
+.notify_failure:
+  stage: notify
+  tags: [shell]
+  timeout: 5 minutes
+  when: on_failure
+  script:
+    - |
+      set -u
+      SCRIPT_DIR="$CI_PROJECT_DIR"; . bin/lib/notify.sh
+      WHO="${GITLAB_USER_NAME:-${GITLAB_USER_LOGIN:-unknown}}"
+      TEXT="Branch: ${CI_COMMIT_REF_NAME} — pushed by ${WHO}
+      Commit: [${CI_COMMIT_TITLE:-$CI_COMMIT_SHORT_SHA}](${CI_PROJECT_URL}/-/commit/${CI_COMMIT_SHA}) (${CI_COMMIT_SHORT_SHA})
+      Author: ${CI_COMMIT_AUTHOR:-unknown}
+      Pipeline: ${CI_PIPELINE_URL}"
+      discord alerts 15158332 "🔴 Pipeline FAILED" "$TEXT"
+      exit 0
+
+notify-failure-dev:     { extends: .notify_failure, only: [dev] }
+notify-failure-staging: { extends: .notify_failure, only: [staging] }
+notify-failure-main:    { extends: .notify_failure, only: [main, master] }

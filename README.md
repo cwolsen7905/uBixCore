@@ -41,6 +41,13 @@ bin/ubix <command>     # Commands are auto-discovered
 
 ## Development
 
+One-time per clone — enable the pre-push gate (runs `bin/ubix code:review`):
+
+```bash
+git config core.hooksPath .githooks
+cp .env_dev .env   # bin/ubix needs a .env
+```
+
 ### PHP
 
 ```bash
