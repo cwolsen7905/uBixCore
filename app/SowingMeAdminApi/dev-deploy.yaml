@@ -38,6 +38,14 @@ spec:
           value: "DEV"
         - name: APP_NAME
           value: "SowingMeAdminApi"
+        - name: VAULT_ADDR
+          value: "https://vault.dev.ubixsys.com"
+        - name: VAULT_K8S_ROLE
+          value: "sowingme-dev"
+        - name: VAULT_DB_STRATEGY
+          value: "kv"
+        - name: VAULT_DB_KV_PATH
+          value: "sowingme/dev/db"
         image: gitlab.brainchurts.com:5050/ubixsys/ubixcore:dev
         imagePullPolicy: Always
         name: sowing-me-admin-api

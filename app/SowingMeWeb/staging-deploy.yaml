@@ -38,6 +38,18 @@ spec:
           value: "STAGING"
         - name: APP_NAME
           value: "SowingMeWeb"
+        - name: VAULT_ADDR
+          value: "https://vault.prod.ubixsys.com"
+        - name: VAULT_K8S_ROLE
+          value: "sowingme-staging"
+        - name: VAULT_DB_STRATEGY
+          value: "kv"
+        - name: VAULT_DB_KV_PATH
+          value: "sowingme/staging/db"
+        - name: MYSQL_READ_HOST
+          value: "10.50.25.45"
+        - name: MYSQL_WRITE_HOST
+          value: "10.50.25.45"
         image: gitlab.brainchurts.com:5050/ubixsys/ubixcore:staging
         imagePullPolicy: Always
         name: sowing-me-web
