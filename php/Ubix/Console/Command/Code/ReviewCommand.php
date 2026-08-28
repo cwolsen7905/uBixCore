@@ -44,7 +44,7 @@ This command provides machine code review for your source code with various tool
 By default, it checks all modified files in the current branch. If you want to review specific files, you can pass them as arguments.
 
 Usage:
-  neptune code:review [<file>...] [--modified]
+  ubix code:review [<file>...] [--modified]
 HELP)
             ->addOption('modified', null, InputOption::VALUE_NONE, 'Review all the modified files in the current git branch')
             ->addArgument('file', InputArgument::IS_ARRAY | InputArgument::OPTIONAL, 'Files to code review');
@@ -80,8 +80,14 @@ HELP)
         );
 
         //
-        //  Return success
+        //  Return SUCCESS only when the review surfaced zero violations;
+        //  otherwise FAILURE so the pre-push hook and CI jobs see a non-zero
+        //  exit (ported from neptune's ReviewCommand, 2026-08-27).
         //
+        if ($review->getViolationsCount() > 0) {
+            return SymfonyCommand::FAILURE;
+        }
+
         return SymfonyCommand::SUCCESS;
     }
 }

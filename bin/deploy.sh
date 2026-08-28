@@ -14,6 +14,21 @@ KUBECTL="kubectl"
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd -P)"
 
+# Discord deploy note to #ubixcore-ops on exit (success or failure). Best-effort.
+. "$SCRIPT_DIR/bin/lib/notify.sh"
+deploy_notify() {
+    local rc=$?
+    local sha="${CI_COMMIT_SHORT_SHA:-$(git -C "$SCRIPT_DIR" rev-parse --short HEAD 2>/dev/null)}"
+    local who="${GITLAB_USER_NAME:-${USER:-unknown}}"
+    local link="${CI_PIPELINE_URL:-}"
+    if [ "$rc" -eq 0 ]; then
+        discord ops 3066993 "Deployed ${ENVIRONMENT}" "\`${sha}\` ${CI_COMMIT_TITLE:-} — by ${who}${link:+\nPipeline: ${link}}"
+    else
+        discord ops 15158332 "Deploy FAILED on ${ENVIRONMENT}" "\`${sha}\` — by ${who} (exit ${rc})${link:+\nPipeline: ${link}}"
+    fi
+}
+trap deploy_notify EXIT
+
 # If environment is prod use la3config and la3config-blue as array otherwise use devstageconfig
 if [ "$ENVIRONMENT" == "main" ]; then
 	KUBECONFIGS=("/home/gitlab-runner/.kube/la3config" "/home/gitlab-runner/.kube/la3config-blue")

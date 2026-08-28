@@ -1,0 +1,21 @@
+# Test image for the `lint-and-test` GitLab stage. Derives FROM the runtime
+# image the same pipeline just built (`--build-arg RUNTIME_IMAGE=...`) and
+# layers the test infrastructure on top, so live pods never ship tests/ or
+# tool configs. Ported from project-neptune's Dockerfile_Test (2026-08-27);
+# the dev runtime image already carries dev Composer deps (phpunit/phpcs/
+# phpstan) because `Dockerfile` runs a plain `composer update`.
+ARG RUNTIME_IMAGE
+FROM ${RUNTIME_IMAGE}
+
+USER root
+# pcntl/posix: phpunit time limits + posix_kill teardown.
+# mariadb-client: `bin/ubix database:resetSchema` shells out to `mysql`.
+RUN apk add --no-cache php84-pcntl php84-posix mariadb-client
+
+USER www
+COPY --chown=www tests/       /web/tests/
+COPY --chown=www sql/         /web/sql/
+COPY --chown=www phpcs.xml    /web/
+COPY --chown=www phpstan.neon /web/
+COPY --chown=www phpunit.xml  /web/
+COPY --chown=www rector.php   /web/
