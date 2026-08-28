@@ -10,7 +10,9 @@ FROM ${RUNTIME_IMAGE}
 USER root
 # pcntl/posix: phpunit time limits + posix_kill teardown.
 # mariadb-client: `bin/ubix database:resetSchema` shells out to `mysql`.
-RUN apk add --no-cache php85-pcntl php85-posix mariadb-client
+RUN apk add --no-cache php85-pcntl php85-posix mariadb-client && \
+    # the unit-test MariaDB has no TLS; Alpine's mariadb client insists on it by default
+    printf '[client]\nskip-ssl\n' > /etc/my.cnf.d/99-skip-ssl.cnf
 
 USER www
 COPY --chown=www tests/       /web/tests/

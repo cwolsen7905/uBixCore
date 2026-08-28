@@ -40,6 +40,17 @@ vault_for_branch() {
     esac
 }
 
+# vault_kv <path-under-secret/ubixcore> <key> — prints the value from
+# secret/ubixcore/<path> via the branch's read-only CI token, or nothing.
+vault_kv() {
+    local path="$1" key="$2"
+    vault_for_branch
+    [ -n "${VAULT_TOKEN:-}" ] || return 0
+    curl -sS -m 10 -H "X-Vault-Token: $VAULT_TOKEN" "$VAULT_ADDR/v1/secret/data/ubixcore/${path}" 2>/dev/null \
+        | python3 -c "import json,sys; print(json.load(sys.stdin)['data']['data'].get('${key}',''))" 2>/dev/null \
+        || true
+}
+
 # discord_webhook <ops|alerts|reviews> — prints the URL or nothing.
 discord_webhook() {
     local name="$1" upper url

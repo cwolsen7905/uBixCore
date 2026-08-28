@@ -76,8 +76,9 @@ build-main:
         "$CI_REGISTRY_IMAGE:$CI_COMMIT_SHA-test" \
         sh -c "set -e && vendor/bin/phpcs --no-cache && vendor/bin/phpstan analyse --no-progress --memory-limit=2G app bin php public tests"
 
-# PHPUnit against the unit-test MariaDB. TEST_MYSQL_WRITE_* come from GitLab
-# CI variables (fallback: the .env baked into the image).
+# PHPUnit against the unit-test MariaDB (`ubixcore-test-db` container on the
+# runner host, docker-bridge IP only). Credentials come from ubixvault
+# secret/ubixcore/test-db via the branch's read-only CI token (CP-04).
 .phpunit:
   extends: .registry_login
   stage: lint-and-test
@@ -86,11 +87,20 @@ build-main:
   allow_failure: true   # CP-05
   script:
     - |
+      set -u; SCRIPT_DIR="$CI_PROJECT_DIR"; . bin/lib/notify.sh
+      export TEST_MYSQL_WRITE_HOST="$(vault_kv test-db host)" TEST_MYSQL_WRITE_PORT="$(vault_kv test-db port)"
+      export TEST_MYSQL_WRITE_USERNAME="$(vault_kv test-db username)" TEST_MYSQL_WRITE_PASSWORD="$(vault_kv test-db password)"
+      export TEST_MYSQL_WRITE_DATABASE="$(vault_kv test-db database)"
+      [ -n "$TEST_MYSQL_WRITE_HOST" ] || { echo "no test-db credentials from vault (secret/ubixcore/test-db)"; exit 1; }
       docker run --rm --workdir /web \
-        -e TEST_MYSQL_WRITE_HOST -e TEST_MYSQL_WRITE_PORT \
+        -e TEST_MYSQL_WRITE_HOST -e TEST_MYSQL_WRITE_PORT -e TEST_MYSQL_WRITE_DATABASE \
         -e TEST_MYSQL_WRITE_USERNAME -e TEST_MYSQL_WRITE_PASSWORD \
         "$CI_REGISTRY_IMAGE:$CI_COMMIT_SHA-test" \
-        sh -c "set -e && php bin/ubix database:resetSchema test -n && vendor/bin/phpunit"
+        sh -c "set -e && sed -i 's/^TEST_MYSQL_/#&/' /web/.env \\
+          && php bin/ubix database:resetSchema test -n \\
+          && mysql -h \$TEST_MYSQL_WRITE_HOST -P \$TEST_MYSQL_WRITE_PORT -u \$TEST_MYSQL_WRITE_USERNAME -p\$TEST_MYSQL_WRITE_PASSWORD -e 'CREATE DATABASE IF NOT EXISTS SYSTEMS' \\
+          && php bin/ubix migrate:up --target=test --yes -n \\
+          && vendor/bin/phpunit"
 
 # eslint + prettier + svelte-check for the SvelteKit app, in the node image the
 # build stage pushed (its `npm install` includes devDeps).
