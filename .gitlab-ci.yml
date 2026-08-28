@@ -90,7 +90,7 @@ build-main:
         -e TEST_MYSQL_WRITE_HOST -e TEST_MYSQL_WRITE_PORT \
         -e TEST_MYSQL_WRITE_USERNAME -e TEST_MYSQL_WRITE_PASSWORD \
         "$CI_REGISTRY_IMAGE:$CI_COMMIT_SHA-test" \
-        sh -c "set -e && php bin/ubix database:resetSchema -n && vendor/bin/phpunit"
+        sh -c "set -e && php bin/ubix database:resetSchema test -n && vendor/bin/phpunit"
 
 # eslint + prettier + svelte-check for the SvelteKit app, in the node image the
 # build stage pushed (its `npm install` includes devDeps).
