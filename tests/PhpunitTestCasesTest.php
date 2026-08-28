@@ -52,8 +52,8 @@ final class PhpunitTestCasesTest extends TestCase
 
             $relative      = substr($realPath, strlen($codeDirectory) + 1);
             $class         = strtr(substr($relative, 0, -4), ['/' => '\\']);
-            $testCaseClass = 'Ubix\\Tests\\' . substr($class, 4) . 'Test';
-            $testCaseFile  = $testsDirectory . '/' . substr($relative, 4, -4) . 'Test.php';
+            $testCaseClass = 'Ubix\\Tests\\' . substr($class, 5) . 'Test';
+            $testCaseFile  = $testsDirectory . '/' . substr($relative, 5, -4) . 'Test.php';
 
             if (str_starts_with($class, 'Ubix\\Filters\\') || str_starts_with($class, 'Ubix\\Sniffs\\')) { // We are not subjecting custom phpcs filters or sniffs to a full machine code review
                 continue;
