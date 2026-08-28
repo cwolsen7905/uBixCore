@@ -54,8 +54,8 @@ return static function (): Container {
         //  bin/ubix, but the services they inject need these bindings.
         //
         MigrationFileScannerService::class  => autowire(MigrationFileScannerService::class)->constructorParameter('migrationsPath', $migrationsPath),
-        SqlService::class                    => autowire(MysqlPdoSqlService::class),
-        SchemaMigrationSqlRepository::class  => autowire(SchemaMigrationSqlRepository::class)->constructorParameter('sqlService', get(MigrationPdoSqlService::class)),
+        SqlService::class                   => autowire(MysqlPdoSqlService::class),
+        SchemaMigrationSqlRepository::class => autowire(SchemaMigrationSqlRepository::class)->constructorParameter('sqlService', get(MigrationPdoSqlService::class)),
         SchemaMigrationReader::class        => get(SchemaMigrationSqlRepository::class),
         SchemaMigrationWriter::class        => get(SchemaMigrationSqlRepository::class),
         SlackService::class                 => autowire()->constructorParameter('apiEndpoint', (string) getenv('SLACK_API_ENDPOINT')),
