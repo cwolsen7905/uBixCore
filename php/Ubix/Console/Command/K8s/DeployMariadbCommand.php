@@ -41,7 +41,7 @@ final class DeployMariadbCommand extends Command
      * @param ProcessService $processService Process service instance
      */
     public function __construct(
-        private Logger $logger, // @phpstan-ignore property.onlyWritten (Logger is a required dependency of most VSM classes but has not been implemented in this class yet)
+        private Logger $logger,
         private ProcessService $processService,
     ) {
         parent::__construct($logger);
@@ -63,7 +63,7 @@ final class DeployMariadbCommand extends Command
 
         $output->writeln('Building the project for environment: ' . $env->value);
         // Execute the build commands
-        foreach (self::DEPLOY_COMMANDS[$env->value] as $command) {
+        foreach (self::DEPLOY_COMMANDS[$env->value] ?? [] as $command) {
             $result = $this->processService->executeAsSubprocess($command);
             if ($result->exitCode !== 0) {
                 $output->writeln('<error>Command failed: ' . $command . '</error>');

@@ -2,22 +2,15 @@
 
 declare(strict_types=1);
 
+use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
+use Psr\Http\Server\RequestHandlerInterface as Handler;
 use Slim\App;
 use Slim\Exception\HttpNotFoundException;
-use Ubix\Controller\InternalAdminApi\AffiliateController;
-use Ubix\Controller\InternalAdminApi\AuthController;
 
 return static function (App $app): void {
     session_start();
 
-	// phpcs:disable Generic.Functions.FunctionCallArgumentSpacing.TooMuchSpaceAfterComma -- disable this rule to allow for vertical spacing of the route parameters
-    $app->map(['GET'],     '/affiliates',                     AffiliateController::class . ':list');
-    $app->map(['GET'],     '/affiliate/{affiliateId:[0-9]+}', AffiliateController::class . ':get');
-    $app->map(['GET'],     '/auth',                           AuthController::class . ':validate');
-    $app->map(['POST'],    '/auth',                           AuthController::class . ':authenticate');
-    $app->map(['OPTIONS'], '/{routes:.*}',                    AuthController::class . ':options');
-	// phpcs:enable Generic.Functions.FunctionCallArgumentSpacing.TooMuchSpaceAfterComma
 
     //
     //  If no match is found with the existing routes then fallback to throwing a 404 exception
@@ -30,7 +23,7 @@ return static function (App $app): void {
         },
     );
 
-    $app->add(function ($request, $handler) {
+    $app->add(static function (Request $request, Handler $handler): Response {
         $origin = $request->getHeaderLine('Origin');
 
         $response = $handler->handle($request)

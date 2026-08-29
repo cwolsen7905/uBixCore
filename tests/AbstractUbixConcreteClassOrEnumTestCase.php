@@ -24,8 +24,6 @@ use Throwable;
 use Ubix\Collection\CollectionInterface as Collection;
 use Ubix\Controller\AbstractController as Controller;
 use Ubix\DataTransferObject\DtoInterface as Dto;
-use Ubix\DataTransferObject\GeolocationLookup;
-use Ubix\Enum\AgeVerification\AgeVerificationRequirement;
 use Ubix\Enum\MachineCodeReview\MachineCodeReviewTool;
 use Ubix\Enum\Migration\DestructiveStatementKind;
 use Ubix\Model\AbstractModel as Model;
@@ -481,14 +479,6 @@ abstract class AbstractUbixConcreteClassOrEnumTestCase extends TestCase
 
                     case 'string':
                         $value = $this->generateRandomString();
-                        break;
-
-                    case GeolocationLookup::class: // TEMPORARY: this is hacky, we need to do something about PHP-DI for PHPUnit
-                        $value = new GeolocationLookup();
-                        break;
-
-                    case AgeVerificationRequirement::class: // TEMPORARY: this is hacky, we need to do something about PHP-DI for PHPUnit
-                        $value = AgeVerificationRequirement::BLOCKED;
                         break;
 
                     case MachineCodeReviewTool::class: // TEMPORARY: this is hacky, we need to do something about PHP-DI for PHPUnit

@@ -104,7 +104,7 @@ final class EmailConfirmationController extends Controller
             $now = new DateTime();
             if ($confirmationToken->getExpiresAt() < $now) {
                 $this->logger->info('Email confirmation failed: token expired', [
-                    'expires_at' => $confirmationToken->getExpiresAt()->format('Y-m-d H:i:s'),
+                    'expires_at' => $confirmationToken->getExpiresAt()?->format('Y-m-d H:i:s'),
                     'token_id'   => $confirmationToken->getId(),
                     'user_id'    => $confirmationToken->getUserId(),
                 ]);
@@ -116,7 +116,11 @@ final class EmailConfirmationController extends Controller
             }
 
             // Get the user
-            $user = $this->userReader->getUserById(new UserId($confirmationToken->getUserId()));
+            $tokenId     = $confirmationToken->getId();
+            $tokenUserId = $confirmationToken->getUserId();
+            assert($tokenId !== null && $tokenUserId !== null);
+
+            $user = $this->userReader->getUserById(new UserId($tokenUserId));
 
             // Check if user is already active
             if ($user->getStatus() === UserStatus::ACTIVE) {
@@ -125,7 +129,7 @@ final class EmailConfirmationController extends Controller
                 ]);
 
                 // Mark token as used
-                $this->tokenWriter->markTokenAsUsed($confirmationToken->getId());
+                $this->tokenWriter->markTokenAsUsed($tokenId);
 
                 // Auto-login the user
                 $_SESSION['user'] = [
@@ -155,7 +159,7 @@ final class EmailConfirmationController extends Controller
             $this->userWriter->updateUser($user);
 
             // Mark token as used
-            $this->tokenWriter->markTokenAsUsed($confirmationToken->getId());
+            $this->tokenWriter->markTokenAsUsed($tokenId);
 
             // Auto-login the user
             $_SESSION['user'] = [

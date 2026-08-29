@@ -29,7 +29,7 @@ final class RunCommand extends Command
      * @param ProcessService $processService Process service instance
      */
     public function __construct(
-        private Logger $logger, // @phpstan-ignore property.onlyWritten (Logger is a required dependency of most VSM classes but has not been implemented in this class yet)
+        private Logger $logger,
         private ProcessService $processService,
     ) {
         // Call the parent constructor with the command name
@@ -63,7 +63,10 @@ final class RunCommand extends Command
                 return Command::FAILURE;
             }
 
-            $result = $this->processService->executeAsSubprocess('cd ' . escapeshellarg($this->appPath . $appName) . ' && npm run dev -- --open --host=' . escapeshellarg((string)$input->getOption('host')) . ' --port=' . escapeshellarg((string)$input->getOption('port')));
+            $host = $input->getOption('host');
+            $port = $input->getOption('port');
+            assert(is_string($host) && is_string($port));
+            $result = $this->processService->executeAsSubprocess('cd ' . escapeshellarg($this->appPath . $appName) . ' && npm run dev -- --open --host=' . escapeshellarg($host) . ' --port=' . escapeshellarg($port));
             return Command::SUCCESS;
         }
 
