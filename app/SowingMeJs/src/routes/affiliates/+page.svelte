@@ -1,5 +1,5 @@
 <script>
-  // Add any page-specific logic here
+	// Add any page-specific logic here
 </script>
 
 <h1>Affiliates</h1>
