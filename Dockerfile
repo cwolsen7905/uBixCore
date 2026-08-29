@@ -32,3 +32,5 @@ EXPOSE 8080
 
 # Let supervisord start nginx & php-fpm
 CMD ["/usr/bin/supervisord", "-c", "/etc/supervisor/conf.d/supervisord.conf"]
+# Rebuild trigger: pull nginx-php85-fpm-memcache:dev with the php-fpm85 supervisord fix
+# (baseimages@b99503a). No-op to force a fresh ubixcore:dev image after the base fix. 2026-08-28
