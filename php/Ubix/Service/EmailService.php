@@ -6,7 +6,7 @@ namespace Ubix\Service;
 
 use Exception;
 use Psr\Log\LoggerInterface as Logger;
-use Symfony\Component\Mailer\Exception\TransportExceptionInterface;
+use Symfony\Component\Mailer\Exception\TransportExceptionInterface as TransportException;
 use Symfony\Component\Mailer\MailerInterface;
 use Symfony\Component\Mime\Email;
 
@@ -64,7 +64,7 @@ final class EmailService
             ]);
 
             return true;
-        } catch (TransportExceptionInterface $e) {
+        } catch (TransportException $e) {
             $this->logger->error('Failed to send registration confirmation email', [
                 'error' => $e->getMessage(),
                 'to'    => $toEmail,

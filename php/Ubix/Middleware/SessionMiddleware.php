@@ -52,16 +52,17 @@ final class SessionMiddleware implements Middleware
         }
 
         // Get the root domain as wildcard for cookie sharing across subdomains
-        $domainParts      = explode('.', $_SERVER['HTTP_HOST']);
+        $uri              = $request->getUri();
+        $host             = $uri->getHost();
+        $domainParts      = explode('.', $host);
         $domainPartsCount = count($domainParts);
-        if ($domainPartsCount >= 2 && !strstr($_SERVER['HTTP_HOST'], '127.0.0.1')) {
-            $domain = '.' . $domainParts[$domainPartsCount - 2] . '.' . $domainParts[$domainPartsCount - 1];
-        } else {
-            $domain = '';// $_SERVER['HTTP_HOST'];
-        }
+        $domain           = $domainPartsCount >= 2 && !str_contains($host, '127.0.0.1') ? '.' . $domainParts[$domainPartsCount - 2] . '.' . $domainParts[$domainPartsCount - 1] : '';
 
-        $isSecure = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') || (isset($_SERVER['SERVER_PORT']) && $_SERVER['SERVER_PORT'] === 443) || (!empty($_SERVER['HTTP_X_FORWARDED_PROTO']) && $_SERVER['HTTP_X_FORWARDED_PROTO'] === 'https');
-        $sameSite = $isSecure ? 'None' : 'Lax';
+        $serverParams = $request->getServerParams();
+        $isSecure     = $uri->getScheme() === 'https'
+        || ($serverParams['HTTP_X_FORWARDED_PROTO'] ?? '') === 'https'
+        || in_array($serverParams['SERVER_PORT'] ?? null, [443, '443'], true);
+        $sameSite     = $isSecure ? 'None' : 'Lax';
         // Invoke session_set_cookie_params() before session_set_save_handler() because the latter will invoke session_get_cookie_params() to get the $domain value
         session_set_cookie_params(
             [

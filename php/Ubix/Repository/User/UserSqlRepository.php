@@ -40,6 +40,8 @@ final class UserSqlRepository implements UserReader, UserWriter
 
     /**
      * {@inheritDoc}
+     *
+     * @throws Exception When no user has the given id
      */
     public function getUserById(UserId $userId): User
     {
@@ -73,6 +75,8 @@ final class UserSqlRepository implements UserReader, UserWriter
 
     /**
      * {@inheritDoc}
+     *
+     * @throws Exception When no user has the given email
      */
     public function getUserByEmail(Email $email): User
     {

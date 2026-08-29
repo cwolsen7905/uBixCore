@@ -6,12 +6,7 @@ namespace Ubix\Controller\SowingMeWeb;
 
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
-use Psr\Log\LoggerInterface as Logger;
 use Ubix\Controller\AbstractController as Controller;
-use Ubix\Renderer\TemplateRenderer;
-use Ubix\Service\AffiliateService;
-use Ubix\Service\AttributionService;
-use Ubix\Service\JsonService;
 
 /**
  * Controller to handle API calls involving models
@@ -21,25 +16,6 @@ use Ubix\Service\JsonService;
 final class SowingMeWebController extends Controller
 {
     /**
-     * Constructor
-     *
-     * @param Logger             $logger             The Monolog logger
-     * @param TemplateRenderer   $view               The template renderer
-     * @param JsonService        $jsonService        The JSON service
-     * @param AttributionService $attributionService The Attribution Service
-     * @param AffiliateService   $affiliateService   The Affiliate Service
-     *
-     * @return void
-     */
-    public function __construct(
-        protected Logger $logger,
-        protected TemplateRenderer $view, // -> Needed Always
-        protected JsonService $jsonService, // -> Needed Always
-    ) {
-        parent::__construct($logger, $view, $jsonService);
-    }
-
-    /**
      * Home page for SowingMeWeb
      *
      * @param Request  $request  The HTTP request object containing client data.
@@ -47,7 +23,7 @@ final class SowingMeWebController extends Controller
      *
      * @return Response The modified response object with the operation result.
      */
-    public function home(Request $request, Response $response): Response
+    public function home(Request $request, Response $response): Response // phpcs:ignore SlevomatCodingStandard.Functions.UnusedParameter.UnusedParameter -- Slim route signature
     {
         return $this->renderTemplate(
             $response,
@@ -63,7 +39,7 @@ final class SowingMeWebController extends Controller
      *
      * @return Response The modified response object with the operation result.
      */
-    public function signup(Request $request, Response $response): Response
+    public function signup(Request $request, Response $response): Response // phpcs:ignore SlevomatCodingStandard.Functions.UnusedParameter.UnusedParameter -- Slim route signature
     {
         // Determine API hostname based on ENV environment variable
         $env         = getenv('ENV') ?: '';
@@ -90,7 +66,7 @@ final class SowingMeWebController extends Controller
      *
      * @return Response The modified response object with the operation result.
      */
-    public function forCreators(Request $request, Response $response): Response
+    public function forCreators(Request $request, Response $response): Response // phpcs:ignore SlevomatCodingStandard.Functions.UnusedParameter.UnusedParameter -- Slim route signature
     {
         return $this->renderTemplate($response, 'for-creators.latte');
     }
@@ -103,7 +79,7 @@ final class SowingMeWebController extends Controller
      *
      * @return Response The modified response object with the operation result.
      */
-    public function howItWorks(Request $request, Response $response): Response
+    public function howItWorks(Request $request, Response $response): Response // phpcs:ignore SlevomatCodingStandard.Functions.UnusedParameter.UnusedParameter -- Slim route signature
     {
         return $this->renderTemplate($response, 'how-it-works.latte');
     }
@@ -116,7 +92,7 @@ final class SowingMeWebController extends Controller
      *
      * @return Response The modified response object with the operation result.
      */
-    public function pricing(Request $request, Response $response): Response
+    public function pricing(Request $request, Response $response): Response // phpcs:ignore SlevomatCodingStandard.Functions.UnusedParameter.UnusedParameter -- Slim route signature
     {
         return $this->renderTemplate($response, 'pricing.latte');
     }
@@ -129,7 +105,7 @@ final class SowingMeWebController extends Controller
      *
      * @return Response The modified response object with the operation result.
      */
-    public function about(Request $request, Response $response): Response
+    public function about(Request $request, Response $response): Response // phpcs:ignore SlevomatCodingStandard.Functions.UnusedParameter.UnusedParameter -- Slim route signature
     {
         return $this->renderTemplate($response, 'about.latte');
     }
@@ -142,7 +118,7 @@ final class SowingMeWebController extends Controller
      *
      * @return Response The modified response object with the operation result.
      */
-    public function faq(Request $request, Response $response): Response
+    public function faq(Request $request, Response $response): Response // phpcs:ignore SlevomatCodingStandard.Functions.UnusedParameter.UnusedParameter -- Slim route signature
     {
         return $this->renderTemplate($response, 'faq.latte');
     }
@@ -155,7 +131,7 @@ final class SowingMeWebController extends Controller
      *
      * @return Response The modified response object with the operation result.
      */
-    public function testimonials(Request $request, Response $response): Response
+    public function testimonials(Request $request, Response $response): Response // phpcs:ignore SlevomatCodingStandard.Functions.UnusedParameter.UnusedParameter -- Slim route signature
     {
         return $this->renderTemplate($response, 'testimonials.latte');
     }
