@@ -576,4 +576,6 @@
     </rule>
     -->
 
+    <exclude-pattern>*/node_modules/*</exclude-pattern>
+    <exclude-pattern>*/.svelte-kit/*</exclude-pattern>
 </ruleset>

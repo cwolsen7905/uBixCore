@@ -47,13 +47,16 @@ Usage:
   ubix code:review [<file>...] [--modified]
 HELP)
             ->addOption('modified', null, InputOption::VALUE_NONE, 'Review all the modified files in the current git branch')
+            ->addOption('phpcs', null, InputOption::VALUE_REQUIRED, 'Run phpcs: on|off', 'on')
+            ->addOption('phpstan', null, InputOption::VALUE_REQUIRED, 'Run phpstan: on|off', 'on')
+            ->addOption('phpunit', null, InputOption::VALUE_REQUIRED, 'Run phpunit: on|off (off = the fast gate used by the pre-push hook; CI runs phpunit before deploy)', 'on')
             ->addArgument('file', InputArgument::IS_ARRAY | InputArgument::OPTIONAL, 'Files to code review');
     }
 
     /**
      * {@inheritDoc}
      */
-    protected function execute(Input $input, Output $output): int // phpcs:ignore SlevomatCodingStandard.Functions.UnusedParameter.UnusedParameter -- $input is required but not used
+    protected function execute(Input $input, Output $output): int
     {
         $this->displayAsciiTrident($output);
 
@@ -66,8 +69,11 @@ HELP)
         //  Execute the machine code review
         //
         $review = $this->machineCodeReviewService->getReview(
-            files:  $files,
-            output: $output,
+            files:         $files,
+            enablePhpcs:   $input->getOption('phpcs') !== 'off',
+            enablePhpstan: $input->getOption('phpstan') !== 'off',
+            enablePhpunit: $input->getOption('phpunit') !== 'off',
+            output:        $output,
         );
 
         //
