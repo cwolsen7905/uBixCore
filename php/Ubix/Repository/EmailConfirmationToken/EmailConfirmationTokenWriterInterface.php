@@ -19,29 +19,29 @@ interface EmailConfirmationTokenWriterInterface
      *
      * @param EmailConfirmationToken $token The token to create
      *
-     * @return int The created token ID
+     * @return void The created ID is set on the passed model
      *
      * @throws Exception If the token creation fails
      */
-    public function createToken(EmailConfirmationToken $token): int;
+    public function createToken(EmailConfirmationToken $token): void;
 
     /**
      * Mark a token as used
      *
      * @param int $tokenId The token ID to mark as used
      *
-     * @return bool True if the update was successful
+     * @return void
      *
      * @throws Exception If the token update fails
      */
-    public function markTokenAsUsed(int $tokenId): bool;
+    public function markTokenAsUsed(int $tokenId): void;
 
     /**
      * Delete expired tokens
      *
-     * @return int The number of deleted tokens
+     * @return void
      *
      * @throws Exception If the deletion fails
      */
-    public function deleteExpiredTokens(): int;
+    public function deleteExpiredTokens(): void;
 }
