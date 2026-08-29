@@ -125,7 +125,7 @@ class UbixConcreteClassOrEnumTestCaseSniff implements Sniff
         }
         $namespace = '\\' . ltrim($namespace, '\\');
         if (str_starts_with($namespace, '\\Ubix\\Tests\\')) {
-            $namespace = substr($namespace, 0, 4) . substr($namespace, 10);
+            $namespace = substr($namespace, 0, 5) . substr($namespace, 11); // "\\Ubix\\Tests\\X" -> "\\Ubix\\X"
         }
         $namePtr   = $phpcsFile->findNext(\T_STRING, $stackPtr);
         $className = $tokens[$namePtr]['content'];
