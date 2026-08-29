@@ -16,6 +16,7 @@ Sowing.me is a creator-monetisation platform for faith-based content creators (P
 ## Related
 
 - [`docs/pitch-deck.md`](../../pitch-deck.md) — investor/positioning narrative. **Marketing intent, not engineering truth** — its "Completed" list is aspirational; the roadmap is authoritative for build status.
+- [`design-system.md`](design-system.md) — Claude Design ↔ code source-of-truth record: the 3 design projects, project→codebase mapping, token map (how `/design-sync` targets `SowingMeWeb` vs `SowingMeJs`).
 - [`docs/surfaces/`](../../surfaces/README.md) — **surface index**: all 21 capability surfaces (SRS + TDS each; ADS where warranted), grouped by milestone.
 - [`docs/data-models/core-entities.md`](../../data-models/core-entities.md) — cross-cutting ERD (the spine + `transactions` ledger + owner polymorphism) shared by every surface.
 - [`docs/projects/migrations/`](../migrations/README.md) — schema-migration runner this project depends on for every table it adds.
