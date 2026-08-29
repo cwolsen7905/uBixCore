@@ -555,7 +555,7 @@ final class MachineCodeReviewService
                     //
                     //  Ensure the rule is in the $tools array entry
                     //
-                    $rule      = $violation->rule ?? '';
+                    $rule      = $violation->rule;
                     $ruleParts = explode('.', $rule);
                     if ($violation->tool === MachineCodeReviewTool::PHPCS && count($ruleParts) > 3) { // The phpcs rules include a "sub-rule" that is not fixable, e.g. the Squiz.WhiteSpace.SuperfluousWhitespace.EndLine sub-rule is not auto-fixable but the broader Squiz.WhiteSpace.SuperfluousWhitespace rule is
                         $rule = $ruleParts[0] . '.' . $ruleParts[1] . '.' . $ruleParts[2];

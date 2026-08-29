@@ -30,7 +30,10 @@ require_once '../vendor/autoload.php';
 //
 $vaultBootstrap = __DIR__ . '/../php/Ubix/Bootstrap/vault.php';
 if (is_file($vaultBootstrap)) {
-    (require $vaultBootstrap)();
+    $vaultBootstrapper = require $vaultBootstrap;
+    if (is_callable($vaultBootstrapper)) {
+        $vaultBootstrapper();
+    }
 }
 
 //

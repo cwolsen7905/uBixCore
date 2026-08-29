@@ -65,7 +65,7 @@ final class EmailConfirmationController extends Controller
         $queryParams = $request->getQueryParams();
         $token       = $queryParams['token'] ?? null;
 
-        if (!$token) {
+        if (!is_string($token) || $token === '') {
             return $this->renderJson($response, [
                 'message' => 'Confirmation token is required',
                 'status'  => 'error',

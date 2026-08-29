@@ -40,7 +40,7 @@ final class MigrationPdoSqlServiceTest extends UbixConcreteClassOrEnumTestCase i
      */
     public function setUp(): void
     {
-        $studios = UbixDatabase::STUDIOS->databaseName();
+        $studios = UbixDatabase::SOWINGME->databaseName();
 
         $this->insertSeedData(
             'INSERT INTO ' . $studios . '.Broadcasters SET id=:id, name=:name, prospect_id=0, status=1',
@@ -63,7 +63,7 @@ final class MigrationPdoSqlServiceTest extends UbixConcreteClassOrEnumTestCase i
      */
     public function tearDown(): void
     {
-        $studios = UbixDatabase::STUDIOS->databaseName();
+        $studios = UbixDatabase::SOWINGME->databaseName();
 
         $this->insertSeedData(
             'DELETE FROM ' . $studios . '.Broadcasters WHERE id IN (:idOne, :idTwo, :idThree)',
@@ -95,7 +95,7 @@ final class MigrationPdoSqlServiceTest extends UbixConcreteClassOrEnumTestCase i
      */
     public function testGetColumnReadsThroughLazyInitialisedConnection(): void
     {
-        $studios = UbixDatabase::STUDIOS->databaseName();
+        $studios = UbixDatabase::SOWINGME->databaseName();
 
         $name = $this->buildMigrationSqlService()->getColumn(
             'SELECT name FROM ' . $studios . '.Broadcasters WHERE id=:id',
@@ -115,7 +115,7 @@ final class MigrationPdoSqlServiceTest extends UbixConcreteClassOrEnumTestCase i
      */
     public function testGetColumnReturnsFalseWhenNoMatch(): void
     {
-        $studios = UbixDatabase::STUDIOS->databaseName();
+        $studios = UbixDatabase::SOWINGME->databaseName();
 
         $name = $this->buildMigrationSqlService()->getColumn(
             'SELECT name FROM ' . $studios . '.Broadcasters WHERE id=:id',
@@ -134,7 +134,7 @@ final class MigrationPdoSqlServiceTest extends UbixConcreteClassOrEnumTestCase i
      */
     public function testGetRowReturnsAssociativeRow(): void
     {
-        $studios = UbixDatabase::STUDIOS->databaseName();
+        $studios = UbixDatabase::SOWINGME->databaseName();
 
         $row = $this->buildMigrationSqlService()->getRow(
             'SELECT id, name FROM ' . $studios . '.Broadcasters WHERE id=:id',
@@ -155,7 +155,7 @@ final class MigrationPdoSqlServiceTest extends UbixConcreteClassOrEnumTestCase i
      */
     public function testGetRowsYieldsEachMatchingRow(): void
     {
-        $studios = UbixDatabase::STUDIOS->databaseName();
+        $studios = UbixDatabase::SOWINGME->databaseName();
 
         $names = [];
         $rows  = $this->buildMigrationSqlService()->getRows(
@@ -183,7 +183,7 @@ final class MigrationPdoSqlServiceTest extends UbixConcreteClassOrEnumTestCase i
      */
     public function testQueryReturnsAffectedRowCount(): void
     {
-        $studios    = UbixDatabase::STUDIOS->databaseName();
+        $studios    = UbixDatabase::SOWINGME->databaseName();
         $sqlService = $this->buildMigrationSqlService();
 
         // Seeded statuses are TWO=1 and THREE=0; updating both to 5 changes
@@ -206,7 +206,7 @@ final class MigrationPdoSqlServiceTest extends UbixConcreteClassOrEnumTestCase i
      */
     public function testWriteIsImmediatelyReadableWithoutReplicaLag(): void
     {
-        $studios    = UbixDatabase::STUDIOS->databaseName();
+        $studios    = UbixDatabase::SOWINGME->databaseName();
         $sqlService = $this->buildMigrationSqlService();
 
         $sqlService->query(
@@ -231,7 +231,7 @@ final class MigrationPdoSqlServiceTest extends UbixConcreteClassOrEnumTestCase i
      */
     public function testCommitPersistsTransactionalWrite(): void
     {
-        $studios    = UbixDatabase::STUDIOS->databaseName();
+        $studios    = UbixDatabase::SOWINGME->databaseName();
         $sqlService = $this->buildMigrationSqlService();
 
         $sqlService->beginTransaction();

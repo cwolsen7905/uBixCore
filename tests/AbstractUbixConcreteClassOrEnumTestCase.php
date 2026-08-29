@@ -36,7 +36,7 @@ use Ubix\Tests\AbstractTestCase as TestCase;
 abstract class AbstractUbixConcreteClassOrEnumTestCase extends TestCase
 {
     private const CLASS_NAME_RESERVED_WORDS_AND_EXEMPTIONS = [ // These reserved words and exemptions are case sensitive
-        'Model'    => ['Ubix\\DataTransferObject\\ModelDiff'],
+        'Model'    => [],
         'Optiuser' => [],
     ];
 

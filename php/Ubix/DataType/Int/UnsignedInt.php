@@ -20,7 +20,6 @@ class UnsignedInt extends IntDataType
      * @param int $input The input value
      */
     public function __construct(
-        // @phpstan-ignore-next-line
         #[Range(min: 0, max: 4294967295)]
         private int $input,
     ) {

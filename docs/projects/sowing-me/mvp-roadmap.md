@@ -10,7 +10,7 @@ Status vocabulary per row: `Todo` · `Docs` (SRS/spec in progress) · `Build` ·
 
 | ID | Task | Effort | Status | Notes |
 |---|---|---|---|---|
-| M0-01 | Remove neptune leftovers: `broadcasting/*` routes in both JS apps, `AttributionLog`, `Transaction` model (replace with Sowing.me ledger later), `DuplicateProspect` repo, admin `explore` page | S | Todo | Verify nothing imports them; delete tests alongside |
+| M0-01 | Remove neptune leftovers: `broadcasting/*` routes in both JS apps, `AttributionLog`, `Transaction` model (replace with Sowing.me ledger later), `DuplicateProspect` repo, admin `explore` page | S | Done | 2026-08-28: 56 prod files + 89 tests deleted (Performer/AgeVerification/Notification/Transaction/AdminUser/Broadcaster/Studio/Slug/DuplicateProspect/FanClub/BillingTransaction, neptune DTO options, domain ids, cron examples, MpCode); `UbixDatabase` → `SOWINGME`/`SYSTEMS`; JS `broadcasting/*` removed. Admin `explore` page kept (M2-08 decides). |
 | M0-02 | Decide Q2 (creator entity) + write `docs/data-models/core-entities.md` (ERD for users/creators/tiers/subscriptions/posts/transactions) | S | Docs | ERD [drafted](../../data-models/core-entities.md); Q2 default (separate `creators`) adopted pending final sign-off |
 | M0-03 | SRS + tech spec for `authentication` (`docs/surfaces/authentication/`) — current session flow, lockout, password reset, roles | S | Docs | |
 | M0-04 | SRS + tech spec for `registration` — supporter vs creator sign-up, onboarding wizard | S | Docs | Email confirmation already built; document it |

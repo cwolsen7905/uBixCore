@@ -20,7 +20,6 @@ class Varchar extends StringDataType
      * @param string $input The input value
      */
     public function __construct(
-        // @phpstan-ignore-next-line
         #[Length(min: 0, max: 65535)]
         private string $input,
     ) {
