@@ -18,12 +18,10 @@ use Ubix\Model\User;
 use Ubix\Payload\Request\AuthenticationRequestPayload;
 use Ubix\Payload\Request\RegistrationRequestPayload;
 use Ubix\Renderer\TemplateRenderer;
-use Ubix\Repository\EmailConfirmationToken\EmailConfirmationTokenReaderInterface as EmailConfirmationTokenReader;
-use Ubix\Repository\EmailConfirmationToken\EmailConfirmationTokenWriterInterface as EmailConfirmationTokenWriter;
-use Ubix\Repository\User\UserReaderInterface as UserReader;
-use Ubix\Repository\User\UserWriterInterface as UserWriter;
+use Ubix\Service\EmailConfirmationTokenService;
 use Ubix\Service\EmailService;
 use Ubix\Service\JsonService;
+use Ubix\Service\UserService;
 
 /**
  * Controller to handle API calls involving models
@@ -35,14 +33,12 @@ final class AuthController extends Controller
     /**
      * Constructor
      *
-     * @param Logger                       $logger       The Monolog logger
-     * @param TemplateRenderer             $view         The template renderer
-     * @param JsonService                  $jsonService  The JSON service
-     * @param UserReader                   $userReader   The user reader
-     * @param UserWriter                   $userWriter   The user writer
-     * @param EmailConfirmationTokenReader $tokenReader  The email confirmation token reader
-     * @param EmailConfirmationTokenWriter $tokenWriter  The email confirmation token writer
-     * @param EmailService                 $emailService The email service
+     * @param Logger                        $logger       The Monolog logger
+     * @param TemplateRenderer              $view         The template renderer
+     * @param JsonService                   $jsonService  The JSON service
+     * @param UserService                   $userService  The user service
+     * @param EmailConfirmationTokenService $tokenService The email confirmation token service
+     * @param EmailService                  $emailService The email service
      *
      * @return void
      */
@@ -50,10 +46,8 @@ final class AuthController extends Controller
         protected Logger $logger,
         protected TemplateRenderer $view, // -> Needed Always
         protected JsonService $jsonService, // -> Needed Always
-        protected UserReader $userReader, // -> Needed for user lookups
-        protected UserWriter $userWriter, // -> Needed for user creation
-        protected EmailConfirmationTokenReader $tokenReader, // -> Needed for token lookups
-        protected EmailConfirmationTokenWriter $tokenWriter, // -> Needed for token creation
+        protected UserService $userService,
+        protected EmailConfirmationTokenService $tokenService,
         protected EmailService $emailService, // -> Needed for sending emails
     ) {
         parent::__construct($logger, $view, $jsonService);
@@ -89,7 +83,7 @@ final class AuthController extends Controller
 
         // Lookup the user by email or return a json error response status 401
         try {
-            $user = $this->userReader->getUserByEmail($payload->email);
+            $user = $this->userService->getUserByEmail($payload->email);
         } catch (Exception $e) {
             $this->logger->info('Authentication failed: user not found', [
                 'email' => $payload->email->value,
@@ -225,15 +219,12 @@ final class AuthController extends Controller
             $payload = RegistrationRequestPayload::getRequest($request);
             assert($payload instanceof RegistrationRequestPayload);
         } catch (DtoException $e) {
-            print 'Test2';
             return $this->renderJson($response, [
                 'fields'     => $e->getDto()->errors ?? [],
                 'message'    => $e->getMessage(),
                 'statusCode' => $e->getCode(),
             ], StatusCode::BAD_REQUEST);
         }
-
-        print 'Test';
 
         // Log the registration attempt
         $this->logger->debug('Registration attempt', [
@@ -255,7 +246,7 @@ final class AuthController extends Controller
         }
 
         // Check if displayName already exists
-        if ($this->userReader->displayNameExists($payload->displayName)) {
+        if ($this->userService->displayNameExists($payload->displayName)) {
             $this->logger->info('Registration failed: displayName already exists', [
                 'email' => $payload->email->value,
             ]);
@@ -270,7 +261,7 @@ final class AuthController extends Controller
         }
 
         // Check if email already exists
-        if ($this->userReader->emailExists($payload->email)) {
+        if ($this->userService->emailExists($payload->email)) {
             $this->logger->info('Registration failed: email already exists', [
                 'email' => $payload->email->value,
             ]);
@@ -305,7 +296,7 @@ final class AuthController extends Controller
         );
 
         try {
-            $userId = $this->userWriter->createUser($user);
+            $userId = $this->userService->createUser($user);
 
             $this->logger->info('User registration successful', [
                 'display_name' => $payload->displayName->value,
@@ -329,7 +320,7 @@ final class AuthController extends Controller
             );
 
             try {
-                $this->tokenWriter->createToken($confirmationToken);
+                $this->tokenService->createToken($confirmationToken);
             } catch (Exception $e) {
                 $this->logger->error('Failed to create confirmation token', [
                     'error'   => $e->getMessage(),

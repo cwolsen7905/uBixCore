@@ -14,11 +14,9 @@ use Ubix\DataType\Int\UserId;
 use Ubix\Enum\StatusCode;
 use Ubix\Enum\User\UserStatus;
 use Ubix\Renderer\TemplateRenderer;
-use Ubix\Repository\EmailConfirmationToken\EmailConfirmationTokenReaderInterface as EmailConfirmationTokenReader;
-use Ubix\Repository\EmailConfirmationToken\EmailConfirmationTokenWriterInterface as EmailConfirmationTokenWriter;
-use Ubix\Repository\User\UserReaderInterface as UserReader;
-use Ubix\Repository\User\UserWriterInterface as UserWriter;
+use Ubix\Service\EmailConfirmationTokenService;
 use Ubix\Service\JsonService;
+use Ubix\Service\UserService;
 
 /**
  * Controller to handle email confirmation
@@ -30,13 +28,11 @@ final class EmailConfirmationController extends Controller
     /**
      * Constructor
      *
-     * @param Logger                       $logger      The Monolog logger
-     * @param TemplateRenderer             $view        The template renderer
-     * @param JsonService                  $jsonService The JSON service
-     * @param EmailConfirmationTokenReader $tokenReader The email confirmation token reader
-     * @param EmailConfirmationTokenWriter $tokenWriter The email confirmation token writer
-     * @param UserReader                   $userReader  The user reader
-     * @param UserWriter                   $userWriter  The user writer
+     * @param Logger                        $logger       The Monolog logger
+     * @param TemplateRenderer              $view         The template renderer
+     * @param JsonService                   $jsonService  The JSON service
+     * @param EmailConfirmationTokenService $tokenService The email confirmation token service
+     * @param UserService                   $userService  The user service
      *
      * @return void
      */
@@ -44,10 +40,8 @@ final class EmailConfirmationController extends Controller
         protected Logger $logger,
         protected TemplateRenderer $view,
         protected JsonService $jsonService,
-        protected EmailConfirmationTokenReader $tokenReader,
-        protected EmailConfirmationTokenWriter $tokenWriter,
-        protected UserReader $userReader,
-        protected UserWriter $userWriter,
+        protected EmailConfirmationTokenService $tokenService,
+        protected UserService $userService,
     ) {
         parent::__construct($logger, $view, $jsonService);
     }
@@ -74,7 +68,7 @@ final class EmailConfirmationController extends Controller
 
         try {
             // Look up the token
-            $confirmationToken = $this->tokenReader->getTokenByString($token);
+            $confirmationToken = $this->tokenService->getTokenByString($token);
 
             if ($confirmationToken === null) {
                 $this->logger->info('Email confirmation failed: token not found', [
@@ -120,7 +114,7 @@ final class EmailConfirmationController extends Controller
             $tokenUserId = $confirmationToken->getUserId();
             assert($tokenId !== null && $tokenUserId !== null);
 
-            $user = $this->userReader->getUserById(new UserId($tokenUserId));
+            $user = $this->userService->getUserById(new UserId($tokenUserId));
 
             // Check if user is already active
             if ($user->getStatus() === UserStatus::ACTIVE) {
@@ -129,7 +123,7 @@ final class EmailConfirmationController extends Controller
                 ]);
 
                 // Mark token as used
-                $this->tokenWriter->markTokenAsUsed($tokenId);
+                $this->tokenService->markTokenAsUsed($tokenId);
 
                 // Auto-login the user
                 $_SESSION['user'] = [
@@ -156,10 +150,10 @@ final class EmailConfirmationController extends Controller
 
             // Update user status to active
             $user->setStatus(UserStatus::ACTIVE);
-            $this->userWriter->updateUser($user);
+            $this->userService->updateUser($user);
 
             // Mark token as used
-            $this->tokenWriter->markTokenAsUsed($tokenId);
+            $this->tokenService->markTokenAsUsed($tokenId);
 
             // Auto-login the user
             $_SESSION['user'] = [

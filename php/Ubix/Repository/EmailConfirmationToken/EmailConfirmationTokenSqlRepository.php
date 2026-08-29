@@ -6,6 +6,8 @@ namespace Ubix\Repository\EmailConfirmationToken;
 
 use DateTime;
 use Psr\Log\LoggerInterface as Logger;
+use Ubix\DataTransferObject\SqlQuery;
+use Ubix\DataTransferObject\SqlRepository\EmailConfirmationTokenOptions;
 use Ubix\Model\EmailConfirmationToken;
 use Ubix\Repository\EmailConfirmationToken\EmailConfirmationTokenReaderInterface as EmailConfirmationTokenReader;
 use Ubix\Repository\EmailConfirmationToken\EmailConfirmationTokenWriterInterface as EmailConfirmationTokenWriter;
@@ -37,24 +39,12 @@ final class EmailConfirmationTokenSqlRepository implements EmailConfirmationToke
      */
     public function getTokenByString(string $token): ?EmailConfirmationToken
     {
-        $sql = 'SELECT
-                    id,
-                    user_id,
-                    token,
-                    expires_at,
-                    created_at,
-                    used_at
-                FROM sowingme.email_confirmation_tokens
-                WHERE token = :token
-                LIMIT 1';
+        $tokens = $this->query(new EmailConfirmationTokenOptions(
+            token: $token,
+            limit: 1,
+        ));
 
-        $result = $this->sqlService->getRow($sql, ['token' => $token]);
-
-        if ($result === false) {
-            return null;
-        }
-
-        return $this->hydrateToken($result);
+        return $tokens[0] ?? null;
     }
 
     /**
@@ -62,33 +52,19 @@ final class EmailConfirmationTokenSqlRepository implements EmailConfirmationToke
      */
     public function getActiveTokenForUser(int $userId): ?EmailConfirmationToken
     {
-        $sql = 'SELECT
-                    id,
-                    user_id,
-                    token,
-                    expires_at,
-                    created_at,
-                    used_at
-                FROM sowingme.email_confirmation_tokens
-                WHERE user_id = :user_id
-                AND used_at IS NULL
-                AND expires_at > NOW()
-                ORDER BY created_at DESC
-                LIMIT 1';
+        $tokens = $this->query(new EmailConfirmationTokenOptions(
+            userId:     $userId,
+            activeOnly: true,
+            limit:      1,
+        ));
 
-        $result = $this->sqlService->getRow($sql, ['user_id' => $userId]);
-
-        if ($result === false) {
-            return null;
-        }
-
-        return $this->hydrateToken($result);
+        return $tokens[0] ?? null;
     }
 
     /**
      * {@inheritDoc}
      */
-    public function createToken(EmailConfirmationToken $token): int
+    public function createToken(EmailConfirmationToken $token): void
     {
         $sql = 'INSERT INTO sowingme.email_confirmation_tokens (
                     user_id,
@@ -110,31 +86,109 @@ final class EmailConfirmationTokenSqlRepository implements EmailConfirmationToke
 
         $this->sqlService->query($sql, $params);
 
-        return (int) $this->sqlService->lastInsertId();
+        $token->setId((int) $this->sqlService->lastInsertId());
     }
 
     /**
      * {@inheritDoc}
      */
-    public function markTokenAsUsed(int $tokenId): bool
+    public function markTokenAsUsed(int $tokenId): void
     {
         $sql = 'UPDATE sowingme.email_confirmation_tokens
                 SET used_at = NOW()
                 WHERE id = :id';
 
-        return $this->sqlService->query($sql, ['id' => $tokenId]) !== 0;
+        $this->sqlService->query($sql, ['id' => $tokenId]);
     }
 
     /**
      * {@inheritDoc}
      */
-    public function deleteExpiredTokens(): int
+    public function deleteExpiredTokens(): void
     {
         $sql = 'DELETE FROM sowingme.email_confirmation_tokens
                 WHERE expires_at < NOW()
                 OR used_at IS NOT NULL';
 
-        return $this->sqlService->query($sql);
+        $this->sqlService->query($sql);
+    }
+
+    /**
+     * Generate and execute a database query then return its results
+     *
+     * @param EmailConfirmationTokenOptions $options DTO of options to generate the query
+     *
+     * @return EmailConfirmationToken[] An array of objects
+     */
+    private function query(EmailConfirmationTokenOptions $options): array
+    {
+        $sqlQuery = $this->getSqlQuery($options);
+
+        $objects = [];
+
+        /**
+ * @var array<string, bool|float|int|string|null> $row
+*/
+        foreach ($this->sqlService->getRows($sqlQuery->sql, $sqlQuery->parameters, true) as $row) {
+            $objects[] = $this->hydrateToken($row);
+        }
+
+        return $objects;
+    }
+
+    /**
+     * Get a SQL query DTO ready to be executed
+     *
+     * @param EmailConfirmationTokenOptions $options DTO of options to generate the query
+     *
+     * @return SqlQuery A SQL query DTO
+     */
+    private function getSqlQuery(EmailConfirmationTokenOptions $options): SqlQuery
+    {
+        $parameters = [];
+
+        $sql = 'SELECT
+                    id,
+                    user_id,
+                    token,
+                    expires_at,
+                    created_at,
+                    used_at
+                FROM sowingme.email_confirmation_tokens
+                WHERE 1 = 1';
+
+        if ($options->id !== null) {
+            $sql .= ' AND id = :id';
+
+            $parameters['id'] = $options->id;
+        }
+
+        if ($options->userId !== null) {
+            $sql .= ' AND user_id = :userId';
+
+            $parameters['userId'] = $options->userId;
+        }
+
+        if ($options->token !== null) {
+            $sql .= ' AND token = :token';
+
+            $parameters['token'] = $options->token;
+        }
+
+        if ($options->activeOnly) {
+            $sql .= ' AND used_at IS NULL AND expires_at > NOW()';
+        }
+
+        $sql .= ' ORDER BY created_at DESC';
+
+        if ($options->limit !== null) {
+            $sql .= ' LIMIT ' . $options->limit;
+        }
+
+        return new SqlQuery(
+            sql:        $sql,
+            parameters: $parameters,
+        );
     }
 
     /**

@@ -7,6 +7,8 @@ namespace Ubix\Repository\User;
 use DateTime;
 use Exception;
 use Psr\Log\LoggerInterface as Logger;
+use Ubix\DataTransferObject\SqlQuery;
+use Ubix\DataTransferObject\SqlRepository\UserOptions;
 use Ubix\DataType\Int\UserId;
 use Ubix\DataType\String\DisplayName;
 use Ubix\DataType\String\Email;
@@ -45,32 +47,15 @@ final class UserSqlRepository implements UserReader, UserWriter
      */
     public function getUserById(UserId $userId): User
     {
-        $sql = 'SELECT
-                    id,
-                    display_name,
-                    password_hash,
-                    email,
-                    first_name,
-                    last_name,
-                    creator_name,
-                    status,
-                    roles,
-                    failed_login_attempts,
-                    last_failed_login,
-                    last_login,
-                    created_at,
-                    updated_at
-                FROM sowingme.users
-                WHERE id = :id
-                LIMIT 1';
-
-        $result = $this->sqlService->getRow($sql, ['id' => $userId->value]);
-
-        if ($result === false) {
+        $users = $this->query(new UserOptions(
+            id:    $userId->value,
+            limit: 1,
+        ));
+        if (count($users) === 0) {
             throw new Exception('User not found', ExceptionCode::USER_NOT_FOUND->value);
         }
 
-        return $this->hydrateUser($result);
+        return $users[0];
     }
 
     /**
@@ -80,38 +65,21 @@ final class UserSqlRepository implements UserReader, UserWriter
      */
     public function getUserByEmail(Email $email): User
     {
-        $sql = 'SELECT
-                    id,
-                    display_name,
-                    password_hash,
-                    email,
-                    first_name,
-                    last_name,
-                    creator_name,
-                    status,
-                    roles,
-                    failed_login_attempts,
-                    last_failed_login,
-                    last_login,
-                    created_at,
-                    updated_at
-                FROM sowingme.users
-                WHERE email = :email
-                LIMIT 1';
-
-        $result = $this->sqlService->getRow($sql, ['email' => $email->value]);
-
-        if ($result === false || empty($result)) {
+        $users = $this->query(new UserOptions(
+            email: $email->value,
+            limit: 1,
+        ));
+        if (count($users) === 0) {
             throw new Exception('User not found', ExceptionCode::USER_NOT_FOUND->value);
         }
 
-        return $this->hydrateUser($result);
+        return $users[0];
     }
 
     /**
      * {@inheritDoc}
      */
-    public function createUser(User $user): int
+    public function createUser(User $user): void
     {
         $sql = 'INSERT INTO sowingme.users (
                     display_name,
@@ -147,13 +115,13 @@ final class UserSqlRepository implements UserReader, UserWriter
 
         $this->sqlService->query($sql, $params);
 
-        return (int) $this->sqlService->lastInsertId();
+        $user->setId((int) $this->sqlService->lastInsertId());
     }
 
     /**
      * {@inheritDoc}
      */
-    public function updateUser(User $user): bool
+    public function updateUser(User $user): void
     {
         $sql = 'UPDATE sowingme.users
                 SET display_name = :display_name,
@@ -183,7 +151,7 @@ final class UserSqlRepository implements UserReader, UserWriter
             'status'                => $user->getStatus()?->value,
         ];
 
-        return $this->sqlService->query($sql, $params) > 0;
+        $this->sqlService->query($sql, $params);
     }
 
     /**
@@ -212,6 +180,88 @@ final class UserSqlRepository implements UserReader, UserWriter
         $result = $this->sqlService->getRow($sql, ['display_name' => $displayName->value]);
 
         return $result !== false && (int) $result['count'] > 0;
+    }
+
+    /**
+     * Generate and execute a database query then return its results
+     *
+     * @param UserOptions $options DTO of options to generate the query
+     *
+     * @return User[] An array of objects
+     */
+    private function query(UserOptions $options): array
+    {
+        $sqlQuery = $this->getSqlQuery($options);
+
+        $objects = [];
+
+        /**
+ * @var array<string, bool|float|int|string|null> $row
+*/
+        foreach ($this->sqlService->getRows($sqlQuery->sql, $sqlQuery->parameters, true) as $row) {
+            $objects[] = $this->hydrateUser($row);
+        }
+
+        return $objects;
+    }
+
+    /**
+     * Get a SQL query DTO ready to be executed
+     *
+     * @param UserOptions $options DTO of options to generate the query
+     *
+     * @return SqlQuery A SQL query DTO
+     */
+    private function getSqlQuery(UserOptions $options): SqlQuery
+    {
+        $parameters = [];
+
+        $sql = 'SELECT
+                    id,
+                    display_name,
+                    password_hash,
+                    email,
+                    first_name,
+                    last_name,
+                    creator_name,
+                    status,
+                    roles,
+                    failed_login_attempts,
+                    last_failed_login,
+                    last_login,
+                    created_at,
+                    updated_at
+                FROM sowingme.users
+                WHERE 1 = 1';
+
+        if ($options->id !== null) {
+            $sql .= ' AND id = :id';
+
+            $parameters['id'] = $options->id;
+        }
+
+        if ($options->username !== null) {
+            $sql .= ' AND display_name = :displayName';
+
+            $parameters['displayName'] = $options->username;
+        }
+
+        if ($options->email !== null) {
+            $sql .= ' AND email = :email';
+
+            $parameters['email'] = $options->email;
+        }
+
+        $sql .= ' ORDER BY id ASC';
+
+        if ($options->limit !== null) {
+            $sql .= ' LIMIT ' . $options->limit;
+        }
+
+        return new SqlQuery(
+            sql:        $sql,
+            parameters: $parameters,
+        );
     }
 
     /**
