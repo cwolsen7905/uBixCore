@@ -12,7 +12,7 @@ use Ubix\Tests\AbstractUbixConcreteClassOrEnumTestCase as UbixConcreteClassOrEnu
 use Ubix\Tests\UbixConcreteClassOrEnumTestCaseInterface as IUbixConcreteClassOrEnumTestCase;
 
 /**
- * PHPUnit test case for \Ubis\Console\Command\Migrate\UpCommand
+ * PHPUnit test case for \Ubix\Console\Command\Migrate\UpCommand
  *
  * @coversDefaultClass \Ubix\Console\Command\Migrate\UpCommand
  * @coversDefaultClass \Ubis\Console\Command\Migrate\UpCommand

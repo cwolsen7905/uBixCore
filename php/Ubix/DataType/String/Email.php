@@ -11,6 +11,8 @@ use Ubix\DataType\String\AbstractStringDataType as StringDataType;
 
 /**
  * Object for creating and validating Email strings
+ *
+ * @see \Ubix\Tests\DataType\String\EmailTest PHPUnit test case
  */
 class Email extends StringDataType
 {
@@ -20,9 +22,9 @@ class Email extends StringDataType
      * @param string $input The input value
      */
     public function __construct(
-        #[NotBlank]
-        #[Length(max: 255)]
         #[EmailConstraint]
+        #[Length(max: 255)]
+        #[NotBlank]
         private string $input,
     ) {
         $this->validate();

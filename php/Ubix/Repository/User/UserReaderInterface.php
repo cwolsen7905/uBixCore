@@ -6,8 +6,8 @@ namespace Ubix\Repository\User;
 
 use Exception;
 use Ubix\DataType\Int\UserId;
-use Ubix\DataType\String\Email;
 use Ubix\DataType\String\DisplayName;
+use Ubix\DataType\String\Email;
 use Ubix\Model\User;
 
 /**
@@ -39,7 +39,7 @@ interface UserReaderInterface
      */
     public function getUserByEmail(Email $email): User;
 
-	/**
+    /**
      * Check if email already exists
      *
      * @param Email $email The email to check

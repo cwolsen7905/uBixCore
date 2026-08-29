@@ -9,7 +9,7 @@ use Ubix\Tests\AbstractUbixConcreteClassOrEnumTestCase as UbixConcreteClassOrEnu
 use Ubix\Tests\UbixConcreteClassOrEnumTestCaseInterface as IUbixConcreteClassOrEnumTestCase;
 
 /**
- * PHPUnit test case for \Ubis\Enum\Migration\DestructiveStatementKind
+ * PHPUnit test case for \Ubix\Enum\Migration\DestructiveStatementKind
  *
  * @coversDefaultClass \Ubix\Enum\Migration\DestructiveStatementKind
  * @coversDefaultClass \Ubis\Enum\Migration\DestructiveStatementKind

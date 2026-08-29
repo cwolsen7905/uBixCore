@@ -5,7 +5,6 @@ declare(strict_types=1);
 use Psr\Container\ContainerInterface as Container;
 use Psr\Log\LoggerInterface as Logger;
 use Slim\App;
-use Ubix\Middleware\BearerTokenAuthenticationMiddleware;
 use Ubix\Middleware\NormalizedHostMiddleware;
 use Ubix\Middleware\NormalizedIpAddressMiddleware;
 use Ubix\Renderer\JsonErrorRenderer;
@@ -52,5 +51,4 @@ return static function (App $app): void {
 
     $errorMiddleware = $app->addErrorMiddleware(false, true, true, $logger);
     $errorMiddleware->setDefaultErrorHandler($slimErrorHandler);
-
 };

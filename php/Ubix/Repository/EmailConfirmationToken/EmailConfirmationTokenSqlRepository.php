@@ -15,6 +15,8 @@ use Ubix\Service\Sql\SqlServiceInterface as SqlService;
  * Class EmailConfirmationTokenSqlRepository
  *
  * Implements methods to read and write email confirmation token data from the database.
+ *
+ * @see \Ubix\Tests\Repository\EmailConfirmationToken\EmailConfirmationTokenSqlRepositoryTest PHPUnit test case
  */
 final class EmailConfirmationTokenSqlRepository implements TokenReader, TokenWriter
 {
@@ -101,9 +103,9 @@ final class EmailConfirmationTokenSqlRepository implements TokenReader, TokenWri
                 )';
 
         $params = [
-            'user_id'    => $token->getUserId(),
-            'token'      => $token->getToken(),
             'expires_at' => $token->getExpiresAt()?->format('Y-m-d H:i:s'),
+            'token'      => $token->getToken(),
+            'user_id'    => $token->getUserId(),
         ];
 
         $this->sqlService->query($sql, $params);
@@ -120,7 +122,7 @@ final class EmailConfirmationTokenSqlRepository implements TokenReader, TokenWri
                 SET used_at = NOW()
                 WHERE id = :id';
 
-        return $this->sqlService->query($sql, ['id' => $tokenId]) == 0 ? false : true;
+        return $this->sqlService->query($sql, ['id' => $tokenId]) !== 0;
     }
 
     /**
@@ -147,12 +149,12 @@ final class EmailConfirmationTokenSqlRepository implements TokenReader, TokenWri
     private function hydrateToken(array $result): EmailConfirmationToken
     {
         return new EmailConfirmationToken(
-            id: (int) $result['id'],
-            userId: (int) $result['user_id'],
-            token: $result['token'],
+            id:        (int) $result['id'],
+            userId:    (int) $result['user_id'],
+            token:     $result['token'],
             expiresAt: $result['expires_at'] !== null ? new DateTime($result['expires_at']) : null,
             createdAt: $result['created_at'] !== null ? new DateTime($result['created_at']) : null,
-            usedAt: $result['used_at'] !== null ? new DateTime($result['used_at']) : null,
+            usedAt:    $result['used_at'] !== null ? new DateTime($result['used_at']) : null,
         );
     }
 }

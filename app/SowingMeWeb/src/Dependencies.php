@@ -59,16 +59,16 @@ return static function (): Container {
 
     $container->addDefinitions([
 
-        Engine::class                            => autowire()->method('setAutoRefresh', true)->method('setTempDirectory', $cacheDir)->method('setLoader', new FileLoader($templateDir . $theme)),
-        FilterService::class                     => autowire()->constructorParameter('bearerToken', getenv('VSM_FILTER_API_BEARER_TOKEN_BROADCASTING')),
-        HttpClient::class                        => autowire(CurlHttpClient::class),
-        Logger::class                            => autowire(MonologLogger::class)->constructorParameter('name', $appName)->constructorParameter('handlers', [new StreamHandler(getenv('LOGGER_PATH') . '/' . strtolower(getenv('ENV') ?? 'NA') . '/' . $appName . '.log', Level::fromName($logLevel), true, 0777)])->constructorParameter('processors', [new UidProcessor()]),
-        Psr17Factory::class                      => autowire(Psr17Factory::class),
-        RequestFactory::class                    => get(Psr17Factory::class),
-        ResponseFactory::class                   => autowire(SlimResponseFactory::class),
-        SimpleCache::class                       => autowire(MemcachedLegacySimpleCache::class)->constructorParameter('servers', $memcacheServers),
-        SqlService::class                        => autowire(MysqlPdoSqlService::class),
-        StreamFactory::class                     => get(Psr17Factory::class),
+        Engine::class          => autowire()->method('setAutoRefresh', true)->method('setTempDirectory', $cacheDir)->method('setLoader', new FileLoader($templateDir . $theme)),
+        FilterService::class   => autowire()->constructorParameter('bearerToken', getenv('VSM_FILTER_API_BEARER_TOKEN_BROADCASTING')),
+        HttpClient::class      => autowire(CurlHttpClient::class),
+        Logger::class          => autowire(MonologLogger::class)->constructorParameter('name', $appName)->constructorParameter('handlers', [new StreamHandler(getenv('LOGGER_PATH') . '/' . strtolower(getenv('ENV') ?? 'NA') . '/' . $appName . '.log', Level::fromName($logLevel), true, 0777)])->constructorParameter('processors', [new UidProcessor()]),
+        Psr17Factory::class    => autowire(Psr17Factory::class),
+        RequestFactory::class  => get(Psr17Factory::class),
+        ResponseFactory::class => autowire(SlimResponseFactory::class),
+        SimpleCache::class     => autowire(MemcachedLegacySimpleCache::class)->constructorParameter('servers', $memcacheServers),
+        SqlService::class      => autowire(MysqlPdoSqlService::class),
+        StreamFactory::class   => get(Psr17Factory::class),
     ]);
 
     return $container->build();

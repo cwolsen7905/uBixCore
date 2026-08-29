@@ -11,15 +11,17 @@ use Psr\Http\Server\RequestHandlerInterface as Handler;
 
 /**
  * Middleware to handle CORS headers for approved origins
+ *
+ * @see \Ubix\Tests\Middleware\CorsMiddlewareTest PHPUnit test case
  */
 final class CorsMiddleware implements Middleware
 {
     /**
      * Constructor
      *
-     * @param array<string> $allowedOrigins  List of allowed origins
-     * @param array<string> $allowedMethods  List of allowed HTTP methods
-     * @param array<string> $allowedHeaders  List of allowed headers
+     * @param array<string> $allowedOrigins   List of allowed origins
+     * @param array<string> $allowedMethods   List of allowed HTTP methods
+     * @param array<string> $allowedHeaders   List of allowed headers
      * @param bool          $allowCredentials Whether to allow credentials
      */
     public function __construct(
@@ -40,7 +42,7 @@ final class CorsMiddleware implements Middleware
      */
     public function process(Request $request, Handler $handler): Response
     {
-        $origin = $request->getHeaderLine('Origin');
+        $origin   = $request->getHeaderLine('Origin');
         $response = $handler->handle($request);
 
         if ($origin === '' || !$this->isOriginAllowed($origin)) {
@@ -65,7 +67,7 @@ final class CorsMiddleware implements Middleware
     {
         // Parse host from origin URL
         $parsedUrl = parse_url($origin);
-        $host = $parsedUrl['host'] ?? '';
+        $host      = $parsedUrl['host'] ?? '';
 
         if ($host === '') {
             return false;

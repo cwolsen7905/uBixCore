@@ -24,16 +24,16 @@ use Symfony\Component\Mailer\MailerInterface;
 use Symfony\Component\Mailer\Transport;
 use Ubix\Enum\Exception\ExceptionCode;
 use Ubix\HttpClient\CurlHttpClient;
-use Ubix\Repository\EmailConfirmationToken\EmailConfirmationTokenReaderInterface as TokenReader;
-use Ubix\Repository\EmailConfirmationToken\EmailConfirmationTokenWriterInterface as TokenWriter;
-use Ubix\Repository\EmailConfirmationToken\EmailConfirmationTokenSqlRepository;
-use Ubix\Repository\User\UserReaderInterface as UserReader;
-use Ubix\Repository\User\UserWriterInterface as UserWriter;
-use Ubix\Repository\User\UserSqlRepository;
-use Ubix\Service\Sql\MysqlPdoSqlService;
-use Ubix\Service\Sql\SqlServiceInterface as SqlService;
 use Ubix\Middleware\CorsMiddleware;
 use Ubix\Middleware\SessionAuthenticationMiddleware;
+use Ubix\Repository\EmailConfirmationToken\EmailConfirmationTokenReaderInterface as TokenReader;
+use Ubix\Repository\EmailConfirmationToken\EmailConfirmationTokenSqlRepository;
+use Ubix\Repository\EmailConfirmationToken\EmailConfirmationTokenWriterInterface as TokenWriter;
+use Ubix\Repository\User\UserReaderInterface as UserReader;
+use Ubix\Repository\User\UserSqlRepository;
+use Ubix\Repository\User\UserWriterInterface as UserWriter;
+use Ubix\Service\Sql\MysqlPdoSqlService;
+use Ubix\Service\Sql\SqlServiceInterface as SqlService;
 use Ubix\SessionHandler\SimpleCacheLegacySessionHandler;
 use Ubix\SimpleCache\MemcachedLegacySimpleCache;
 
@@ -69,36 +69,36 @@ return static function (): Container {
     $logLevel = in_array($logLevel, $allowedLevels, true) ? $logLevel : 'Info';
     assert(in_array($logLevel, $allowedLevels, true));
 
-	$logFile = getenv('LOGGER_PATH') . '/' . strtolower(getenv('ENV') ?: 'sandbox') . '/' . $appName . '.log';
+    $logFile = getenv('LOGGER_PATH') . '/' . strtolower(getenv('ENV') ?: 'sandbox') . '/' . $appName . '.log';
 
     $container->addDefinitions([
 
-        Engine::class                            => autowire()->method('setAutoRefresh', true)->method('setTempDirectory', $cacheDir)->method('setLoader', new FileLoader($templateDir . $theme)),
-        HttpClient::class                        => autowire(CurlHttpClient::class),
-        Logger::class                            => autowire(MonologLogger::class)->constructorParameter('name', $appName)->constructorParameter('handlers', [new StreamHandler($logFile, Level::fromName($logLevel), true, 0777)])->constructorParameter('processors', [new UidProcessor()]),
-        MailerInterface::class                   => static function (): MailerInterface {
-            $dsn = 'smtp://10.50.50.61:616';
+        Engine::class                          => autowire()->method('setAutoRefresh', true)->method('setTempDirectory', $cacheDir)->method('setLoader', new FileLoader($templateDir . $theme)),
+        HttpClient::class                      => autowire(CurlHttpClient::class),
+        Logger::class                          => autowire(MonologLogger::class)->constructorParameter('name', $appName)->constructorParameter('handlers', [new StreamHandler($logFile, Level::fromName($logLevel), true, 0777)])->constructorParameter('processors', [new UidProcessor()]),
+        MailerInterface::class                 => static function (): MailerInterface {
+            $dsn       = 'smtp://10.50.50.61:616';
             $transport = Transport::fromDsn($dsn);
             return new Mailer($transport);
         },
-        Psr17Factory::class                      => autowire(Psr17Factory::class),
-        RequestFactory::class                    => get(Psr17Factory::class),
-        ResponseFactory::class                   => autowire(SlimResponseFactory::class),
-        TokenReader::class                       => autowire(EmailConfirmationTokenSqlRepository::class),
-        TokenWriter::class                       => autowire(EmailConfirmationTokenSqlRepository::class),
-        UserReader::class                        => autowire(UserSqlRepository::class),
-        UserWriter::class                        => autowire(UserSqlRepository::class),
-        SessionAuthenticationMiddleware::class   => autowire()->constructorParameter('excludedRoutes', [
-			['method' => 'POST', 'path' => '/auth'],
-			['method' => 'OPTIONS', 'path' => '/auth'],
-			['method' => 'POST', 'path' => '/register'],
-			['method' => 'GET', 'path' => '/confirm-email']
-		]),
-        SessionHandler::class                    => autowire(SimpleCacheLegacySessionHandler::class),
-        SimpleCache::class                       => autowire(MemcachedLegacySimpleCache::class)->constructorParameter('servers', $memcacheServers),
-        SqlService::class                        => autowire(MysqlPdoSqlService::class),
-        StreamFactory::class                     => get(Psr17Factory::class),
-        CorsMiddleware::class                    => autowire()->constructorParameter('allowedOrigins', [
+        Psr17Factory::class                    => autowire(Psr17Factory::class),
+        RequestFactory::class                  => get(Psr17Factory::class),
+        ResponseFactory::class                 => autowire(SlimResponseFactory::class),
+        TokenReader::class                     => autowire(EmailConfirmationTokenSqlRepository::class),
+        TokenWriter::class                     => autowire(EmailConfirmationTokenSqlRepository::class),
+        UserReader::class                      => autowire(UserSqlRepository::class),
+        UserWriter::class                      => autowire(UserSqlRepository::class),
+        SessionAuthenticationMiddleware::class => autowire()->constructorParameter('excludedRoutes', [
+            ['method' => 'POST', 'path' => '/auth'],
+            ['method' => 'OPTIONS', 'path' => '/auth'],
+            ['method' => 'POST', 'path' => '/register'],
+            ['method' => 'GET', 'path' => '/confirm-email'],
+        ]),
+        SessionHandler::class                  => autowire(SimpleCacheLegacySessionHandler::class),
+        SimpleCache::class                     => autowire(MemcachedLegacySimpleCache::class)->constructorParameter('servers', $memcacheServers),
+        SqlService::class                      => autowire(MysqlPdoSqlService::class),
+        StreamFactory::class                   => get(Psr17Factory::class),
+        CorsMiddleware::class                  => autowire()->constructorParameter('allowedOrigins', [
             '127.0.0.1',
             'localhost',
             '.ubixsys.com',

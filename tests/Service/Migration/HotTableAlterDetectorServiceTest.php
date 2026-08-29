@@ -10,7 +10,7 @@ use Ubix\Tests\AbstractUbixConcreteClassOrEnumTestCase as UbixConcreteClassOrEnu
 use Ubix\Tests\UbixConcreteClassOrEnumTestCaseInterface as IUbixConcreteClassOrEnumTestCase;
 
 /**
- * PHPUnit test case for \Ubis\Service\Migration\HotTableAlterDetectorService
+ * PHPUnit test case for \Ubix\Service\Migration\HotTableAlterDetectorService
  *
  * @coversDefaultClass \Ubix\Service\Migration\HotTableAlterDetectorService
  * @coversDefaultClass \Ubis\Service\Migration\HotTableAlterDetectorService

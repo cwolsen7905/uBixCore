@@ -10,7 +10,7 @@ use Ubix\Tests\AbstractUbixConcreteClassOrEnumTestCase as UbixConcreteClassOrEnu
 use Ubix\Tests\UbixConcreteClassOrEnumTestCaseInterface as IUbixConcreteClassOrEnumTestCase;
 
 /**
- * PHPUnit test case for \Ubis\Service\Migration\MigrationCredentialResolverService
+ * PHPUnit test case for \Ubix\Service\Migration\MigrationCredentialResolverService
  *
  * @coversDefaultClass \Ubix\Service\Migration\MigrationCredentialResolverService
  * @coversDefaultClass \Ubis\Service\Migration\MigrationCredentialResolverService

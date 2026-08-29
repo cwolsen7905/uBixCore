@@ -11,7 +11,7 @@ use Ubix\Tests\AbstractUbixConcreteClassOrEnumTestCase as UbixConcreteClassOrEnu
 use Ubix\Tests\UbixConcreteClassOrEnumTestCaseInterface as IUbixConcreteClassOrEnumTestCase;
 
 /**
- * PHPUnit test case for \Ubis\Service\Sql\MigrationPdoSqlService
+ * PHPUnit test case for \Ubix\Service\Sql\MigrationPdoSqlService
  *
  * @coversDefaultClass \Ubix\Service\Sql\MigrationPdoSqlService
  * @coversDefaultClass \Ubis\Service\Sql\MigrationPdoSqlService

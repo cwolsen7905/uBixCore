@@ -9,6 +9,8 @@ use Ubix\DataType\Int\AbstractIntDataType as IntDataType;
 
 /**
  * Object for creating and validating User ID integers
+ *
+ * @see \Ubix\Tests\DataType\Int\UserIdTest PHPUnit test case
  */
 class UserId extends IntDataType
 {

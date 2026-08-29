@@ -9,7 +9,7 @@ use Ubix\Tests\AbstractUbixConcreteClassOrEnumTestCase as UbixConcreteClassOrEnu
 use Ubix\Tests\UbixConcreteClassOrEnumTestCaseInterface as IUbixConcreteClassOrEnumTestCase;
 
 /**
- * PHPUnit test case for \Ubis\Console\Command\Migrate\DiffCommand
+ * PHPUnit test case for \Ubix\Console\Command\Migrate\DiffCommand
  *
  * @coversDefaultClass \Ubix\Console\Command\Migrate\DiffCommand
  * @coversDefaultClass \Ubis\Console\Command\Migrate\DiffCommand

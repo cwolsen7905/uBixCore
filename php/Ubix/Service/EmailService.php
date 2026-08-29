@@ -45,7 +45,7 @@ final class EmailService
         string $toEmail,
         string $firstName,
         string $lastName,
-        string $confirmationUrl
+        string $confirmationUrl,
     ): bool {
         try {
             $email = (new Email())
@@ -58,17 +58,17 @@ final class EmailService
             $this->mailer->send($email);
 
             $this->logger->info('Registration confirmation email sent', [
-                'to'         => $toEmail,
                 'first_name' => $firstName,
                 'last_name'  => $lastName,
+                'to'         => $toEmail,
             ]);
 
             return true;
         } catch (TransportExceptionInterface $e) {
             $this->logger->error('Failed to send registration confirmation email', [
-                'to'      => $toEmail,
-                'error'   => $e->getMessage(),
-                'trace'   => $e->getTraceAsString(),
+                'error' => $e->getMessage(),
+                'to'    => $toEmail,
+                'trace' => $e->getTraceAsString(),
             ]);
 
             throw new Exception('Failed to send confirmation email: ' . $e->getMessage(), 0, $e);

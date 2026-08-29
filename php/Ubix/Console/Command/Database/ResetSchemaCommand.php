@@ -8,10 +8,10 @@ use Psr\Log\LoggerInterface as Logger;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface as Input;
 use Symfony\Component\Console\Output\OutputInterface as Output;
-use ValueError;
 use Ubix\Console\Command\AbstractCommand as Command;
 use Ubix\Enum\Env;
 use Ubix\Service\ProcessService;
+use ValueError;
 
 /**
  * Command to build the project.

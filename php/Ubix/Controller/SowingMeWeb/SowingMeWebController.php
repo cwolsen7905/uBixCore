@@ -4,12 +4,10 @@ declare(strict_types=1);
 
 namespace Ubix\Controller\SowingMeWeb;
 
-use Exception;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
 use Psr\Log\LoggerInterface as Logger;
 use Ubix\Controller\AbstractController as Controller;
-use Ubix\Enum\StatusCode;
 use Ubix\Renderer\TemplateRenderer;
 use Ubix\Service\AffiliateService;
 use Ubix\Service\AttributionService;
@@ -51,14 +49,13 @@ final class SowingMeWebController extends Controller
      */
     public function home(Request $request, Response $response): Response
     {
-
         return $this->renderTemplate(
-			$response,
-			'home.latte',
-		);
+            $response,
+            'home.latte',
+        );
     }
 
-	/**
+    /**
      * Signup page for SowingMeWeb
      *
      * @param Request  $request  The HTTP request object containing client data.
@@ -69,7 +66,7 @@ final class SowingMeWebController extends Controller
     public function signup(Request $request, Response $response): Response
     {
         // Determine API hostname based on ENV environment variable
-        $env = getenv('ENV') ?: '';
+        $env         = getenv('ENV') ?: '';
         $apiHostname = match ($env) {
             'PROD'    => 'https://api.sowing.me',
             'STAGING' => 'https://api-sowing-me.staging.ubixsys.com',
@@ -80,9 +77,9 @@ final class SowingMeWebController extends Controller
         $this->sendToTemplate('apiHostname', $apiHostname);
 
         return $this->renderTemplate(
-			$response,
-			'signup.latte',
-		);
+            $response,
+            'signup.latte',
+        );
     }
 
     /**

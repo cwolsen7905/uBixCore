@@ -10,6 +10,7 @@ use Ubix\DataTransferObject\DtoInterface as Dto;
  * Data transfer object for the SQL repository options of users
  *
  * @see \Ubix\Repository\User\UserSqlRepository This DTO is used by the user SQL repository
+ * @see \Ubix\Tests\DataTransferObject\SqlRepository\UserOptionsTest PHPUnit test case
  */
 final readonly class UserOptions implements Dto
 {

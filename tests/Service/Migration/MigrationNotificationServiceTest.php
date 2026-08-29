@@ -20,7 +20,7 @@ use Ubix\Tests\AbstractUbixConcreteClassOrEnumTestCase as UbixConcreteClassOrEnu
 use Ubix\Tests\UbixConcreteClassOrEnumTestCaseInterface as IUbixConcreteClassOrEnumTestCase;
 
 /**
- * PHPUnit test case for \Ubis\Service\Migration\MigrationNotificationService
+ * PHPUnit test case for \Ubix\Service\Migration\MigrationNotificationService
  *
  * @coversDefaultClass \Ubix\Service\Migration\MigrationNotificationService
  * @coversDefaultClass \Ubis\Service\Migration\MigrationNotificationService

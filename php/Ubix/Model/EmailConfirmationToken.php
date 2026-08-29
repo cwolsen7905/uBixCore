@@ -9,6 +9,8 @@ use Ubix\Model\AbstractModel as Model;
 
 /**
  * Model of an email confirmation token
+ *
+ * @see \Ubix\Tests\Model\EmailConfirmationTokenTest PHPUnit test case
  */
 final class EmailConfirmationToken extends Model
 {

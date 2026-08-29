@@ -9,9 +9,10 @@ use Ubix\Tests\AbstractUbixConcreteClassOrEnumTestCase as UbixConcreteClassOrEnu
 use Ubix\Tests\UbixConcreteClassOrEnumTestCaseInterface as IUbixConcreteClassOrEnumTestCase;
 
 /**
- * PHPUnit test case for \Ubix\DataTransferObject\MpCode
+ * PHPUnit test case for \Ubix\DataType\MpCode
  *
  * @coversDefaultClass \Ubix\DataTransferObject\MpCode
+ * @coversDefaultClass \Ubix\DataType\MpCode
  */
 final class MpCodeTest extends UbixConcreteClassOrEnumTestCase implements IUbixConcreteClassOrEnumTestCase
 {

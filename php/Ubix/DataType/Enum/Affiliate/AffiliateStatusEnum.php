@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace Ubix\DataType\Enum\Affiliate;
 
-use UnitEnum;
 use Ubix\DataType\Enum\AbstractEnumDataType as EnumDataType;
 use Ubix\Enum\Affiliate\AffiliateStatus;
+use UnitEnum;
 
 /**
  * Object for creating and validating Status enum values

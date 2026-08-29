@@ -11,6 +11,8 @@ use Ubix\Payload\RequestPayloadInterface as RequestPayload;
 
 /**
  * Payload object for authentication request parameters
+ *
+ * @see \Ubix\Tests\Payload\Request\AuthenticationRequestPayloadTest PHPUnit test case
  */
 final class AuthenticationRequestPayload extends Payload implements RequestPayload
 {
@@ -23,7 +25,7 @@ final class AuthenticationRequestPayload extends Payload implements RequestPaylo
     /**
      * Constructor
      *
-     * @param ?string $email The email
+     * @param ?string $email    The email
      * @param ?string $password The password
      * @param ?bool   $debug    Optional debug flag
      */

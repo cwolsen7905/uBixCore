@@ -10,6 +10,7 @@ use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
 use Psr\Log\LoggerInterface as Logger;
 use Ubix\Controller\AbstractController as Controller;
+use Ubix\DataType\Int\UserId;
 use Ubix\Enum\StatusCode;
 use Ubix\Enum\User\UserStatus;
 use Ubix\Renderer\TemplateRenderer;
@@ -18,7 +19,6 @@ use Ubix\Repository\EmailConfirmationToken\EmailConfirmationTokenWriterInterface
 use Ubix\Repository\User\UserReaderInterface as UserReader;
 use Ubix\Repository\User\UserWriterInterface as UserWriter;
 use Ubix\Service\JsonService;
-use Ubix\DataType\Int\UserId;
 
 /**
  * Controller to handle email confirmation
@@ -30,13 +30,13 @@ final class EmailConfirmationController extends Controller
     /**
      * Constructor
      *
-     * @param Logger             $logger             The Monolog logger
-     * @param TemplateRenderer   $view               The template renderer
-     * @param JsonService        $jsonService        The JSON service
-     * @param TokenReader        $tokenReader        The email confirmation token reader
-     * @param TokenWriter        $tokenWriter        The email confirmation token writer
-     * @param UserReader         $userReader         The user reader
-     * @param UserWriter         $userWriter         The user writer
+     * @param Logger           $logger      The Monolog logger
+     * @param TemplateRenderer $view        The template renderer
+     * @param JsonService      $jsonService The JSON service
+     * @param TokenReader      $tokenReader The email confirmation token reader
+     * @param TokenWriter      $tokenWriter The email confirmation token writer
+     * @param UserReader       $userReader  The user reader
+     * @param UserWriter       $userWriter  The user writer
      *
      * @return void
      */
@@ -63,12 +63,12 @@ final class EmailConfirmationController extends Controller
     public function confirmEmail(Request $request, Response $response): Response
     {
         $queryParams = $request->getQueryParams();
-        $token = $queryParams['token'] ?? null;
+        $token       = $queryParams['token'] ?? null;
 
         if (!$token) {
             return $this->renderJson($response, [
-                'status'  => 'error',
                 'message' => 'Confirmation token is required',
+                'status'  => 'error',
             ], StatusCode::BAD_REQUEST);
         }
 
@@ -82,8 +82,8 @@ final class EmailConfirmationController extends Controller
                 ]);
 
                 return $this->renderJson($response, [
-                    'status'  => 'error',
                     'message' => 'Invalid confirmation token',
+                    'status'  => 'error',
                 ], StatusCode::BAD_REQUEST);
             }
 
@@ -95,8 +95,8 @@ final class EmailConfirmationController extends Controller
                 ]);
 
                 return $this->renderJson($response, [
-                    'status'  => 'error',
                     'message' => 'This confirmation link has already been used',
+                    'status'  => 'error',
                 ], StatusCode::BAD_REQUEST);
             }
 
@@ -104,14 +104,14 @@ final class EmailConfirmationController extends Controller
             $now = new DateTime();
             if ($confirmationToken->getExpiresAt() < $now) {
                 $this->logger->info('Email confirmation failed: token expired', [
+                    'expires_at' => $confirmationToken->getExpiresAt()->format('Y-m-d H:i:s'),
                     'token_id'   => $confirmationToken->getId(),
                     'user_id'    => $confirmationToken->getUserId(),
-                    'expires_at' => $confirmationToken->getExpiresAt()->format('Y-m-d H:i:s'),
                 ]);
 
                 return $this->renderJson($response, [
-                    'status'  => 'error',
                     'message' => 'This confirmation link has expired. Please request a new one.',
+                    'status'  => 'error',
                 ], StatusCode::BAD_REQUEST);
             }
 
@@ -129,23 +129,23 @@ final class EmailConfirmationController extends Controller
 
                 // Auto-login the user
                 $_SESSION['user'] = [
-                    'id'        => $user->getId(),
-                    'displayName'  => $user->getDisplayName(),
-                    'email'     => $user->getEmail(),
-                    'roles'     => $user->getRoles(),
-                    'firstName' => $user->getFirstName(),
-                    'lastName'  => $user->getLastName(),
+                    'displayName' => $user->getDisplayName(),
+                    'email'       => $user->getEmail(),
+                    'firstName'   => $user->getFirstName(),
+                    'id'          => $user->getId(),
+                    'lastName'    => $user->getLastName(),
+                    'roles'       => $user->getRoles(),
                 ];
 
                 return $this->renderJson($response, [
-                    'status'  => 'success',
                     'message' => 'Your account is already confirmed',
+                    'status'  => 'success',
                     'user'    => [
-                        'id'        => $user->getId(),
-                        'displayName'  => $user->getDisplayName(),
-                        'email'     => $user->getEmail(),
-                        'firstName' => $user->getFirstName(),
-                        'lastName'  => $user->getLastName(),
+                        'displayName' => $user->getDisplayName(),
+                        'email'       => $user->getEmail(),
+                        'firstName'   => $user->getFirstName(),
+                        'id'          => $user->getId(),
+                        'lastName'    => $user->getLastName(),
                     ],
                 ]);
             }
@@ -159,41 +159,41 @@ final class EmailConfirmationController extends Controller
 
             // Auto-login the user
             $_SESSION['user'] = [
-                'id'        => $user->getId(),
-                'displayName'  => $user->getDisplayName(),
-                'email'     => $user->getEmail(),
-                'roles'     => $user->getRoles(),
-                'firstName' => $user->getFirstName(),
-                'lastName'  => $user->getLastName(),
+                'displayName' => $user->getDisplayName(),
+                'email'       => $user->getEmail(),
+                'firstName'   => $user->getFirstName(),
+                'id'          => $user->getId(),
+                'lastName'    => $user->getLastName(),
+                'roles'       => $user->getRoles(),
             ];
 
             $this->logger->info('Email confirmation successful', [
-                'user_id'  => $user->getId(),
                 'email'    => $user->getEmail(),
                 'token_id' => $confirmationToken->getId(),
+                'user_id'  => $user->getId(),
             ]);
 
             return $this->renderJson($response, [
-                'status'  => 'success',
                 'message' => 'Your email has been confirmed successfully!',
+                'status'  => 'success',
                 'user'    => [
-                    'id'        => $user->getId(),
-                    'displayName'  => $user->getDisplayName(),
-                    'email'     => $user->getEmail(),
-                    'firstName' => $user->getFirstName(),
-                    'lastName'  => $user->getLastName(),
+                    'displayName' => $user->getDisplayName(),
+                    'email'       => $user->getEmail(),
+                    'firstName'   => $user->getFirstName(),
+                    'id'          => $user->getId(),
+                    'lastName'    => $user->getLastName(),
                 ],
             ]);
         } catch (Exception $e) {
             $this->logger->error('Email confirmation failed', [
-                'token' => substr($token, 0, 10) . '...',
                 'error' => $e->getMessage(),
+                'token' => substr($token, 0, 10) . '...',
                 'trace' => $e->getTraceAsString(),
             ]);
 
             return $this->renderJson($response, [
-                'status'  => 'error',
                 'message' => 'Email confirmation failed. Please try again later.',
+                'status'  => 'error',
             ], StatusCode::INTERNAL_SERVER_ERROR);
         }
     }

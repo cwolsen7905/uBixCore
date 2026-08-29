@@ -63,7 +63,7 @@ final class RunCommand extends Command
                 return Command::FAILURE;
             }
 
-			$result = $this->processService->executeAsSubprocess('cd ' . escapeshellarg($this->appPath . $appName) . ' && npm run dev -- --open --host=' . escapeshellarg((string)$input->getOption('host')) . ' --port=' . escapeshellarg((string)$input->getOption('port')));
+            $result = $this->processService->executeAsSubprocess('cd ' . escapeshellarg($this->appPath . $appName) . ' && npm run dev -- --open --host=' . escapeshellarg((string)$input->getOption('host')) . ' --port=' . escapeshellarg((string)$input->getOption('port')));
             return Command::SUCCESS;
         }
 

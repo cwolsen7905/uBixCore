@@ -9,6 +9,8 @@ use Ubix\Payload\ResponsePayloadInterface as ResponsePayload;
 
 /**
  * Payload object for registration response
+ *
+ * @see \Ubix\Tests\Payload\Response\RegistrationResponsePayloadTest PHPUnit test case
  */
 final class RegistrationResponsePayload extends Payload implements ResponsePayload
 {

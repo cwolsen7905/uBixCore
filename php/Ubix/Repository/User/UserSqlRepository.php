@@ -8,8 +8,8 @@ use DateTime;
 use Exception;
 use Psr\Log\LoggerInterface as Logger;
 use Ubix\DataType\Int\UserId;
-use Ubix\DataType\String\Email;
 use Ubix\DataType\String\DisplayName;
+use Ubix\DataType\String\Email;
 use Ubix\Enum\Exception\ExceptionCode;
 use Ubix\Enum\User\UserStatus;
 use Ubix\Model\User;
@@ -21,6 +21,8 @@ use Ubix\Service\Sql\SqlServiceInterface as SqlService;
  * Class UserSqlRepository
  *
  * Implements methods to read and write user-related data from the database.
+ *
+ * @see \Ubix\Tests\Repository\User\UserSqlRepositoryTest PHPUnit test case
  */
 final class UserSqlRepository implements UserReader, UserWriter
 {
@@ -131,12 +133,12 @@ final class UserSqlRepository implements UserReader, UserWriter
 
         $params = [
             'display_name'  => $user->getDisplayName(),
-            'password_hash' => $user->getPasswordHash(),
             'email'         => $user->getEmail(),
             'first_name'    => $user->getFirstName(),
             'last_name'     => $user->getLastName(),
-            'status'        => $user->getStatus()?->value ?? 'pending',
+            'password_hash' => $user->getPasswordHash(),
             'roles'         => $user->getRoles() ?? 'user',
+            'status'        => $user->getStatus()?->value ?? 'pending',
         ];
 
         $this->sqlService->query($sql, $params);
@@ -164,17 +166,17 @@ final class UserSqlRepository implements UserReader, UserWriter
                 WHERE id = :id';
 
         $params = [
-            'id'                    => $user->getId(),
             'display_name'          => $user->getDisplayName(),
-            'password_hash'         => $user->getPasswordHash(),
             'email'                 => $user->getEmail(),
-            'first_name'            => $user->getFirstName(),
-            'last_name'             => $user->getLastName(),
-            'status'                => $user->getStatus()?->value,
-            'roles'                 => $user->getRoles(),
             'failed_login_attempts' => $user->getFailedLoginAttempts(),
+            'first_name'            => $user->getFirstName(),
+            'id'                    => $user->getId(),
             'last_failed_login'     => $user->getLastFailedLogin()?->format('Y-m-d H:i:s'),
             'last_login'            => $user->getLastLogin()?->format('Y-m-d H:i:s'),
+            'last_name'             => $user->getLastName(),
+            'password_hash'         => $user->getPasswordHash(),
+            'roles'                 => $user->getRoles(),
+            'status'                => $user->getStatus()?->value,
         ];
 
         return $this->sqlService->query($sql, $params);
@@ -218,20 +220,20 @@ final class UserSqlRepository implements UserReader, UserWriter
     private function hydrateUser(array $result): User
     {
         return new User(
-            id: (int) $result['id'],
-            displayName: $result['display_name'],
-            passwordHash: $result['password_hash'],
-            email: $result['email'],
-            firstName: $result['first_name'],
-            lastName: $result['last_name'],
-            creatorName: $result['creator_name'] ?? null,
-            status: $result['status'] !== null ? UserStatus::from($result['status']) : null,
-            roles: $result['roles'],
+            id:                  (int) $result['id'],
+            displayName:         $result['display_name'],
+            passwordHash:        $result['password_hash'],
+            email:               $result['email'],
+            firstName:           $result['first_name'],
+            lastName:            $result['last_name'],
+            creatorName:         $result['creator_name'] ?? null,
+            status:              $result['status'] !== null ? UserStatus::from($result['status']) : null,
+            roles:               $result['roles'],
             failedLoginAttempts: (int) $result['failed_login_attempts'],
-            lastFailedLogin: $result['last_failed_login'] !== null ? new DateTime($result['last_failed_login']) : null,
-            lastLogin: $result['last_login'] !== null ? new DateTime($result['last_login']) : null,
-            createdAt: $result['created_at'] !== null ? new DateTime($result['created_at']) : null,
-            updatedAt: $result['updated_at'] !== null ? new DateTime($result['updated_at']) : null,
+            lastFailedLogin:     $result['last_failed_login'] !== null ? new DateTime($result['last_failed_login']) : null,
+            lastLogin:           $result['last_login'] !== null ? new DateTime($result['last_login']) : null,
+            createdAt:           $result['created_at'] !== null ? new DateTime($result['created_at']) : null,
+            updatedAt:           $result['updated_at'] !== null ? new DateTime($result['updated_at']) : null,
         );
     }
 }

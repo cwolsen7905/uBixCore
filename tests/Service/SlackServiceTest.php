@@ -18,7 +18,7 @@ use Ubix\Tests\AbstractUbixConcreteClassOrEnumTestCase as UbixConcreteClassOrEnu
 use Ubix\Tests\UbixConcreteClassOrEnumTestCaseInterface as IUbixConcreteClassOrEnumTestCase;
 
 /**
- * PHPUnit test case for \Ubis\Service\SlackService
+ * PHPUnit test case for \Ubix\Service\SlackService
  *
  * @coversDefaultClass \Ubix\Service\SlackService
  * @coversDefaultClass \Ubis\Service\SlackService
