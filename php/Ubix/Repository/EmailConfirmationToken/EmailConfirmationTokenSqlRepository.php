@@ -50,7 +50,7 @@ final class EmailConfirmationTokenSqlRepository implements EmailConfirmationToke
 
         $result = $this->sqlService->getRow($sql, ['token' => $token]);
 
-        if ($result === null) {
+        if ($result === false) {
             return null;
         }
 
@@ -78,7 +78,7 @@ final class EmailConfirmationTokenSqlRepository implements EmailConfirmationToke
 
         $result = $this->sqlService->getRow($sql, ['user_id' => $userId]);
 
-        if ($result === null) {
+        if ($result === false) {
             return null;
         }
 
@@ -134,15 +134,13 @@ final class EmailConfirmationTokenSqlRepository implements EmailConfirmationToke
                 WHERE expires_at < NOW()
                 OR used_at IS NOT NULL';
 
-        $this->sqlService->query($sql);
-
-        return $this->sqlService->rowCount();
+        return $this->sqlService->query($sql);
     }
 
     /**
      * Hydrate an EmailConfirmationToken model from database result
      *
-     * @param array<string, mixed> $result The database result row
+     * @param array<string, bool|int|float|string|null> $result The database result row
      *
      * @return EmailConfirmationToken The hydrated token model
      */
@@ -151,10 +149,10 @@ final class EmailConfirmationTokenSqlRepository implements EmailConfirmationToke
         return new EmailConfirmationToken(
             id:        (int) $result['id'],
             userId:    (int) $result['user_id'],
-            token:     $result['token'],
-            expiresAt: $result['expires_at'] !== null ? new DateTime($result['expires_at']) : null,
-            createdAt: $result['created_at'] !== null ? new DateTime($result['created_at']) : null,
-            usedAt:    $result['used_at'] !== null ? new DateTime($result['used_at']) : null,
+            token:     is_string($result['token']) ? $result['token'] : null,
+            expiresAt: is_string($result['expires_at']) ? new DateTime($result['expires_at']) : null,
+            createdAt: is_string($result['created_at']) ? new DateTime($result['created_at']) : null,
+            usedAt:    is_string($result['used_at']) ? new DateTime($result['used_at']) : null,
         );
     }
 }

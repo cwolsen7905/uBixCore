@@ -66,7 +66,7 @@ final class UserSqlRepository implements UserReader, UserWriter
 
         $result = $this->sqlService->getRow($sql, ['id' => $userId->value]);
 
-        if ($result === null) {
+        if ($result === false) {
             throw new Exception('User not found', ExceptionCode::USER_NOT_FOUND->value);
         }
 
@@ -101,7 +101,7 @@ final class UserSqlRepository implements UserReader, UserWriter
 
         $result = $this->sqlService->getRow($sql, ['email' => $email->value]);
 
-        if ($result === null || empty($result)) {
+        if ($result === false || empty($result)) {
             throw new Exception('User not found', ExceptionCode::USER_NOT_FOUND->value);
         }
 
@@ -142,7 +142,7 @@ final class UserSqlRepository implements UserReader, UserWriter
             'last_name'     => $user->getLastName(),
             'password_hash' => $user->getPasswordHash(),
             'roles'         => $user->getRoles() ?? 'user',
-            'status'        => $user->getStatus()?->value ?? 'pending',
+            'status'        => $user->getStatus()->value ?? 'pending',
         ];
 
         $this->sqlService->query($sql, $params);
@@ -183,7 +183,7 @@ final class UserSqlRepository implements UserReader, UserWriter
             'status'                => $user->getStatus()?->value,
         ];
 
-        return $this->sqlService->query($sql, $params);
+        return $this->sqlService->query($sql, $params) > 0;
     }
 
     /**
@@ -197,7 +197,7 @@ final class UserSqlRepository implements UserReader, UserWriter
 
         $result = $this->sqlService->getRow($sql, ['email' => $email->value]);
 
-        return $result !== null && (int) $result['count'] > 0;
+        return $result !== false && (int) $result['count'] > 0;
     }
 
     /**
@@ -211,13 +211,13 @@ final class UserSqlRepository implements UserReader, UserWriter
 
         $result = $this->sqlService->getRow($sql, ['display_name' => $displayName->value]);
 
-        return $result !== null && (int) $result['count'] > 0;
+        return $result !== false && (int) $result['count'] > 0;
     }
 
     /**
      * Hydrate a User model from database result
      *
-     * @param array<string, mixed> $result The database result row
+     * @param array<string, bool|int|float|string|null> $result The database result row
      *
      * @return User The hydrated user model
      */
@@ -225,19 +225,19 @@ final class UserSqlRepository implements UserReader, UserWriter
     {
         return new User(
             id:                  (int) $result['id'],
-            displayName:         $result['display_name'],
-            passwordHash:        $result['password_hash'],
-            email:               $result['email'],
-            firstName:           $result['first_name'],
-            lastName:            $result['last_name'],
-            creatorName:         $result['creator_name'] ?? null,
-            status:              $result['status'] !== null ? UserStatus::from($result['status']) : null,
-            roles:               $result['roles'],
+            displayName:         is_string($result['display_name']) ? $result['display_name'] : null,
+            passwordHash:        is_string($result['password_hash']) ? $result['password_hash'] : null,
+            email:               is_string($result['email']) ? $result['email'] : null,
+            firstName:           is_string($result['first_name']) ? $result['first_name'] : null,
+            lastName:            is_string($result['last_name']) ? $result['last_name'] : null,
+            creatorName:         is_string($result['creator_name']) ? $result['creator_name'] : null,
+            status:              is_string($result['status']) ? UserStatus::from($result['status']) : null,
+            roles:               is_string($result['roles']) ? $result['roles'] : null,
             failedLoginAttempts: (int) $result['failed_login_attempts'],
-            lastFailedLogin:     $result['last_failed_login'] !== null ? new DateTime($result['last_failed_login']) : null,
-            lastLogin:           $result['last_login'] !== null ? new DateTime($result['last_login']) : null,
-            createdAt:           $result['created_at'] !== null ? new DateTime($result['created_at']) : null,
-            updatedAt:           $result['updated_at'] !== null ? new DateTime($result['updated_at']) : null,
+            lastFailedLogin:     is_string($result['last_failed_login']) ? new DateTime($result['last_failed_login']) : null,
+            lastLogin:           is_string($result['last_login']) ? new DateTime($result['last_login']) : null,
+            createdAt:           is_string($result['created_at']) ? new DateTime($result['created_at']) : null,
+            updatedAt:           is_string($result['updated_at']) ? new DateTime($result['updated_at']) : null,
         );
     }
 }

@@ -71,6 +71,7 @@ final class AuthController extends Controller
     {
         try {
             $payload = AuthenticationRequestPayload::getRequest($request);
+            assert($payload instanceof AuthenticationRequestPayload);
         } catch (DtoException $e) {
             return $this->renderJson($response, [
                 'fields'     => $e->getDto()->errors ?? [],
@@ -81,7 +82,7 @@ final class AuthController extends Controller
 
         // Log the payload for debugging
         $this->logger->debug('Authentication payload', [
-            'debug'           => $payload->debug?->value,
+            'debug'           => $payload->debug,
             'email'           => $payload->email->value,
             'password_length' => strlen($payload->password->value),
         ]);
@@ -102,7 +103,7 @@ final class AuthController extends Controller
         // Verify password
         if (!password_verify($payload->password->value, $user->getPasswordHash() ?? '')) {
             $this->logger->info('Authentication failed: invalid password', [
-                'displayName' => $payload->displayName->value,
+                'email' => $payload->email->value,
             ]);
 
             return $this->renderJson($response, [
@@ -113,8 +114,8 @@ final class AuthController extends Controller
         // Check user status
         if ($user->getStatus()?->value !== 'active') {
             $this->logger->info('Authentication failed: user not active', [
-                'displayName' => $payload->displayName->value,
-                'status'      => $user->getStatus()?->value,
+                'email'  => $payload->email->value,
+                'status' => $user->getStatus()?->value,
             ]);
 
             return $this->renderJson($response, [
@@ -163,14 +164,15 @@ final class AuthController extends Controller
      */
     public function validateSession(Request $request, Response $response): Response // phpcs:ignore SlevomatCodingStandard.Functions.UnusedParameter.UnusedParameter -- Slim route signature
     {
-        $data = [
-            'creatorName' => $_SESSION['user']['creatorName'] ?? null,
-            'displayName' => $_SESSION['user']['displayName'] ?? null,
-            'email'       => $_SESSION['user']['email'] ?? null,
-            'firstName'   => $_SESSION['user']['firstName'] ?? null,
-            'id'          => $_SESSION['user']['id'] ?? null,
-            'lastName'    => $_SESSION['user']['lastName'] ?? null,
-            'roles'       => $_SESSION['user']['roles'] ?? null,
+        $sessionUser = is_array($_SESSION['user'] ?? null) ? $_SESSION['user'] : [];
+        $data        = [
+            'creatorName' => $sessionUser['creatorName'] ?? null,
+            'displayName' => $sessionUser['displayName'] ?? null,
+            'email'       => $sessionUser['email'] ?? null,
+            'firstName'   => $sessionUser['firstName'] ?? null,
+            'id'          => $sessionUser['id'] ?? null,
+            'lastName'    => $sessionUser['lastName'] ?? null,
+            'roles'       => $sessionUser['roles'] ?? null,
         ];
 
         return $this->renderJson($response, $data);
@@ -186,8 +188,9 @@ final class AuthController extends Controller
      */
     public function logout(Request $request, Response $response): Response // phpcs:ignore SlevomatCodingStandard.Functions.UnusedParameter.UnusedParameter -- Slim route signature
     {
-        $userId      = $_SESSION['user']['id'] ?? null;
-        $displayName = $_SESSION['user']['displayName'] ?? null;
+        $sessionUser = is_array($_SESSION['user'] ?? null) ? $_SESSION['user'] : [];
+        $userId      = $sessionUser['id'] ?? null;
+        $displayName = $sessionUser['displayName'] ?? null;
 
         // Clear session data
         $_SESSION = [];
@@ -220,6 +223,7 @@ final class AuthController extends Controller
     {
         try {
             $payload = RegistrationRequestPayload::getRequest($request);
+            assert($payload instanceof RegistrationRequestPayload);
         } catch (DtoException $e) {
             print 'Test2';
             return $this->renderJson($response, [
@@ -253,7 +257,7 @@ final class AuthController extends Controller
         // Check if displayName already exists
         if ($this->userReader->displayNameExists($payload->displayName)) {
             $this->logger->info('Registration failed: displayName already exists', [
-                'displayName' => $payload->displayName->value,
+                'email' => $payload->email->value,
             ]);
 
             return $this->renderJson($response, [
@@ -266,7 +270,7 @@ final class AuthController extends Controller
         }
 
         // Check if email already exists
-        if ($this->userReader->emailExists($payload->email->value)) {
+        if ($this->userReader->emailExists($payload->email)) {
             $this->logger->info('Registration failed: email already exists', [
                 'email' => $payload->email->value,
             ]);
