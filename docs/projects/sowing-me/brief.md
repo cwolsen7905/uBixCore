@@ -70,7 +70,7 @@ The MVP is "a creator can get paid by a supporter": creator onboarding → publi
 
 ### 4.3 Surfaces
 
-Each product surface gets `docs/surfaces/<slug>/srs.md` + `technical-spec.md` as it is picked up. Planned surface list (rows in the roadmap): `authentication`, `registration`, `creator-profile`, `subscription-tiers`, `content-posts`, `media-storage`, `payments`, `payouts`, `supporter-feed`, `explore`, `creator-dashboard`, `admin-console`, `affiliates`, `notifications`, `messaging`.
+The whole product is specified by the platform trio [`platform/`](platform/README.md) (Platform SRS/TDS/ADS); each product surface then gets `docs/surfaces/<slug>/srs.md` + `technical-spec.md` (+ `architecture.md` when it needs its own SDD) as it is picked up. Planned surface list (rows in the roadmap): `authentication`, `registration`, `creator-profile`, `subscription-tiers`, `content-posts`, `media-storage`, `payments`, `payouts`, `supporter-feed`, `explore`, `creator-dashboard`, `admin-console`, `affiliates`, `notifications`, `messaging`.
 
 ## 5. What we're not touching
 

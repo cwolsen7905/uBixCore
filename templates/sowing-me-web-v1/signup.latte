@@ -9,35 +9,37 @@
         display: flex;
         align-items: center;
         justify-content: center;
-        padding: 60px 20px;
-        background: var(--color-light);
+        padding: 64px 20px 96px;
+        background: linear-gradient(135deg, var(--color-primary-soft) 0%, var(--color-surface-2) 100%);
     }
 
     .auth-container {
-        background: var(--color-white);
-        border-radius: 12px;
-        box-shadow: 0 4px 24px rgba(0,0,0,0.1);
-        padding: 40px;
+        background: var(--color-surface);
+        border-radius: var(--radius-lg);
+        box-shadow: var(--shadow-lg);
+        padding: 44px;
         width: 100%;
-        max-width: 420px;
+        max-width: 460px;
+        border: 1px solid var(--color-border);
     }
 
     .auth-tabs {
         display: flex;
-        margin-bottom: 30px;
-        border-bottom: 2px solid var(--color-light);
+        margin-bottom: 28px;
+        border-bottom: 2px solid var(--color-surface-2);
     }
 
     .auth-tab {
         flex: 1;
-        padding: 15px;
+        padding: 14px;
         text-align: center;
-        font-weight: 600;
-        color: #78909C;
+        font-weight: 700;
+        font-family: var(--font-heading);
+        color: var(--color-text-subtle);
         cursor: pointer;
         border: none;
         background: none;
-        font-size: 1rem;
+        font-size: 0.9rem;
         transition: color 0.2s;
         position: relative;
     }
@@ -72,7 +74,7 @@
         display: flex;
         flex-direction: column;
         gap: 12px;
-        margin-bottom: 25px;
+        margin-bottom: 24px;
     }
 
     .oauth-btn {
@@ -81,23 +83,23 @@
         justify-content: center;
         gap: 12px;
         padding: 12px 20px;
-        border-radius: 6px;
-        font-weight: 500;
-        font-size: 0.95rem;
+        border-radius: var(--radius-md);
+        font-weight: 600;
+        font-size: 0.9rem;
         cursor: pointer;
         transition: all 0.2s;
-        border: 1px solid #E0E0E0;
-        background: var(--color-white);
-        color: var(--color-dark);
+        border: 1px solid var(--color-border);
+        background: var(--color-surface);
+        color: var(--color-text);
     }
 
     .oauth-btn:hover {
-        background: var(--color-light);
+        background: var(--color-surface-2);
     }
 
     .oauth-btn svg {
-        width: 20px;
-        height: 20px;
+        width: 18px;
+        height: 18px;
     }
 
     .oauth-btn.google {
@@ -105,9 +107,9 @@
     }
 
     .oauth-btn.apple {
-        background: #000;
+        background: var(--color-slate-900);
         color: #fff;
-        border-color: #000;
+        border-color: var(--color-slate-900);
     }
 
     .oauth-btn.apple:hover {
@@ -117,8 +119,8 @@
     .divider {
         display: flex;
         align-items: center;
-        margin: 25px 0;
-        color: #78909C;
+        margin: 22px 0;
+        color: var(--color-text-subtle);
         font-size: 0.9rem;
     }
 
@@ -127,37 +129,46 @@
         content: '';
         flex: 1;
         height: 1px;
-        background: #E0E0E0;
+        background: var(--color-border);
     }
 
     .divider span {
-        padding: 0 15px;
+        padding: 0 14px;
+    }
+
+    .form-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 16px;
     }
 
     .form-group {
-        margin-bottom: 20px;
+        margin-bottom: 18px;
     }
 
     .form-group label {
         display: block;
-        margin-bottom: 8px;
-        font-weight: 500;
-        color: var(--color-dark);
+        margin-bottom: 7px;
+        font-weight: 600;
+        color: var(--color-text);
         font-size: 0.9rem;
     }
 
     .form-group input {
         width: 100%;
-        padding: 12px 15px;
-        border: 1px solid #E0E0E0;
-        border-radius: 6px;
-        font-size: 1rem;
+        padding: 11px 14px;
+        border: 1px solid var(--color-border);
+        border-radius: var(--radius-md);
+        font-size: 0.95rem;
+        font-family: var(--font-body);
+        color: var(--color-text);
         transition: border-color 0.2s;
         box-sizing: border-box;
     }
 
     .form-group input:focus {
-        outline: none;
+        outline: 2px solid var(--color-primary);
+        outline-offset: 1px;
         border-color: var(--color-primary);
     }
 
@@ -184,13 +195,15 @@
         width: 100%;
         padding: 14px;
         background: var(--color-primary);
-        color: var(--color-white);
+        color: var(--color-on-primary);
         border: none;
-        border-radius: 6px;
+        border-radius: var(--radius-md);
         font-size: 1rem;
-        font-weight: 600;
+        font-weight: 700;
+        font-family: var(--font-heading);
         cursor: pointer;
         transition: background 0.2s;
+        margin-top: 4px;
     }
 
     .submit-btn:hover {
@@ -199,32 +212,44 @@
 
     .auth-footer {
         text-align: center;
-        margin-top: 25px;
-        color: #78909C;
+        margin-top: 22px;
+        color: var(--color-text-muted);
         font-size: 0.9rem;
     }
 
     .auth-footer a {
         color: var(--color-primary);
-        font-weight: 500;
+        font-weight: 700;
     }
 
     .terms-text {
-        font-size: 0.8rem;
-        color: #78909C;
+        font-size: 0.75rem;
+        color: var(--color-text-subtle);
         text-align: center;
-        margin-top: 20px;
+        margin-top: 18px;
         line-height: 1.5;
     }
 
     .terms-text a {
         color: var(--color-primary);
+        font-weight: 600;
     }
 
     .password-requirements {
-        font-size: 0.8rem;
-        color: #78909C;
+        font-size: 0.75rem;
+        color: var(--color-text-subtle);
         margin-top: 5px;
+    }
+
+    @media (max-width: 768px) {
+        .auth-container {
+            padding: 28px;
+        }
+
+        .form-row {
+            grid-template-columns: 1fr;
+            gap: 0;
+        }
     }
 </style>
 {/block}
@@ -308,14 +333,16 @@
             <div class="divider"><span>or register with email</span></div>
 
             <form onsubmit="handleRegister(event)">
-                <div class="form-group">
-                    <label for="register-first-name">First Name</label>
-                    <input type="text" id="register-first-name" name="first_name" required placeholder="Your first name">
-                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="register-first-name">First Name</label>
+                        <input type="text" id="register-first-name" name="first_name" required placeholder="Your first name">
+                    </div>
 
-                <div class="form-group">
-                    <label for="register-last-name">Last Name</label>
-                    <input type="text" id="register-last-name" name="last_name" required placeholder="Your last name">
+                    <div class="form-group">
+                        <label for="register-last-name">Last Name</label>
+                        <input type="text" id="register-last-name" name="last_name" required placeholder="Your last name">
+                    </div>
                 </div>
 
                 <div class="form-group">

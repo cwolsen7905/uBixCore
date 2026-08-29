@@ -42,11 +42,11 @@ Faith-based creators have no purpose-built monetisation platform; the pitch deck
 
 ### 4.2 Post-MVP (M3+)
 
-`affiliates` (referral links, banners, revenue share — admin API stubs exist), `notifications` (email digests, in-app), `messaging` (creator ↔ supporter DMs), `organisations` (church accounts, tithing), `prayer-requests`, analytics dashboard, premium creator features, mobile apps, whitelabel.
+`affiliates` (referral links, banners, revenue share — admin API stubs exist), `notifications` (email digests, in-app), `messaging` (creator ↔ supporter DMs), `live-streaming` (creator live video — WHIP browser ingest → MediaMTX, tier-gated playback, restream, VOD; **repurposes** the neptune `broadcasting/*` stubs; full spec in [`docs/surfaces/live-streaming/`](../../surfaces/live-streaming/README.md), roadmap M3-06), `organisations` (church accounts, tithing), `prayer-requests`, analytics dashboard, premium creator features, mobile apps, whitelabel.
 
 ### 4.3 Out of scope
 
-Native mobile apps; live streaming/broadcasting (delete the `broadcasting/*` stubs); anything requiring us to store card numbers.
+Native mobile apps; anything requiring us to store card numbers. (Live streaming was previously out of scope; it moved to **post-MVP / M3** on 2026-08-27 — see `docs/surfaces/live-streaming/`. The `broadcasting/*` stubs are now **repurposed** by that surface rather than deleted.)
 
 ### 4.4 Effort legend
 
@@ -121,3 +121,4 @@ One owner. Decisions go in `status.md` the session they're made; roadmap rows fl
 | Version | Date | Change |
 |---|---|---|
 | 0.1 | 2026-08-27 | Initial charter. |
+| 0.2 | 2026-08-27 | Live streaming moved from out-of-scope to post-MVP (M3-06); surface docs added. |
