@@ -18,6 +18,23 @@
             --color-white: #FFFFFF;
             --font-heading: 'Inter', sans-serif;
             --font-body: 'Open Sans', sans-serif;
+
+            /* Added to match approved mockups (design-system-handoff tokens) */
+            --color-surface: #FFFFFF;
+            --color-surface-2: #F5F7F8;
+            --color-border: #CFD8DC;
+            --color-text: #263238;
+            --color-text-muted: #546E7A;
+            --color-text-subtle: #78909C;
+            --color-primary-soft: #E8F5E9;
+            --color-accent-hover: #F57C00;
+            --color-on-primary: #FFFFFF;
+            --color-slate-900: #263238;
+            --radius-md: 6px;
+            --radius-lg: 12px;
+            --radius-full: 9999px;
+            --shadow-card: 0 2px 4px rgba(38,50,56,.10);
+            --shadow-lg: 0 12px 32px rgba(38,50,56,.14);
         }
 
         * {
@@ -78,14 +95,18 @@
         }
 
         .logo img {
-            height: 40px;
+            height: 34px;
         }
 
         .logo-text {
             font-family: var(--font-heading);
             font-size: 1.5rem;
-            font-weight: 700;
+            font-weight: 800;
             color: var(--color-primary);
+        }
+
+        .footer-brand img {
+            height: 30px;
         }
 
         .nav {
@@ -165,11 +186,20 @@
             margin-top: 80px;
         }
 
+        .footer-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 40px;
+            flex-wrap: wrap;
+            margin-bottom: 40px;
+        }
+
         .footer-content {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
             gap: 40px;
-            margin-bottom: 40px;
+            flex: 1;
         }
 
         .footer-section h4 {
@@ -309,7 +339,8 @@
     <header class="header">
         <div class="header-content">
             <a href="/" class="logo">
-                <img src="/assets/horizontal_logo_white.png" alt="Sowing.me">
+                <img src="/assets/logo_transparent.png" alt="Sowing.me">
+                <span class="logo-text">Sowing.me</span>
             </a>
             <nav class="nav">
                 <a href="/for-creators">For Creators</a>
@@ -337,30 +368,35 @@
 
     <footer class="footer">
         <div class="container">
-            <div class="footer-content">
-                <div class="footer-section">
-                    <h4>Platform</h4>
-                    <a href="/for-creators">For Creators</a>
-                    <a href="/how-it-works">How It Works</a>
-                    <a href="/pricing">Pricing</a>
-                    <a href="/testimonials">Testimonials</a>
-                </div>
-                <div class="footer-section">
-                    <h4>Company</h4>
-                    <a href="/about">About Us</a>
-                    <a href="/faq">FAQ</a>
-                    <a href="/contact">Contact</a>
-                </div>
-                <div class="footer-section">
-                    <h4>Legal</h4>
-                    <a href="/terms">Terms of Service</a>
-                    <a href="/privacy">Privacy Policy</a>
-                </div>
-                <div class="footer-section">
-                    <h4>Connect</h4>
-                    <a href="#">Facebook</a>
-                    <a href="#">Twitter</a>
-                    <a href="#">Instagram</a>
+            <div class="footer-row">
+                <a href="/" class="footer-brand">
+                    <img src="/assets/horizontal_logo_white.png" alt="Sowing.me">
+                </a>
+                <div class="footer-content">
+                    <div class="footer-section">
+                        <h4>Platform</h4>
+                        <a href="/for-creators">For Creators</a>
+                        <a href="/how-it-works">How It Works</a>
+                        <a href="/pricing">Pricing</a>
+                        <a href="/testimonials">Testimonials</a>
+                    </div>
+                    <div class="footer-section">
+                        <h4>Company</h4>
+                        <a href="/about">About Us</a>
+                        <a href="/faq">FAQ</a>
+                        <a href="/contact">Contact</a>
+                    </div>
+                    <div class="footer-section">
+                        <h4>Legal</h4>
+                        <a href="/terms">Terms of Service</a>
+                        <a href="/privacy">Privacy Policy</a>
+                    </div>
+                    <div class="footer-section">
+                        <h4>Connect</h4>
+                        <a href="#">Facebook</a>
+                        <a href="#">Twitter</a>
+                        <a href="#">Instagram</a>
+                    </div>
                 </div>
             </div>
             <div class="footer-bottom">

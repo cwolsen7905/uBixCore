@@ -5,9 +5,9 @@
 {block head}
 <style>
     .creator-hero {
-        background: linear-gradient(135deg, var(--color-accent) 0%, #F57C00 100%);
+        background: linear-gradient(135deg, var(--color-accent) 0%, var(--color-accent-hover) 100%);
         color: var(--color-white);
-        padding: 100px 0;
+        padding: 96px 0;
         text-align: center;
     }
 
@@ -23,6 +23,11 @@
         opacity: 0.95;
     }
 
+    .creator-hero .btn {
+        padding: 16px 32px;
+        font-size: 1rem;
+    }
+
     .benefits {
         padding: 100px 0;
     }
@@ -30,7 +35,7 @@
     .benefits-grid {
         display: grid;
         grid-template-columns: repeat(2, 1fr);
-        gap: 60px;
+        gap: 56px;
         align-items: center;
         margin-top: 60px;
     }
@@ -43,67 +48,94 @@
 
     .benefits-content p {
         margin-bottom: 15px;
-        color: #546E7A;
+        color: var(--color-text-muted);
     }
 
     .benefits-content ul {
         list-style: none;
         padding: 0;
+        margin: 0;
     }
 
     .benefits-content li {
-        padding: 10px 0;
-        padding-left: 30px;
+        padding: 10px 0 10px 32px;
         position: relative;
+        color: var(--color-text);
     }
 
-    .benefits-content li::before {
-        content: "✓";
+    .benefits-content li svg {
         position: absolute;
         left: 0;
-        color: var(--color-primary);
-        font-weight: bold;
+        top: 12px;
+        width: 18px;
+        height: 18px;
+        stroke: var(--color-primary);
     }
 
     .benefits-image {
-        background: var(--color-light);
-        border-radius: 12px;
-        padding: 60px;
-        text-align: center;
+        background: var(--color-surface-2);
+        border-radius: var(--radius-lg);
+        padding: 56px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 220px;
     }
 
-    .benefits-image .placeholder {
-        font-size: 4rem;
+    .benefits-image svg {
+        width: 90px;
+        height: 90px;
+        stroke: var(--color-primary);
     }
 
     .creator-types {
-        background: var(--color-light);
+        background: var(--color-surface-2);
         padding: 100px 0;
     }
 
     .types-grid {
         display: grid;
         grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-        gap: 30px;
+        gap: 28px;
         margin-top: 60px;
     }
 
     .type-card {
-        background: var(--color-white);
-        padding: 40px 30px;
-        border-radius: 12px;
+        background: var(--color-surface);
+        border: 1px solid var(--color-border);
+        padding: 36px 26px;
+        border-radius: var(--radius-lg);
         text-align: center;
-        box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+        box-shadow: var(--shadow-card);
     }
 
     .type-icon {
-        font-size: 3rem;
-        margin-bottom: 20px;
+        width: 56px;
+        height: 56px;
+        border-radius: var(--radius-full);
+        background: var(--color-primary-soft);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 18px;
+    }
+
+    .type-icon svg {
+        width: 26px;
+        height: 26px;
+        stroke: var(--color-primary);
     }
 
     .type-card h3 {
         margin-bottom: 15px;
         color: var(--color-dark);
+        font-size: 1.15rem;
+    }
+
+    .type-card p {
+        color: var(--color-text-muted);
+        font-size: 0.95rem;
+        margin-bottom: 0;
     }
 
     .earnings {
@@ -111,12 +143,13 @@
     }
 
     .earnings-calculator {
-        background: var(--color-white);
-        border-radius: 12px;
-        padding: 60px;
-        box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+        background: var(--color-surface);
+        border: 1px solid var(--color-border);
+        border-radius: var(--radius-lg);
+        padding: 56px;
+        box-shadow: var(--shadow-card);
         max-width: 800px;
-        margin: 60px auto 0;
+        margin: 48px auto 0;
     }
 
     .earnings-example {
@@ -124,7 +157,7 @@
         grid-template-columns: repeat(3, 1fr);
         gap: 30px;
         text-align: center;
-        margin-top: 40px;
+        margin-top: 36px;
     }
 
     .earnings-item h4 {
@@ -134,7 +167,8 @@
     }
 
     .earnings-item p {
-        color: #546E7A;
+        color: var(--color-text-muted);
+        margin-bottom: 0;
     }
 
     .cta-creator {
@@ -146,11 +180,12 @@
 
     .cta-creator h2 {
         margin-bottom: 20px;
+        color: var(--color-white);
     }
 
     .cta-creator p {
         margin-bottom: 30px;
-        opacity: 0.9;
+        opacity: 0.92;
     }
 
     @media (max-width: 768px) {
@@ -160,6 +195,10 @@
 
         .earnings-example {
             grid-template-columns: 1fr;
+        }
+
+        .earnings-calculator {
+            padding: 32px;
         }
     }
 </style>
@@ -183,29 +222,29 @@
                 <h3>Earn Predictable Income</h3>
                 <p>Stop relying on unpredictable ad revenue or one-time donations. Build a reliable monthly income through supporter memberships.</p>
                 <ul>
-                    <li>Monthly recurring payments from supporters</li>
-                    <li>Multiple membership tier options</li>
-                    <li>Keep up to 92% of your earnings</li>
-                    <li>Weekly payouts to your bank account</li>
+                    <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M4 12l5 5 11-11"/></svg>Monthly recurring payments from supporters</li>
+                    <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M4 12l5 5 11-11"/></svg>Multiple membership tier options</li>
+                    <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M4 12l5 5 11-11"/></svg>Keep up to 92% of your earnings</li>
+                    <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M4 12l5 5 11-11"/></svg>Weekly payouts to your bank account</li>
                 </ul>
             </div>
             <div class="benefits-image">
-                <div class="placeholder">💵</div>
+                <svg viewBox="0 0 24 24" fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v10M9 9.5c0-1.4 1.3-2.5 3-2.5s3 1 3 2.3c0 3-6 1.5-6 4.5 0 1.4 1.3 2.5 3 2.5s3-1.1 3-2.5"/></svg>
             </div>
         </div>
 
         <div class="benefits-grid" style="margin-top: 80px;">
             <div class="benefits-image">
-                <div class="placeholder">👥</div>
+                <svg viewBox="0 0 24 24" fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M17 20v-1a4 4 0 0 0-4-4H7a4 4 0 0 0-4 4v1"/><circle cx="9" cy="7" r="4"/><path d="M23 20v-1a4 4 0 0 0-3-3.9M16 3.1a4 4 0 0 1 0 7.8"/></svg>
             </div>
             <div class="benefits-content">
                 <h3>Build Real Community</h3>
                 <p>Connect directly with people who believe in your mission and want to support your growth.</p>
                 <ul>
-                    <li>Direct messaging with supporters</li>
-                    <li>Exclusive posts and content</li>
-                    <li>Community polls and discussions</li>
-                    <li>Special member-only live streams</li>
+                    <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M4 12l5 5 11-11"/></svg>Direct messaging with supporters</li>
+                    <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M4 12l5 5 11-11"/></svg>Exclusive posts and content</li>
+                    <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M4 12l5 5 11-11"/></svg>Community polls and discussions</li>
+                    <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M4 12l5 5 11-11"/></svg>Special member-only live streams</li>
                 </ul>
             </div>
         </div>
@@ -215,14 +254,14 @@
                 <h3>Focus on What Matters</h3>
                 <p>Spend less time worrying about monetization and more time creating content that glorifies God.</p>
                 <ul>
-                    <li>Simple, intuitive creator dashboard</li>
-                    <li>Analytics to understand your audience</li>
-                    <li>Promotional tools to grow your reach</li>
-                    <li>No content censorship of faith-based messaging</li>
+                    <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M4 12l5 5 11-11"/></svg>Simple, intuitive creator dashboard</li>
+                    <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M4 12l5 5 11-11"/></svg>Analytics to understand your audience</li>
+                    <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M4 12l5 5 11-11"/></svg>Promotional tools to grow your reach</li>
+                    <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M4 12l5 5 11-11"/></svg>No content censorship of faith-based messaging</li>
                 </ul>
             </div>
             <div class="benefits-image">
-                <div class="placeholder">🎯</div>
+                <svg viewBox="0 0 24 24" fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 8v4l3 3"/></svg>
             </div>
         </div>
     </div>
@@ -235,37 +274,37 @@
 
         <div class="types-grid">
             <div class="type-card">
-                <div class="type-icon">🎙️</div>
+                <div class="type-icon"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 10a7 7 0 0 0 14 0M12 17v4M9 21h6"/></svg></div>
                 <h3>Podcasters</h3>
                 <p>Share devotionals, interviews, and teachings with exclusive bonus episodes for members.</p>
             </div>
 
             <div class="type-card">
-                <div class="type-icon">🎵</div>
+                <div class="type-icon"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg></div>
                 <h3>Musicians & Worship Leaders</h3>
                 <p>Release worship music, tutorials, and behind-the-scenes content for your supporters.</p>
             </div>
 
             <div class="type-card">
-                <div class="type-icon">📹</div>
+                <div class="type-icon"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="6" width="15" height="12" rx="2"/><path d="M17 10l5-3v10l-5-3"/></svg></div>
                 <h3>Video Creators</h3>
                 <p>Produce Bible studies, vlogs, and inspirational content with early access for members.</p>
             </div>
 
             <div class="type-card">
-                <div class="type-icon">✍️</div>
+                <div class="type-icon"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg></div>
                 <h3>Writers & Bloggers</h3>
                 <p>Share devotionals, articles, and books-in-progress with your dedicated readers.</p>
             </div>
 
             <div class="type-card">
-                <div class="type-icon">🎨</div>
+                <div class="type-icon"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="13.5" cy="6.5" r=".5"/><circle cx="17.5" cy="10.5" r=".5"/><circle cx="8.5" cy="7.5" r=".5"/><circle cx="6.5" cy="12.5" r=".5"/><path d="M12 2a10 10 0 1 0 10 10c0-1-.5-2-2-2h-3a2 2 0 0 1-2-2 2 2 0 0 1 2-2c1 0 2-.5 2-2 0-2-3-2-7-2z"/></svg></div>
                 <h3>Artists & Designers</h3>
                 <p>Create faith-inspired art, printables, and designs with exclusive access for supporters.</p>
             </div>
 
             <div class="type-card">
-                <div class="type-icon">📚</div>
+                <div class="type-icon"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg></div>
                 <h3>Teachers & Coaches</h3>
                 <p>Offer courses, mentorship, and educational content to those seeking to grow in faith.</p>
             </div>
@@ -279,7 +318,7 @@
         <p class="section-subtitle text-center">See what you could earn with Sowing.me</p>
 
         <div class="earnings-calculator">
-            <p class="text-center" style="margin-bottom: 30px;">If you have supporters paying an average of $10/month:</p>
+            <p class="text-center" style="margin-bottom: 0;">If you have supporters paying an average of $10/month:</p>
 
             <div class="earnings-example">
                 <div class="earnings-item">
@@ -296,7 +335,7 @@
                 </div>
             </div>
 
-            <p class="text-center" style="margin-top: 30px; color: #546E7A; font-size: 0.9rem;">
+            <p class="text-center" style="margin-top: 28px; margin-bottom: 0; color: var(--color-text-muted); font-size: 0.9rem;">
                 *Based on 8% platform fee. Your actual earnings may vary based on tier pricing and payment processing fees.
             </p>
         </div>
