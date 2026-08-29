@@ -61,7 +61,7 @@ final class SessionMiddleware implements Middleware
         $serverParams = $request->getServerParams();
         $isSecure     = $uri->getScheme() === 'https'
         || ($serverParams['HTTP_X_FORWARDED_PROTO'] ?? '') === 'https'
-        || (string) ($serverParams['SERVER_PORT'] ?? '') === '443';
+        || in_array($serverParams['SERVER_PORT'] ?? null, [443, '443'], true);
         $sameSite     = $isSecure ? 'None' : 'Lax';
         // Invoke session_set_cookie_params() before session_set_save_handler() because the latter will invoke session_get_cookie_params() to get the $domain value
         session_set_cookie_params(
