@@ -40,6 +40,8 @@ Status: `Todo` · `Build` · `Done` · `Dropped`.
 
 ## Status log
 
+- **2026-08-28 (CP-05 sweep)** — phpcs 2203-era baseline → **2** (both in neptune leftover models); phpstan 1414 → **373** (config excludes were still `Vsm`; typed hydration in User/EmailConfirmationToken repos; AuthController payload narrowing + two real bugs; AdminApi dead InternalAdminApi routes removed). **328 of the remaining 373 phpstan findings and all 22 phpunit errors live in neptune-leftover code** — M0-01 (delete Performer/AgeVerification/Notification/Transaction/AdminUser/Broadcaster/Studio/Slug/DuplicateProspect/FanClub/BillingTransaction services, models, DTOs and their tests) is the next step to a green gate.
+
 - **2026-08-28 (late)** — baseimages: php84 image fixed (pinned alpine 3.22), php85 image added, promotion chain dev→staging→master live. Registry → metadata DB. ubixcore MRs: !74 phpstan paths, !75 test-scan crash, !77 test container/DI, !78 resetSchema, !76 PHP 8.5, this MR (test DB). Job-token pulls from baseimages needed the ubixcore bot granted access on `k8s`.
 
 - **2026-08-28** — !72 merged. Registry GC incident (see memory `gitlab-vm-ops`): all multi-arch images rebuilt via baseimages `dev` push. `feat/ci-promotion`: CP-09 + CP-12 built, `CI_JOB_TOKEN` ARG/ENV removed from runtime Dockerfiles (cache-buster + secret in image history).
