@@ -10,6 +10,8 @@ use Ubix\Model\AbstractModel as Model;
 
 /**
  * Model of a user for authentication
+ *
+ * @see \Ubix\Tests\Model\UserTest PHPUnit test case
  */
 final class User extends Model
 {

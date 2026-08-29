@@ -51,28 +51,28 @@ final class SessionMiddleware implements Middleware
             throw new Exception('A session has already started.', ExceptionCode::SESSION_ALREADY_STARTED->value);
         }
 
-		// Get the root domain as wildcard for cookie sharing across subdomains
-		$domainParts = explode('.', $_SERVER['HTTP_HOST']);
-		$domainPartsCount = count($domainParts);
-		if ($domainPartsCount >= 2 && !strstr($_SERVER['HTTP_HOST'], '127.0.0.1')) {
-			$domain = '.' . $domainParts[$domainPartsCount - 2] . '.' . $domainParts[$domainPartsCount - 1];
-		} else {
-			$domain = '';// $_SERVER['HTTP_HOST'];
-		}
+        // Get the root domain as wildcard for cookie sharing across subdomains
+        $domainParts      = explode('.', $_SERVER['HTTP_HOST']);
+        $domainPartsCount = count($domainParts);
+        if ($domainPartsCount >= 2 && !strstr($_SERVER['HTTP_HOST'], '127.0.0.1')) {
+            $domain = '.' . $domainParts[$domainPartsCount - 2] . '.' . $domainParts[$domainPartsCount - 1];
+        } else {
+            $domain = '';// $_SERVER['HTTP_HOST'];
+        }
 
-		$isSecure = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') || (isset($_SERVER['SERVER_PORT']) && $_SERVER['SERVER_PORT'] == 443) || (!empty($_SERVER['HTTP_X_FORWARDED_PROTO']) && $_SERVER['HTTP_X_FORWARDED_PROTO'] === 'https');
-		$sameSite = $isSecure ? 'None' : 'Lax';
-		// Invoke session_set_cookie_params() before session_set_save_handler() because the latter will invoke session_get_cookie_params() to get the $domain value
+        $isSecure = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') || (isset($_SERVER['SERVER_PORT']) && $_SERVER['SERVER_PORT'] === 443) || (!empty($_SERVER['HTTP_X_FORWARDED_PROTO']) && $_SERVER['HTTP_X_FORWARDED_PROTO'] === 'https');
+        $sameSite = $isSecure ? 'None' : 'Lax';
+        // Invoke session_set_cookie_params() before session_set_save_handler() because the latter will invoke session_get_cookie_params() to get the $domain value
         session_set_cookie_params(
-			[
-				'lifetime' => 0,
-				'path'     => '/',
-				'domain'   => $domain,
-				'secure'   => $isSecure,
-				'httponly' => false,
-				'samesite' => $sameSite, // TEMPORARY: because of the way we're serving the app in development
-			]
-		);
+            [
+                'domain'   => $domain,
+                'httponly' => false,
+                'lifetime' => 0,
+                'path'     => '/',
+                'samesite' => $sameSite, // TEMPORARY: because of the way we're serving the app in development
+                'secure'   => $isSecure,
+            ],
+        );
 
         session_set_save_handler($this->sessionHandler, true);
         session_start();

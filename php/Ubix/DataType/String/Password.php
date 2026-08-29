@@ -11,6 +11,8 @@ use Ubix\DataType\String\AbstractStringDataType as StringDataType;
 
 /**
  * Object for creating and validating Password strings
+ *
+ * @see \Ubix\Tests\DataType\String\PasswordTest PHPUnit test case
  */
 class Password extends StringDataType
 {
@@ -20,8 +22,8 @@ class Password extends StringDataType
      * @param string $input The input value
      */
     public function __construct(
-        #[NotBlank]
         #[Length(min: 8, max: 255)]
+        #[NotBlank]
         #[PasswordStrength(minScore: PasswordStrength::STRENGTH_MEDIUM)]
         private string $input,
     ) {

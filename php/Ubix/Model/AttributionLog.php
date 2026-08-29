@@ -28,7 +28,7 @@ final class AttributionLog extends Model
      * @param ?MpCode           $newMpCode     The new MP code
      * @param ?Varchar          $reason        The reason for the change
      * @param ?Varchar          $bountyPaid    The bounty paid
-     * @param ?UbixDateTime      $dateTimeEvent The date of the event
+     * @param ?UbixDateTime     $dateTimeEvent The date of the event
      */
     public function __construct(
         private ?AttributionLogId $id = null,

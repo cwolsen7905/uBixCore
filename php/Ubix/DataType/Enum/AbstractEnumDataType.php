@@ -5,9 +5,9 @@ declare(strict_types=1);
 namespace Ubix\DataType\Enum;
 
 use BackedEnum;
+use Ubix\DataType\AbstractDataType as DataType;
 use UnitEnum;
 use ValueError;
-use Ubix\DataType\AbstractDataType as DataType;
 
 /**
  * Abstract datatype for use.

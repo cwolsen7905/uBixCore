@@ -10,6 +10,8 @@ use Ubix\DataType\String\AbstractStringDataType as StringDataType;
 
 /**
  * Object for creating and validating DisplayName strings
+ *
+ * @see \Ubix\Tests\DataType\String\DisplayNameTest PHPUnit test case
  */
 class DisplayName extends StringDataType
 {
@@ -19,8 +21,8 @@ class DisplayName extends StringDataType
      * @param string $input The input value
      */
     public function __construct(
-        #[NotBlank]
         #[Length(min: 1, max: 128)]
+        #[NotBlank]
         private string $input,
     ) {
         $this->validate();

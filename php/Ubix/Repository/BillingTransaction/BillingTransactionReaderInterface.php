@@ -26,7 +26,7 @@ interface BillingTransactionReaderInterface
          * Get the most recent transaction by user ID
          *
          * @param PlatformUserId $userId   The user's ID
-         * @param UbixDateTime    $dateTime The date to compare against in 'Y-m-d H:i:s' format
+         * @param UbixDateTime   $dateTime The date to compare against in 'Y-m-d H:i:s' format
          *
          * @return Transaction An array containing the transaction details
          */

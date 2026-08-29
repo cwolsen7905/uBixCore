@@ -19,7 +19,7 @@ interface EmailConfirmationTokenReaderInterface
      *
      * @param string $token The confirmation token
      *
-     * @return EmailConfirmationToken|null The token or null if not found
+     * @return ?EmailConfirmationToken The token or null if not found
      *
      * @throws Exception If the query fails
      */
@@ -30,7 +30,7 @@ interface EmailConfirmationTokenReaderInterface
      *
      * @param int $userId The user ID
      *
-     * @return EmailConfirmationToken|null The token or null if not found
+     * @return ?EmailConfirmationToken The token or null if not found
      *
      * @throws Exception If the query fails
      */

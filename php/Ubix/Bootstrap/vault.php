@@ -22,6 +22,7 @@ use Ubix\Service\Vault\VaultService;
  * Dependencies.php / Middleware.php / Routes.php) so the self-wiring lives
  * outside the DI container, which is not built until after this runs.
  */
+
 return static function (): void {
     $vaultAddress = getenv('VAULT_ADDR');
     if (! is_string($vaultAddress) || trim($vaultAddress) === '') {

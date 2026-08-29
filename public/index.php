@@ -97,7 +97,7 @@ $applyRoutes($slimApp);
 
 
 /*
-$slimApp->add(function ($request, $handler) {
+    $slimApp->add(function ($request, $handler) {
 
     $response = $handler->handle($request)
     ->withHeader('Access-Control-Allow-Origin', 'Balls') // Or specify your allowed origin
@@ -112,7 +112,7 @@ $slimApp->add(function ($request, $handler) {
 
     // var_dump("TEST");
     return $response;
-});
+    });
 */
 
 //

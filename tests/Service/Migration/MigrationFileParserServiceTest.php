@@ -13,7 +13,7 @@ use Ubix\Tests\AbstractUbixConcreteClassOrEnumTestCase as UbixConcreteClassOrEnu
 use Ubix\Tests\UbixConcreteClassOrEnumTestCaseInterface as IUbixConcreteClassOrEnumTestCase;
 
 /**
- * PHPUnit test case for \Ubis\Service\Migration\MigrationFileParserService
+ * PHPUnit test case for \Ubix\Service\Migration\MigrationFileParserService
  *
  * @coversDefaultClass \Ubix\Service\Migration\MigrationFileParserService
  * @coversDefaultClass \Ubis\Service\Migration\MigrationFileParserService

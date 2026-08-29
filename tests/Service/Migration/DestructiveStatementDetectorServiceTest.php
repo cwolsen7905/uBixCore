@@ -11,7 +11,7 @@ use Ubix\Tests\AbstractUbixConcreteClassOrEnumTestCase as UbixConcreteClassOrEnu
 use Ubix\Tests\UbixConcreteClassOrEnumTestCaseInterface as IUbixConcreteClassOrEnumTestCase;
 
 /**
- * PHPUnit test case for \Ubis\Service\Migration\DestructiveStatementDetectorService
+ * PHPUnit test case for \Ubix\Service\Migration\DestructiveStatementDetectorService
  *
  * @coversDefaultClass \Ubix\Service\Migration\DestructiveStatementDetectorService
  * @coversDefaultClass \Ubis\Service\Migration\DestructiveStatementDetectorService

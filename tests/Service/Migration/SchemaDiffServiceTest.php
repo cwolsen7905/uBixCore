@@ -13,7 +13,7 @@ use Ubix\Tests\AbstractUbixConcreteClassOrEnumTestCase as UbixConcreteClassOrEnu
 use Ubix\Tests\UbixConcreteClassOrEnumTestCaseInterface as IUbixConcreteClassOrEnumTestCase;
 
 /**
- * PHPUnit test case for \Ubis\Service\Migration\SchemaDiffService
+ * PHPUnit test case for \Ubix\Service\Migration\SchemaDiffService
  *
  * @coversDefaultClass \Ubix\Service\Migration\SchemaDiffService
  * @coversDefaultClass \Ubis\Service\Migration\SchemaDiffService

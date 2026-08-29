@@ -34,14 +34,14 @@ final class AuthController extends Controller
     /**
      * Constructor
      *
-     * @param Logger             $logger             The Monolog logger
-     * @param TemplateRenderer   $view               The template renderer
-     * @param JsonService        $jsonService        The JSON service
-     * @param UserReader         $userReader         The user reader
-     * @param UserWriter         $userWriter         The user writer
-     * @param TokenReader        $tokenReader        The email confirmation token reader
-     * @param TokenWriter        $tokenWriter        The email confirmation token writer
-     * @param EmailService       $emailService       The email service
+     * @param Logger           $logger       The Monolog logger
+     * @param TemplateRenderer $view         The template renderer
+     * @param JsonService      $jsonService  The JSON service
+     * @param UserReader       $userReader   The user reader
+     * @param UserWriter       $userWriter   The user writer
+     * @param TokenReader      $tokenReader  The email confirmation token reader
+     * @param TokenWriter      $tokenWriter  The email confirmation token writer
+     * @param EmailService     $emailService The email service
      *
      * @return void
      */
@@ -49,11 +49,11 @@ final class AuthController extends Controller
         protected Logger $logger,
         protected TemplateRenderer $view, // -> Needed Always
         protected JsonService $jsonService, // -> Needed Always
-		protected UserReader $userReader, // -> Needed for user lookups
-		protected UserWriter $userWriter, // -> Needed for user creation
-		protected TokenReader $tokenReader, // -> Needed for token lookups
-		protected TokenWriter $tokenWriter, // -> Needed for token creation
-		protected EmailService $emailService, // -> Needed for sending emails
+        protected UserReader $userReader, // -> Needed for user lookups
+        protected UserWriter $userWriter, // -> Needed for user creation
+        protected TokenReader $tokenReader, // -> Needed for token lookups
+        protected TokenWriter $tokenWriter, // -> Needed for token creation
+        protected EmailService $emailService, // -> Needed for sending emails
     ) {
         parent::__construct($logger, $view, $jsonService);
     }
@@ -68,23 +68,22 @@ final class AuthController extends Controller
      */
     public function authenticate(Request $request, Response $response): Response
     {
-
-		try {
-        $payload = AuthenticationRequestPayload::getRequest($request);
-		} catch (DtoException $e) {
+        try {
+            $payload = AuthenticationRequestPayload::getRequest($request);
+        } catch (DtoException $e) {
             return $this->renderJson($response, [
                 'fields'     => $e->getDto()->errors ?? [],
                 'message'    => $e->getMessage(),
                 'statusCode' => $e->getCode(),
-            ]);//, StatusCode::BAD_REQUEST);
+            ]);// , StatusCode::BAD_REQUEST);
         }
 
-		// Log the payload for debugging
-		$this->logger->debug('Authentication payload', [
-			'email' => $payload->email->value,
-			'password_length' => strlen($payload->password->value),
-			'debug' => $payload->debug?->value,
-		]);	
+        // Log the payload for debugging
+        $this->logger->debug('Authentication payload', [
+            'debug'           => $payload->debug?->value,
+            'email'           => $payload->email->value,
+            'password_length' => strlen($payload->password->value),
+        ]);
 
         // Lookup the user by email or return a json error response status 401
         try {
@@ -114,7 +113,7 @@ final class AuthController extends Controller
         if ($user->getStatus()?->value !== 'active') {
             $this->logger->info('Authentication failed: user not active', [
                 'displayName' => $payload->displayName->value,
-                'status'   => $user->getStatus()?->value,
+                'status'      => $user->getStatus()?->value,
             ]);
 
             return $this->renderJson($response, [
@@ -124,57 +123,57 @@ final class AuthController extends Controller
 
         // Set session data
         $_SESSION['user'] = [
-            'id'       => $user->getId(),
+            'creatorName' => $user->getCreatorName(),
             'displayName' => $user->getDisplayName(),
-            'email'    => $user->getEmail(),
-            'roles'    => $user->getRoles(),
-			'firstName' => $user->getFirstName(),
-			'lastName'  => $user->getLastName(),
-			'creatorName' => $user->getCreatorName(),
+            'email'       => $user->getEmail(),
+            'firstName'   => $user->getFirstName(),
+            'id'          => $user->getId(),
+            'lastName'    => $user->getLastName(),
+            'roles'       => $user->getRoles(),
         ];
 
         $this->logger->info('Authentication successful', [
-            'user_id'  => $user->getId(),
             'displayName' => $user->getDisplayName(),
+            'user_id'     => $user->getId(),
         ]);
 
         return $this->renderJson($response, [
-            'status'  => 'success',
             'message' => 'Authentication successful',
+            'status'  => 'success',
             'user'    => [
-                'id'        => $user->getId(),
-                'displayName'  => $user->getDisplayName(),
-                'email'     => $user->getEmail(),
-                'firstName' => $user->getFirstName(),
-                'lastName'  => $user->getLastName(),
                 'creatorName' => $user->getCreatorName(),
-                'roles'     => $user->getRoles(),
+                'displayName' => $user->getDisplayName(),
+                'email'       => $user->getEmail(),
+                'firstName'   => $user->getFirstName(),
+                'id'          => $user->getId(),
+                'lastName'    => $user->getLastName(),
+                'roles'       => $user->getRoles(),
             ],
         ]);
     }
 
-	/**
-	 * Validate the current session
-	 * 
-	 * @param Request  $request  The HTTP request object containing client data.
-	 * @param Response $response The HTTP response object used to send data back to the client
-	 * 
-	 * @return Response The modified response object with the operation result.
-	 */
-	public function validateSession(Request $request, Response $response): Response
-	{
-		$data = [
-			'id'        => $_SESSION['user']['id'] ?? null,
-			'displayName'  => $_SESSION['user']['displayName'] ?? null,
-			'email'     => $_SESSION['user']['email'] ?? null,
-			'firstName' => $_SESSION['user']['firstName'] ?? null,
-			'lastName'  => $_SESSION['user']['lastName'] ?? null,
-			'creatorName' => $_SESSION['user']['creatorName'] ?? null,
-			'roles'     => $_SESSION['user']['roles'] ?? null
-		];
+    /**
+     * Validate the current session
+     *
+     * @param Request  $request  The HTTP request object containing client data.
+     * @param Response $response The HTTP response object used to send data back to the client
+     *
+     * @return Response The modified response object with the operation result.
+     */
+    public function validateSession(Request $request, Response $response): Response
+    {
+        $data = [
+            'creatorName' => $_SESSION['user']['creatorName'] ?? null,
+            'displayName' => $_SESSION['user']['displayName'] ?? null,
+            'email'       => $_SESSION['user']['email'] ?? null,
+            'firstName'   => $_SESSION['user']['firstName'] ?? null,
+            'id'          => $_SESSION['user']['id'] ?? null,
+            'lastName'    => $_SESSION['user']['lastName'] ?? null,
+            'roles'       => $_SESSION['user']['roles'] ?? null,
+        ];
 
-		return $this->renderJson($response, $data);
-	}
+        return $this->renderJson($response, $data);
+    }
 
     /**
      * Logout the user by destroying the session
@@ -186,7 +185,7 @@ final class AuthController extends Controller
      */
     public function logout(Request $request, Response $response): Response
     {
-        $userId = $_SESSION['user']['id'] ?? null;
+        $userId      = $_SESSION['user']['id'] ?? null;
         $displayName = $_SESSION['user']['displayName'] ?? null;
 
         // Clear session data
@@ -198,13 +197,13 @@ final class AuthController extends Controller
         }
 
         $this->logger->info('User logged out', [
-            'user_id'  => $userId,
             'displayName' => $displayName,
+            'user_id'     => $userId,
         ]);
 
         return $this->renderJson($response, [
-            'status'  => 'success',
             'message' => 'Logged out successfully',
+            'status'  => 'success',
         ]);
     }
 
@@ -218,11 +217,10 @@ final class AuthController extends Controller
      */
     public function register(Request $request, Response $response): Response
     {
-
         try {
             $payload = RegistrationRequestPayload::getRequest($request);
         } catch (DtoException $e) {
-			print "Test2";
+            print 'Test2';
             return $this->renderJson($response, [
                 'fields'     => $e->getDto()->errors ?? [],
                 'message'    => $e->getMessage(),
@@ -230,24 +228,24 @@ final class AuthController extends Controller
             ], StatusCode::BAD_REQUEST);
         }
 
-		print "Test";
+        print 'Test';
 
         // Log the registration attempt
         $this->logger->debug('Registration attempt', [
-            'displayName'  => $payload->displayName->value,
-            'email'      => $payload->email->value,
-            'first_name' => $payload->firstName->value,
-            'last_name'  => $payload->lastName->value,
+            'displayName' => $payload->displayName->value,
+            'email'       => $payload->email->value,
+            'first_name'  => $payload->firstName->value,
+            'last_name'   => $payload->lastName->value,
         ]);
 
         // Validate password confirmation
         if ($payload->password->value !== $payload->confirmPassword->value) {
             return $this->renderJson($response, [
-                'status'  => 'error',
-                'message' => 'Passwords do not match',
                 'fields'  => [
                     'confirm_password' => ['Passwords do not match'],
                 ],
+                'message' => 'Passwords do not match',
+                'status'  => 'error',
             ], StatusCode::BAD_REQUEST);
         }
 
@@ -258,11 +256,11 @@ final class AuthController extends Controller
             ]);
 
             return $this->renderJson($response, [
-                'status'  => 'error',
-                'message' => 'This displayName is already taken',
                 'fields'  => [
                     'displayName' => ['This displayName is already taken'],
                 ],
+                'message' => 'This displayName is already taken',
+                'status'  => 'error',
             ], StatusCode::CONFLICT);
         }
 
@@ -273,11 +271,11 @@ final class AuthController extends Controller
             ]);
 
             return $this->renderJson($response, [
-                'status'  => 'error',
-                'message' => 'An account with this email already exists',
                 'fields'  => [
                     'email' => ['This email is already registered'],
                 ],
+                'message' => 'An account with this email already exists',
+                'status'  => 'error',
             ], StatusCode::CONFLICT);
         }
 
@@ -286,51 +284,51 @@ final class AuthController extends Controller
 
         // Create the user
         $user = new User(
-            id: null,
-            displayName: $displayName,
-            passwordHash: password_hash($payload->password->value, PASSWORD_DEFAULT),
-            email: $payload->email->value,
-            firstName: $payload->firstName->value,
-            lastName: $payload->lastName->value,
-            status: UserStatus::PENDING,
-            roles: 'user',
+            id:                  null,
+            displayName:         $displayName,
+            passwordHash:        password_hash($payload->password->value, PASSWORD_DEFAULT),
+            email:               $payload->email->value,
+            firstName:           $payload->firstName->value,
+            lastName:            $payload->lastName->value,
+            status:              UserStatus::PENDING,
+            roles:               'user',
             failedLoginAttempts: 0,
-            lastFailedLogin: null,
-            lastLogin: null,
-            createdAt: new \DateTime(),
-            updatedAt: new \DateTime(),
+            lastFailedLogin:     null,
+            lastLogin:           null,
+            createdAt:           new \DateTime(),
+            updatedAt:           new \DateTime(),
         );
 
         try {
             $userId = $this->userWriter->createUser($user);
 
             $this->logger->info('User registration successful', [
-                'user_id'    => $userId,
-                'email'      => $payload->email->value,
-                'display_name'   => $payload->displayName->value,
-                'first_name' => $payload->firstName->value,
-                'last_name'  => $payload->lastName->value,
+                'display_name' => $payload->displayName->value,
+                'email'        => $payload->email->value,
+                'first_name'   => $payload->firstName->value,
+                'last_name'    => $payload->lastName->value,
+                'user_id'      => $userId,
             ]);
 
             // Generate confirmation token
-            $token = bin2hex(random_bytes(32));
+            $token     = bin2hex(random_bytes(32));
             $expiresAt = new \DateTime('+24 hours');
 
             $confirmationToken = new EmailConfirmationToken(
-                id: null,
-                userId: $userId,
-                token: $token,
+                id:        null,
+                userId:    $userId,
+                token:     $token,
                 expiresAt: $expiresAt,
                 createdAt: new \DateTime(),
-                usedAt: null,
+                usedAt:    null,
             );
 
             try {
                 $this->tokenWriter->createToken($confirmationToken);
             } catch (Exception $e) {
                 $this->logger->error('Failed to create confirmation token', [
-                    'user_id' => $userId,
                     'error'   => $e->getMessage(),
+                    'user_id' => $userId,
                 ]);
             }
 
@@ -342,20 +340,20 @@ final class AuthController extends Controller
                     $payload->email->value,
                     $payload->firstName->value,
                     $payload->lastName->value,
-                    $confirmationUrl
+                    $confirmationUrl,
                 );
             } catch (Exception $e) {
                 // Log the error but don't fail the registration
                 $this->logger->error('Failed to send registration email', [
-                    'user_id' => $userId,
                     'email'   => $payload->email->value,
                     'error'   => $e->getMessage(),
+                    'user_id' => $userId,
                 ]);
             }
 
             return $this->renderJson($response, [
-                'status'  => 'success',
                 'message' => 'Registration successful! Please check your email for confirmation.',
+                'status'  => 'success',
                 'userId'  => $userId,
             ], StatusCode::CREATED);
         } catch (Exception $e) {
@@ -366,8 +364,8 @@ final class AuthController extends Controller
             ]);
 
             return $this->renderJson($response, [
-                'status'  => 'error',
                 'message' => 'Registration failed. Please try again later.',
+                'status'  => 'error',
             ], StatusCode::INTERNAL_SERVER_ERROR);
         }
     }
@@ -384,11 +382,11 @@ final class AuthController extends Controller
     {
         $origin = $request->getHeaderLine('Origin');
 
-		// Debug log this CORS request, the request address the referrer and the origin
-		$this->logger->debug('CORS Preflight Request', [
-			'referrer' => $request->getHeaderLine('Referer'),
-			'origin'   => $origin,
-		]);
+        // Debug log this CORS request, the request address the referrer and the origin
+        $this->logger->debug('CORS Preflight Request', [
+            'origin'   => $origin,
+            'referrer' => $request->getHeaderLine('Referer'),
+        ]);
 
         return $response
         ->withHeader('Access-Control-Allow-Origin', $origin) // Or specify your allowed origin
@@ -397,5 +395,4 @@ final class AuthController extends Controller
         ->withHeader('Access-Control-Allow-Credentials', 'true')
         ->withStatus(204);
     }
-
 }

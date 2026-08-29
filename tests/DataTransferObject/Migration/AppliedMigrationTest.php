@@ -9,7 +9,7 @@ use Ubix\Tests\AbstractUbixConcreteClassOrEnumTestCase as UbixConcreteClassOrEnu
 use Ubix\Tests\UbixConcreteClassOrEnumTestCaseInterface as IUbixConcreteClassOrEnumTestCase;
 
 /**
- * PHPUnit test case for \Ubis\DataTransferObject\Migration\AppliedMigration
+ * PHPUnit test case for \Ubix\DataTransferObject\Migration\AppliedMigration
  *
  * @coversDefaultClass \Ubix\DataTransferObject\Migration\AppliedMigration
  * @coversDefaultClass \Ubis\DataTransferObject\Migration\AppliedMigration

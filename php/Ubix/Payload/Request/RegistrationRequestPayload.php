@@ -4,16 +4,18 @@ declare(strict_types=1);
 
 namespace Ubix\Payload\Request;
 
+use Ubix\DataType\String\DisplayName;
 use Ubix\DataType\String\Email;
 use Ubix\DataType\String\FirstName;
 use Ubix\DataType\String\LastName;
 use Ubix\DataType\String\Password;
-use Ubix\DataType\String\DisplayName;
 use Ubix\Payload\AbstractPayload as Payload;
 use Ubix\Payload\RequestPayloadInterface as RequestPayload;
 
 /**
  * Payload object for user registration request parameters
+ *
+ * @see \Ubix\Tests\Payload\Request\RegistrationRequestPayloadTest PHPUnit test case
  */
 final class RegistrationRequestPayload extends Payload implements RequestPayload
 {
@@ -32,7 +34,7 @@ final class RegistrationRequestPayload extends Payload implements RequestPayload
     /**
      * Constructor
      *
-     * @param ?string $displayName        The display name
+     * @param ?string $displayName     The display name
      * @param ?string $firstName       The first name
      * @param ?string $lastName        The last name
      * @param ?string $email           The email address
@@ -47,7 +49,6 @@ final class RegistrationRequestPayload extends Payload implements RequestPayload
         ?string $password,
         ?string $confirmPassword,
     ) {
-
         $this->validateAndMapField('displayName', 'displayName', $displayName);
         $this->validateAndMapField('firstName', 'firstName', $firstName);
         $this->validateAndMapField('lastName', 'lastName', $lastName);

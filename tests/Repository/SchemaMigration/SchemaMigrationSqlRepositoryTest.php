@@ -13,7 +13,7 @@ use Ubix\Tests\AbstractUbixConcreteClassOrEnumTestCase as UbixConcreteClassOrEnu
 use Ubix\Tests\UbixConcreteClassOrEnumTestCaseInterface as IUbixConcreteClassOrEnumTestCase;
 
 /**
- * PHPUnit test case for \Ubis\Repository\SchemaMigration\SchemaMigrationSqlRepository
+ * PHPUnit test case for \Ubix\Repository\SchemaMigration\SchemaMigrationSqlRepository
  *
  * @coversDefaultClass \Ubix\Repository\SchemaMigration\SchemaMigrationSqlRepository
  * @coversDefaultClass \Ubis\Repository\SchemaMigration\SchemaMigrationSqlRepository

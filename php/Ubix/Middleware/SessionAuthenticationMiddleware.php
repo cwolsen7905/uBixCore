@@ -12,13 +12,15 @@ use Psr\Http\Server\RequestHandlerInterface as Handler;
 
 /**
  * Middleware to authenticate requests using PHP session user data
+ *
+ * @see \Ubix\Tests\Middleware\SessionAuthenticationMiddlewareTest PHPUnit test case
  */
 final class SessionAuthenticationMiddleware implements Middleware
 {
     /**
      * Constructor
      *
-     * @param ResponseFactory      $responseFactory Response factory for creating responses
+     * @param ResponseFactory                            $responseFactory Response factory for creating responses
      * @param array<array{method: string, path: string}> $excludedRoutes  Routes to exclude from authentication
      */
     public function __construct(
@@ -39,7 +41,7 @@ final class SessionAuthenticationMiddleware implements Middleware
     {
         // Check if route is excluded from authentication
         $method = $request->getMethod();
-        $path = $request->getUri()->getPath();
+        $path   = $request->getUri()->getPath();
 
         foreach ($this->excludedRoutes as $route) {
             if ($route['method'] === $method && $route['path'] === $path) {

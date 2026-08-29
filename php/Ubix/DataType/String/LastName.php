@@ -10,6 +10,8 @@ use Ubix\DataType\String\AbstractStringDataType as StringDataType;
 
 /**
  * Object for creating and validating LastName strings
+ *
+ * @see \Ubix\Tests\DataType\String\LastNameTest PHPUnit test case
  */
 class LastName extends StringDataType
 {
@@ -19,8 +21,8 @@ class LastName extends StringDataType
      * @param string $input The input value
      */
     public function __construct(
-        #[NotBlank]
         #[Length(min: 1, max: 100)]
+        #[NotBlank]
         private string $input,
     ) {
         $this->validate();

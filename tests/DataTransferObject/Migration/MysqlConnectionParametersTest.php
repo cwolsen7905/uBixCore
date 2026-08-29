@@ -9,7 +9,7 @@ use Ubix\Tests\AbstractUbixConcreteClassOrEnumTestCase as UbixConcreteClassOrEnu
 use Ubix\Tests\UbixConcreteClassOrEnumTestCaseInterface as IUbixConcreteClassOrEnumTestCase;
 
 /**
- * PHPUnit test case for \Ubis\DataTransferObject\Migration\MysqlConnectionParameters
+ * PHPUnit test case for \Ubix\DataTransferObject\Migration\MysqlConnectionParameters
  *
  * @coversDefaultClass \Ubix\DataTransferObject\Migration\MysqlConnectionParameters
  * @coversDefaultClass \Ubis\DataTransferObject\Migration\MysqlConnectionParameters

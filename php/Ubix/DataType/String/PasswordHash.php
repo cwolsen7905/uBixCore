@@ -10,6 +10,8 @@ use Ubix\DataType\String\AbstractStringDataType as StringDataType;
 
 /**
  * Object for creating and validating password hash strings
+ *
+ * @see \Ubix\Tests\DataType\String\PasswordHashTest PHPUnit test case
  */
 class PasswordHash extends StringDataType
 {
@@ -19,8 +21,8 @@ class PasswordHash extends StringDataType
      * @param string $input The input value
      */
     public function __construct(
-        #[NotBlank]
         #[Length(max: 255)]
+        #[NotBlank]
         private string $input,
     ) {
         $this->validate();

@@ -16,7 +16,7 @@ use Ubix\Tests\AbstractUbixConcreteClassOrEnumTestCase as UbixConcreteClassOrEnu
 use Ubix\Tests\UbixConcreteClassOrEnumTestCaseInterface as IUbixConcreteClassOrEnumTestCase;
 
 /**
- * PHPUnit test case for \Ubis\Service\Migration\MigrationApplyService
+ * PHPUnit test case for \Ubix\Service\Migration\MigrationApplyService
  *
  * @coversDefaultClass \Ubix\Service\Migration\MigrationApplyService
  * @coversDefaultClass \Ubis\Service\Migration\MigrationApplyService

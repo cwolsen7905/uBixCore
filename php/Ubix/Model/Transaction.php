@@ -25,7 +25,7 @@ final class Transaction extends Model
      * @param ?PlatformUserId $userId     The transaction's user id
      * @param ?MpCode         $mpCode     The transaction's mp_code
      * @param ?UsdCurrency    $amount     The transaction's amount
-     * @param ?UbixDateTime    $datetime   The transaction's datetime
+     * @param ?UbixDateTime   $datetime   The transaction's datetime
      * @param ?MpCode         $userMpCode The transaction's user mp_code
      */
     public function __construct(
