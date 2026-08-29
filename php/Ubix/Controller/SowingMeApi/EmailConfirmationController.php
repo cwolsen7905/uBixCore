@@ -14,8 +14,8 @@ use Ubix\DataType\Int\UserId;
 use Ubix\Enum\StatusCode;
 use Ubix\Enum\User\UserStatus;
 use Ubix\Renderer\TemplateRenderer;
-use Ubix\Repository\EmailConfirmationToken\EmailConfirmationTokenReaderInterface as TokenReader;
-use Ubix\Repository\EmailConfirmationToken\EmailConfirmationTokenWriterInterface as TokenWriter;
+use Ubix\Repository\EmailConfirmationToken\EmailConfirmationTokenReaderInterface as EmailConfirmationTokenReader;
+use Ubix\Repository\EmailConfirmationToken\EmailConfirmationTokenWriterInterface as EmailConfirmationTokenWriter;
 use Ubix\Repository\User\UserReaderInterface as UserReader;
 use Ubix\Repository\User\UserWriterInterface as UserWriter;
 use Ubix\Service\JsonService;
@@ -30,13 +30,13 @@ final class EmailConfirmationController extends Controller
     /**
      * Constructor
      *
-     * @param Logger           $logger      The Monolog logger
-     * @param TemplateRenderer $view        The template renderer
-     * @param JsonService      $jsonService The JSON service
-     * @param TokenReader      $tokenReader The email confirmation token reader
-     * @param TokenWriter      $tokenWriter The email confirmation token writer
-     * @param UserReader       $userReader  The user reader
-     * @param UserWriter       $userWriter  The user writer
+     * @param Logger                       $logger      The Monolog logger
+     * @param TemplateRenderer             $view        The template renderer
+     * @param JsonService                  $jsonService The JSON service
+     * @param EmailConfirmationTokenReader $tokenReader The email confirmation token reader
+     * @param EmailConfirmationTokenWriter $tokenWriter The email confirmation token writer
+     * @param UserReader                   $userReader  The user reader
+     * @param UserWriter                   $userWriter  The user writer
      *
      * @return void
      */
@@ -44,8 +44,8 @@ final class EmailConfirmationController extends Controller
         protected Logger $logger,
         protected TemplateRenderer $view,
         protected JsonService $jsonService,
-        protected TokenReader $tokenReader,
-        protected TokenWriter $tokenWriter,
+        protected EmailConfirmationTokenReader $tokenReader,
+        protected EmailConfirmationTokenWriter $tokenWriter,
         protected UserReader $userReader,
         protected UserWriter $userWriter,
     ) {

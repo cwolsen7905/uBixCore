@@ -9,6 +9,7 @@ use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
 use Psr\Http\Server\MiddlewareInterface as Middleware;
 use Psr\Http\Server\RequestHandlerInterface as Handler;
+use Ubix\Service\JsonService;
 
 /**
  * Middleware to authenticate requests using PHP session user data
@@ -21,10 +22,12 @@ final class SessionAuthenticationMiddleware implements Middleware
      * Constructor
      *
      * @param ResponseFactory                            $responseFactory Response factory for creating responses
+     * @param JsonService                                $jsonService     JSON encoder for error bodies
      * @param array<array{method: string, path: string}> $excludedRoutes  Routes to exclude from authentication
      */
     public function __construct(
         private ResponseFactory $responseFactory,
+        private JsonService $jsonService,
         private array $excludedRoutes = [],
     ) {
     }
@@ -51,7 +54,7 @@ final class SessionAuthenticationMiddleware implements Middleware
 
         if (!isset($_SESSION['user']['id'])) {
             $response = $this->responseFactory->createResponse(401);
-            $response->getBody()->write(json_encode(['message' => 'Not Authenticated']));
+            $response->getBody()->write($this->jsonService->encode(['message' => 'Not Authenticated']));
 
             return $response->withHeader('Content-Type', 'application/json');
         }

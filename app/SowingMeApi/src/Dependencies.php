@@ -26,9 +26,9 @@ use Ubix\Enum\Exception\ExceptionCode;
 use Ubix\HttpClient\CurlHttpClient;
 use Ubix\Middleware\CorsMiddleware;
 use Ubix\Middleware\SessionAuthenticationMiddleware;
-use Ubix\Repository\EmailConfirmationToken\EmailConfirmationTokenReaderInterface as TokenReader;
+use Ubix\Repository\EmailConfirmationToken\EmailConfirmationTokenReaderInterface as EmailConfirmationTokenReader;
 use Ubix\Repository\EmailConfirmationToken\EmailConfirmationTokenSqlRepository;
-use Ubix\Repository\EmailConfirmationToken\EmailConfirmationTokenWriterInterface as TokenWriter;
+use Ubix\Repository\EmailConfirmationToken\EmailConfirmationTokenWriterInterface as EmailConfirmationTokenWriter;
 use Ubix\Repository\User\UserReaderInterface as UserReader;
 use Ubix\Repository\User\UserSqlRepository;
 use Ubix\Repository\User\UserWriterInterface as UserWriter;
@@ -84,8 +84,8 @@ return static function (): Container {
         Psr17Factory::class                    => autowire(Psr17Factory::class),
         RequestFactory::class                  => get(Psr17Factory::class),
         ResponseFactory::class                 => autowire(SlimResponseFactory::class),
-        TokenReader::class                     => autowire(EmailConfirmationTokenSqlRepository::class),
-        TokenWriter::class                     => autowire(EmailConfirmationTokenSqlRepository::class),
+        EmailConfirmationTokenReader::class    => autowire(EmailConfirmationTokenSqlRepository::class),
+        EmailConfirmationTokenWriter::class    => autowire(EmailConfirmationTokenSqlRepository::class),
         UserReader::class                      => autowire(UserSqlRepository::class),
         UserWriter::class                      => autowire(UserSqlRepository::class),
         SessionAuthenticationMiddleware::class => autowire()->constructorParameter('excludedRoutes', [

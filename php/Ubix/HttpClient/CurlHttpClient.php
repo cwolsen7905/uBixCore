@@ -96,7 +96,6 @@ final class CurlHttpClient implements HttpClient
 
         $status = curl_getinfo($ch, CURLINFO_RESPONSE_CODE);
 
-        curl_close($ch);
 
         //
         //  Build a PSR-7 response

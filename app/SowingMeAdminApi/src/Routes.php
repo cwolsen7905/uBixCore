@@ -12,11 +12,11 @@ return static function (App $app): void {
     session_start();
 
 	// phpcs:disable Generic.Functions.FunctionCallArgumentSpacing.TooMuchSpaceAfterComma -- disable this rule to allow for vertical spacing of the route parameters
-    $app->map(['GET'],  '/affiliates',                     AffiliateController::class . ':list');
-    $app->map(['GET'],  '/affiliate/{affiliateId:[0-9]+}', AffiliateController::class . ':get');
-    $app->map(['GET'],  '/auth',                           AuthController::class . ':validate');
-    $app->map(['POST'], '/auth',                           AuthController::class . ':authenticate');
-    $app->map(['OPTIONS'], '/{routes:.*}',                 AuthController::class . ':options');
+    $app->map(['GET'],     '/affiliates',                     AffiliateController::class . ':list');
+    $app->map(['GET'],     '/affiliate/{affiliateId:[0-9]+}', AffiliateController::class . ':get');
+    $app->map(['GET'],     '/auth',                           AuthController::class . ':validate');
+    $app->map(['POST'],    '/auth',                           AuthController::class . ':authenticate');
+    $app->map(['OPTIONS'], '/{routes:.*}',                    AuthController::class . ':options');
 	// phpcs:enable Generic.Functions.FunctionCallArgumentSpacing.TooMuchSpaceAfterComma
 
     //
@@ -44,7 +44,6 @@ return static function (App $app): void {
             return $response->withStatus(204);
         }
 
-        // var_dump("TEST");
         return $response;
     });
 };

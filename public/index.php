@@ -96,24 +96,6 @@ assert(is_callable($applyRoutes));
 $applyRoutes($slimApp);
 
 
-/*
-    $slimApp->add(function ($request, $handler) {
-
-    $response = $handler->handle($request)
-    ->withHeader('Access-Control-Allow-Origin', 'Balls') // Or specify your allowed origin
-    ->withHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With')
-    ->withHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS')
-    ->withHeader('Access-Control-Allow-Credentials', 'true');
-
-    // Handle preflight OPTIONS request
-    if ($request->getMethod() === 'OPTIONS') {
-        return $response->withStatus(200);
-    }
-
-    // var_dump("TEST");
-    return $response;
-    });
-*/
 
 //
 //  Run the Slim application

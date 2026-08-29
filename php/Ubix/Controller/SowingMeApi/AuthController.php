@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Ubix\Controller\SowingMeApi;
 
+use DateTime;
 use Exception;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
@@ -17,8 +18,8 @@ use Ubix\Model\User;
 use Ubix\Payload\Request\AuthenticationRequestPayload;
 use Ubix\Payload\Request\RegistrationRequestPayload;
 use Ubix\Renderer\TemplateRenderer;
-use Ubix\Repository\EmailConfirmationToken\EmailConfirmationTokenReaderInterface as TokenReader;
-use Ubix\Repository\EmailConfirmationToken\EmailConfirmationTokenWriterInterface as TokenWriter;
+use Ubix\Repository\EmailConfirmationToken\EmailConfirmationTokenReaderInterface as EmailConfirmationTokenReader;
+use Ubix\Repository\EmailConfirmationToken\EmailConfirmationTokenWriterInterface as EmailConfirmationTokenWriter;
 use Ubix\Repository\User\UserReaderInterface as UserReader;
 use Ubix\Repository\User\UserWriterInterface as UserWriter;
 use Ubix\Service\EmailService;
@@ -34,14 +35,14 @@ final class AuthController extends Controller
     /**
      * Constructor
      *
-     * @param Logger           $logger       The Monolog logger
-     * @param TemplateRenderer $view         The template renderer
-     * @param JsonService      $jsonService  The JSON service
-     * @param UserReader       $userReader   The user reader
-     * @param UserWriter       $userWriter   The user writer
-     * @param TokenReader      $tokenReader  The email confirmation token reader
-     * @param TokenWriter      $tokenWriter  The email confirmation token writer
-     * @param EmailService     $emailService The email service
+     * @param Logger                       $logger       The Monolog logger
+     * @param TemplateRenderer             $view         The template renderer
+     * @param JsonService                  $jsonService  The JSON service
+     * @param UserReader                   $userReader   The user reader
+     * @param UserWriter                   $userWriter   The user writer
+     * @param EmailConfirmationTokenReader $tokenReader  The email confirmation token reader
+     * @param EmailConfirmationTokenWriter $tokenWriter  The email confirmation token writer
+     * @param EmailService                 $emailService The email service
      *
      * @return void
      */
@@ -51,8 +52,8 @@ final class AuthController extends Controller
         protected JsonService $jsonService, // -> Needed Always
         protected UserReader $userReader, // -> Needed for user lookups
         protected UserWriter $userWriter, // -> Needed for user creation
-        protected TokenReader $tokenReader, // -> Needed for token lookups
-        protected TokenWriter $tokenWriter, // -> Needed for token creation
+        protected EmailConfirmationTokenReader $tokenReader, // -> Needed for token lookups
+        protected EmailConfirmationTokenWriter $tokenWriter, // -> Needed for token creation
         protected EmailService $emailService, // -> Needed for sending emails
     ) {
         parent::__construct($logger, $view, $jsonService);
@@ -75,7 +76,7 @@ final class AuthController extends Controller
                 'fields'     => $e->getDto()->errors ?? [],
                 'message'    => $e->getMessage(),
                 'statusCode' => $e->getCode(),
-            ]);// , StatusCode::BAD_REQUEST);
+            ]);
         }
 
         // Log the payload for debugging
@@ -160,7 +161,7 @@ final class AuthController extends Controller
      *
      * @return Response The modified response object with the operation result.
      */
-    public function validateSession(Request $request, Response $response): Response
+    public function validateSession(Request $request, Response $response): Response // phpcs:ignore SlevomatCodingStandard.Functions.UnusedParameter.UnusedParameter -- Slim route signature
     {
         $data = [
             'creatorName' => $_SESSION['user']['creatorName'] ?? null,
@@ -183,7 +184,7 @@ final class AuthController extends Controller
      *
      * @return Response The modified response object with the operation result.
      */
-    public function logout(Request $request, Response $response): Response
+    public function logout(Request $request, Response $response): Response // phpcs:ignore SlevomatCodingStandard.Functions.UnusedParameter.UnusedParameter -- Slim route signature
     {
         $userId      = $_SESSION['user']['id'] ?? null;
         $displayName = $_SESSION['user']['displayName'] ?? null;
@@ -295,8 +296,8 @@ final class AuthController extends Controller
             failedLoginAttempts: 0,
             lastFailedLogin:     null,
             lastLogin:           null,
-            createdAt:           new \DateTime(),
-            updatedAt:           new \DateTime(),
+            createdAt:           new DateTime(),
+            updatedAt:           new DateTime(),
         );
 
         try {
@@ -312,14 +313,14 @@ final class AuthController extends Controller
 
             // Generate confirmation token
             $token     = bin2hex(random_bytes(32));
-            $expiresAt = new \DateTime('+24 hours');
+            $expiresAt = new DateTime('+24 hours');
 
             $confirmationToken = new EmailConfirmationToken(
                 id:        null,
                 userId:    $userId,
                 token:     $token,
                 expiresAt: $expiresAt,
-                createdAt: new \DateTime(),
+                createdAt: new DateTime(),
                 usedAt:    null,
             );
 
@@ -334,7 +335,7 @@ final class AuthController extends Controller
 
             // Send confirmation email
             try {
-                $confirmationUrl = ($_ENV['APP_URL'] ?? 'http://127.0.0.1:5173') . '/confirm-email?token=' . $token;
+                $confirmationUrl = ((getenv('APP_URL') ?: 'http://127.0.0.1:5173')) . '/confirm-email?token=' . $token;
 
                 $this->emailService->sendRegistrationConfirmation(
                     $payload->email->value,

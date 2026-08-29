@@ -7,8 +7,8 @@ namespace Ubix\Repository\EmailConfirmationToken;
 use DateTime;
 use Psr\Log\LoggerInterface as Logger;
 use Ubix\Model\EmailConfirmationToken;
-use Ubix\Repository\EmailConfirmationToken\EmailConfirmationTokenReaderInterface as TokenReader;
-use Ubix\Repository\EmailConfirmationToken\EmailConfirmationTokenWriterInterface as TokenWriter;
+use Ubix\Repository\EmailConfirmationToken\EmailConfirmationTokenReaderInterface as EmailConfirmationTokenReader;
+use Ubix\Repository\EmailConfirmationToken\EmailConfirmationTokenWriterInterface as EmailConfirmationTokenWriter;
 use Ubix\Service\Sql\SqlServiceInterface as SqlService;
 
 /**
@@ -18,7 +18,7 @@ use Ubix\Service\Sql\SqlServiceInterface as SqlService;
  *
  * @see \Ubix\Tests\Repository\EmailConfirmationToken\EmailConfirmationTokenSqlRepositoryTest PHPUnit test case
  */
-final class EmailConfirmationTokenSqlRepository implements TokenReader, TokenWriter
+final class EmailConfirmationTokenSqlRepository implements EmailConfirmationTokenReader, EmailConfirmationTokenWriter
 {
     /**
      * EmailConfirmationTokenSqlRepository constructor.

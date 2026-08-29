@@ -51,7 +51,7 @@ interface UserReaderInterface
     /**
      * Check if display name already exists
      *
-     * @param DisplayNName $displayName The display name to check
+     * @param DisplayName $displayName The display name to check
      *
      * @return bool True if display name exists
      */

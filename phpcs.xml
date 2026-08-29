@@ -499,6 +499,8 @@
         <properties>
             <property name="aliasOverrides" type="array">
                 <element key="DateTimeInterface" value="DateTimeInterface" />
+                <element key="Symfony\Component\Mailer\MailerInterface" value="MailerInterface" />
+                <element key="Symfony\Component\Validator\Constraints\Email" value="EmailConstraint" />
 				<element key="Fig\Http\Message\StatusCodeInterface" value="FigStatusCode" />
                 <element key="Monolog\Logger" value="MonologLogger" />
                 <element key="Nyholm\Psr7\Response" value="Psr7Response" />

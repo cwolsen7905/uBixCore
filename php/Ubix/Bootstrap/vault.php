@@ -11,7 +11,7 @@ use Ubix\Service\Vault\VaultCredentialResolverService;
 use Ubix\Service\Vault\VaultService;
 
 /**
- * uBix Vault bootstrap hook.
+ * UBix Vault bootstrap hook.
  *
  * Resolves the app's database credentials from uBix Vault when `VAULT_ADDR` is
  * set, injecting them into the environment before the SQL layer reads them.
