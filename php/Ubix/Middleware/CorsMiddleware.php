@@ -8,6 +8,7 @@ use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
 use Psr\Http\Server\MiddlewareInterface as Middleware;
 use Psr\Http\Server\RequestHandlerInterface as Handler;
+use Psr\Log\LoggerInterface as Logger;
 
 /**
  * Middleware to handle CORS headers for approved origins
@@ -19,12 +20,14 @@ final class CorsMiddleware implements Middleware
     /**
      * Constructor
      *
+     * @param Logger        $logger           Logger
      * @param array<string> $allowedOrigins   List of allowed origins
      * @param array<string> $allowedMethods   List of allowed HTTP methods
      * @param array<string> $allowedHeaders   List of allowed headers
      * @param bool          $allowCredentials Whether to allow credentials
      */
     public function __construct(
+        private Logger $logger, // @phpstan-ignore property.onlyWritten (Logger is a required dependency of most VSM classes but has not been implemented in this class yet)
         private array $allowedOrigins = [],
         private array $allowedMethods = ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
         private array $allowedHeaders = ['Content-Type', 'Authorization', 'X-Requested-With'],

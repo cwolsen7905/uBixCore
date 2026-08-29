@@ -59,6 +59,10 @@ final class PhpunitTestCasesTest extends TestCase
                 continue;
             }
 
+            if (str_starts_with($class, 'Ubix\\Bootstrap\\')) { // Bootstrap hooks are procedural scripts (e.g. vault.php), not classes
+                continue;
+            }
+
             if (in_array($class, ['Ubix\\External\\GoogleAuthenticator'], true)) { // NOT_IMPLEMENTED: this is temporary until we spin this class into its own repository
                 continue;
             }
