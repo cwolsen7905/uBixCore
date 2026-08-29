@@ -39,7 +39,7 @@ final class MigrationPdoSqlServiceTest extends UbixConcreteClassOrEnumTestCase i
      */
     public function setUp(): void
     {
-        $this->tearDown(); // idempotent: a crashed earlier run can leave the seed rows behind
+        $this->tearDown(); // Idempotent: a crashed earlier run can leave the seed rows behind
 
         $studios = UbixDatabase::SOWINGME->databaseName();
 
