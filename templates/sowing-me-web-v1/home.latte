@@ -5,7 +5,7 @@
 {block head}
 <style>
     .hero {
-        background: linear-gradient(135deg, var(--color-primary) 0%, #1B5E20 100%);
+        background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-dark) 100%);
         color: var(--color-white);
         padding: 100px 0;
         text-align: center;
@@ -18,15 +18,16 @@
 
     .hero .tagline {
         font-size: 1.5rem;
-        opacity: 0.9;
+        font-weight: 600;
+        opacity: 0.92;
         margin-bottom: 30px;
     }
 
-    .hero p {
+    .hero p.sub {
         font-size: 1.2rem;
-        max-width: 600px;
+        max-width: 620px;
         margin: 0 auto 40px;
-        opacity: 0.9;
+        opacity: 0.92;
     }
 
     .hero-buttons {
@@ -37,7 +38,7 @@
     }
 
     .hero .btn {
-        padding: 15px 30px;
+        padding: 16px 32px;
         font-size: 1.1rem;
     }
 
@@ -48,16 +49,17 @@
     .features-grid {
         display: grid;
         grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-        gap: 40px;
+        gap: 32px;
         margin-top: 60px;
     }
 
     .feature-card {
         text-align: center;
-        padding: 40px 30px;
-        border-radius: 12px;
-        background: var(--color-white);
-        box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+        padding: 40px 28px;
+        border-radius: var(--radius-lg);
+        background: var(--color-surface);
+        border: 1px solid var(--color-border);
+        box-shadow: var(--shadow-card);
         transition: transform 0.3s;
     }
 
@@ -66,17 +68,36 @@
     }
 
     .feature-icon {
-        font-size: 3rem;
-        margin-bottom: 20px;
+        width: 64px;
+        height: 64px;
+        border-radius: var(--radius-full);
+        background: var(--color-primary-soft);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 20px;
+    }
+
+    .feature-icon svg {
+        width: 30px;
+        height: 30px;
+        stroke: var(--color-primary);
     }
 
     .feature-card h3 {
         margin-bottom: 15px;
         color: var(--color-primary);
+        font-size: 1.15rem;
+    }
+
+    .feature-card p {
+        color: var(--color-text-muted);
+        font-size: 0.95rem;
+        margin-bottom: 0;
     }
 
     .how-it-works-preview {
-        background: var(--color-light);
+        background: var(--color-surface-2);
         padding: 100px 0;
     }
 
@@ -101,13 +122,20 @@
         display: flex;
         align-items: center;
         justify-content: center;
+        font-family: var(--font-heading);
         font-size: 1.5rem;
-        font-weight: 700;
+        font-weight: 800;
         margin: 0 auto 20px;
     }
 
     .step h3 {
         margin-bottom: 10px;
+    }
+
+    .step p {
+        color: var(--color-text-muted);
+        font-size: 0.95rem;
+        margin-bottom: 0;
     }
 
     .cta-section {
@@ -119,11 +147,12 @@
 
     .cta-section h2 {
         margin-bottom: 20px;
+        color: var(--color-white);
     }
 
     .cta-section p {
         margin-bottom: 30px;
-        opacity: 0.9;
+        opacity: 0.92;
         max-width: 600px;
         margin-left: auto;
         margin-right: auto;
@@ -148,8 +177,9 @@
     }
 
     .stat-item p {
-        color: #546E7A;
-        font-weight: 500;
+        color: var(--color-text-muted);
+        font-weight: 600;
+        margin-bottom: 0;
     }
 
     @media (max-width: 768px) {
@@ -160,6 +190,12 @@
         .hero .tagline {
             font-size: 1.2rem;
         }
+
+        .features-grid,
+        .steps,
+        .stats-grid {
+            grid-template-columns: 1fr;
+        }
     }
 </style>
 {/block}
@@ -169,7 +205,7 @@
     <div class="container">
         <h1>Support Christian Creators</h1>
         <p class="tagline">Planting. Believing. Thriving.</p>
-        <p>Sowing.me empowers faith-based creators to share their gifts while building a community of supporters who believe in their mission.</p>
+        <p class="sub">Sowing.me empowers faith-based creators to share their gifts while building a community of supporters who believe in their mission.</p>
         <div class="hero-buttons">
             <a href="/for-creators" class="btn btn-accent">Start Creating</a>
             <a href="/how-it-works" class="btn btn-outline" style="border-color: white; color: white;">Learn More</a>
@@ -184,37 +220,49 @@
 
         <div class="features-grid">
             <div class="feature-card">
-                <div class="feature-icon">🌱</div>
+                <div class="feature-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22V12M12 12C12 8 9 5 5 5c0 4 3 7 7 7zM12 12c0-4 3-7 7-7 0 4-3 7-7 7z"/></svg>
+                </div>
                 <h3>Faith-Centered Community</h3>
                 <p>Connect with supporters who share your values and understand your mission to spread faith through content.</p>
             </div>
 
             <div class="feature-card">
-                <div class="feature-icon">💰</div>
+                <div class="feature-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v10M9 9.5c0-1.4 1.3-2.5 3-2.5s3 1 3 2.3c0 3-6 1.5-6 4.5 0 1.4 1.3 2.5 3 2.5s3-1.1 3-2.5"/></svg>
+                </div>
                 <h3>Sustainable Income</h3>
                 <p>Build a reliable income stream through monthly memberships, allowing you to focus on creating meaningful content.</p>
             </div>
 
             <div class="feature-card">
-                <div class="feature-icon">🤝</div>
+                <div class="feature-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 20v-1a4 4 0 0 0-4-4H7a4 4 0 0 0-4 4v1"/><circle cx="9" cy="7" r="4"/><path d="M23 20v-1a4 4 0 0 0-3-3.9M16 3.1a4 4 0 0 1 0 7.8"/></svg>
+                </div>
                 <h3>Direct Connection</h3>
                 <p>Engage directly with your supporters through exclusive content, messages, and community features.</p>
             </div>
 
             <div class="feature-card">
-                <div class="feature-icon">📈</div>
+                <div class="feature-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M7 14l4-4 3 3 5-6"/></svg>
+                </div>
                 <h3>Growth Tools</h3>
                 <p>Access analytics, promotional tools, and resources to help you grow your audience and increase your impact.</p>
             </div>
 
             <div class="feature-card">
-                <div class="feature-icon">🔒</div>
+                <div class="feature-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="11" width="16" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>
+                </div>
                 <h3>Creator-Friendly Terms</h3>
                 <p>Keep more of what you earn with competitive rates and transparent pricing. No hidden fees.</p>
             </div>
 
             <div class="feature-card">
-                <div class="feature-icon">✝️</div>
+                <div class="feature-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v6M12 22v-8M8 6l4-4 4 4M6 14h12l-1 8H7z"/></svg>
+                </div>
                 <h3>Aligned Values</h3>
                 <p>A platform that respects and supports Christian content creators without censorship of faith-based messaging.</p>
             </div>
