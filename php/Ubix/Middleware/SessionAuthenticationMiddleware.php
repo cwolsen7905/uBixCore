@@ -9,6 +9,7 @@ use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
 use Psr\Http\Server\MiddlewareInterface as Middleware;
 use Psr\Http\Server\RequestHandlerInterface as Handler;
+use Psr\Log\LoggerInterface as Logger;
 use Ubix\Service\JsonService;
 
 /**
@@ -21,11 +22,13 @@ final class SessionAuthenticationMiddleware implements Middleware
     /**
      * Constructor
      *
+     * @param Logger                                     $logger          Logger
      * @param ResponseFactory                            $responseFactory Response factory for creating responses
      * @param JsonService                                $jsonService     JSON encoder for error bodies
      * @param array<array{method: string, path: string}> $excludedRoutes  Routes to exclude from authentication
      */
     public function __construct(
+        private Logger $logger, // @phpstan-ignore property.onlyWritten (Logger is a required dependency of most VSM classes but has not been implemented in this class yet)
         private ResponseFactory $responseFactory,
         private JsonService $jsonService,
         private array $excludedRoutes = [],
