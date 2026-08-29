@@ -4,20 +4,28 @@ includes:
 parameters:
   level: max
 
+  paths:
+    - app
+    - bin
+    - php
+    - public
+    - tests
+
   tmpDir: .phpstan.cache
 
   treatPhpDocTypesAsCertain: false # TODO: experiment with removing this line
 
   excludePaths:
     analyse:
-      - /*/Vsm/Sniffs/**/*.php # We are not subjecting custom phpcs sniffs to a full machine code review
-      - /*/Vsm/External/GoogleAuthenticator.php # This is temporary until we can spin it off into an open source project
+      - /*/Ubix/Sniffs/**/*.php # We are not subjecting custom phpcs sniffs to a full machine code review
+      - /*/Ubix/External/GoogleAuthenticator.php # This is temporary until we can spin it off into an open source project
       #
       #
       # Andrew's OpenAPI Experiment (START)
-      - /*/Vsm/Console/Command/App/GenerateOpenapiCommand.php
-      - /*/Vsm/SlimApp/RecordingApp.php
+      - /*/Ubix/Console/Command/App/GenerateOpenapiCommand.php
+      - /*/Ubix/SlimApp/RecordingApp.php
       # Andrew's OpenAPI Experiment (END)
       #
       #
-      - /*/Vsm/Console/Cron/*.php
+      - /*/Ubix/Console/Cron/*.php
+      - /*/app/*Js/**/*.php
