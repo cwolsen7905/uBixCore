@@ -41,7 +41,7 @@ bin/ubix <command>     # Commands are auto-discovered
 
 ## Development
 
-One-time per clone — enable the pre-push gate (runs `bin/ubix code:review`):
+One-time per clone — enable the pre-push gate (runs `bin/ubix code:review --phpunit=off`: phpcs + phpstan; CI runs phpunit):
 
 ```bash
 git config core.hooksPath .githooks
