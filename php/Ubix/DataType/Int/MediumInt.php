@@ -20,7 +20,6 @@ class MediumInt extends IntDataType
      * @param int $input The input value
      */
     public function __construct(
-        // @phpstan-ignore-next-line
         #[Range(min: -8388608, max: 8388607)]
         private int $input,
     ) {

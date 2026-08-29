@@ -261,7 +261,7 @@ final class CookieService
      *
      * @return bool Whether or not to use the Secure flag for cookies
      */
-    public function getDefaultSecure(): bool // @phpstan-ignore return.tooWideBool (We are currently returning false every time as an application/framework decision but that amy change in the future so allow this method to return either true or false)
+    public function getDefaultSecure(): bool
     {
         return false;
     }

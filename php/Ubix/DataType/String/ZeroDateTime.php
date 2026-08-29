@@ -21,7 +21,6 @@ class ZeroDateTime extends StringDataType
      * @param string $input The input value to validate (Y-m-d H:i:s format)
      */
     public function __construct(
-        // @phpstan-ignore-next-line
         #[Regex(
             pattern: '/^(0000-00-00( 00:00:00)?|\d{4}-\d{2}-\d{2}( \d{2}:\d{2}:\d{2})?)$/',
             message: 'Date must be YYYY-MM-DD, YYYY-MM-DD HH:MM:SS, or zero date',

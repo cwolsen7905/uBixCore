@@ -20,7 +20,6 @@ class Integer extends IntDataType
      * @param int $input The input value
      */
     public function __construct(
-        // @phpstan-ignore-next-line
         #[Range(min: -2147483648, max: 2147483647)]
         private int $input,
     ) {

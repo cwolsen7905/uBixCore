@@ -20,7 +20,6 @@ class UsdCurrency extends FloatDataType
      * @param float $input The input value
      */
     public function __construct(
-        // @phpstan-ignore-next-line
         #[Regex(
             pattern: '/^-?\d+(?:\.\d{1,2})?$/',
             message: 'Amount must be a positive or negative number with up to 2 decimal places (e.g. 12, 12.3, 12.34)',

@@ -111,7 +111,7 @@ interface SqlServiceInterface
      * @param array<int|string, bool|int|float|string|null> $parameters          An array of parameters, either indexed or named (optional)
      * @param bool                                          $allowParameterReuse Whether or not to support reusing parameters (optional) (default: false)
      *
-     * @return Generator Yields each row from the result set as an array
+     * @return Generator<int, array<string, bool|int|float|string|null>> Yields each row from the result set as an array
      */
     public function getRows(string $sql, array $parameters = [], bool $allowParameterReuse = false): Generator;
 

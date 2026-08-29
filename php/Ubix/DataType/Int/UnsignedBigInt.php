@@ -21,7 +21,6 @@ class UnsignedBigInt extends IntDataType
      * @param int $input The input value
      */
     public function __construct(
-        // @phpstan-ignore-next-line
         #[Range(min: 0, max: 18446744073709551615)]
         private int $input,
     ) {

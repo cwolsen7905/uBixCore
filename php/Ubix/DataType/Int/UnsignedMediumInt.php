@@ -20,7 +20,6 @@ class UnsignedMediumInt extends IntDataType
      * @param int $input The input value
      */
     public function __construct(
-        // @phpstan-ignore-next-line
         #[Range(min: 0, max: 16777215)]
         private int $input,
     ) {

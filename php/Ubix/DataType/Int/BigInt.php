@@ -20,7 +20,6 @@ class BigInt extends IntDataType
      * @param int $input The input value
      */
     public function __construct(
-        // @phpstan-ignore-next-line
         #[Range(min: -9223372036854775808, max: 9223372036854775807)]
         private int $input,
     ) {

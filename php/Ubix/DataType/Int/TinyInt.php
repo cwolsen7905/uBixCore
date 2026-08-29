@@ -20,7 +20,6 @@ class TinyInt extends IntDataType
      * @param int $input The input value
      */
     public function __construct(
-        // @phpstan-ignore-next-line
         #[Range(min: -128, max: 127)]
         private int $input,
     ) {

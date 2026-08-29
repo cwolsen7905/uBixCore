@@ -55,7 +55,8 @@ final class SessionAuthenticationMiddleware implements Middleware
             }
         }
 
-        if (!isset($_SESSION['user']['id'])) {
+        $sessionUser = $_SESSION['user'] ?? null;
+        if (!is_array($sessionUser) || !isset($sessionUser['id'])) {
             $response = $this->responseFactory->createResponse(401);
             $response->getBody()->write($this->jsonService->encode(['message' => 'Not Authenticated']));
 

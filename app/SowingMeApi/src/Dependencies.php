@@ -67,7 +67,6 @@ return static function (): Container {
     $logLevel      = ucfirst(getenv('LOG_LEVEL') ?: 'Info');
 
     $logLevel = in_array($logLevel, $allowedLevels, true) ? $logLevel : 'Info';
-    assert(in_array($logLevel, $allowedLevels, true));
 
     $logFile = getenv('LOGGER_PATH') . '/' . strtolower(getenv('ENV') ?: 'sandbox') . '/' . $appName . '.log';
 
