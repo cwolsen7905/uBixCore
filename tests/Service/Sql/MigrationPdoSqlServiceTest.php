@@ -14,12 +14,11 @@ use Ubix\Tests\UbixConcreteClassOrEnumTestCaseInterface as IUbixConcreteClassOrE
  * PHPUnit test case for \Ubix\Service\Sql\MigrationPdoSqlService
  *
  * @coversDefaultClass \Ubix\Service\Sql\MigrationPdoSqlService
- * @coversDefaultClass \Ubis\Service\Sql\MigrationPdoSqlService
+ * @coversDefaultClass \Ubix\Service\Sql\MigrationPdoSqlService
  */
 final class MigrationPdoSqlServiceTest extends UbixConcreteClassOrEnumTestCase implements IUbixConcreteClassOrEnumTestCase
 {
-    // The Broadcasters.id column is mediumint(5) unsigned (max 16,777,215), so
-    // the 9000000 seed base fits comfortably while staying clear of other agents.
+    // Seed ids sit far above anything real data will reach, clear of other agents.
     private const BROADCASTER_ID_ONE = 9000000;
 
     private const BROADCASTER_ID_THREE = 9000002;
@@ -33,26 +32,28 @@ final class MigrationPdoSqlServiceTest extends UbixConcreteClassOrEnumTestCase i
     private const NAME_TWO = 'UbixMigrationSqlTestTwo';
 
     /**
-     * Seed three broadcaster rows so the migration-tier connection can read,
+     * Seed three user rows so the migration-tier connection can read,
      * count and iterate real data from the writer cluster.
      *
      * @return void
      */
     public function setUp(): void
     {
+        $this->tearDown(); // Idempotent: a crashed earlier run can leave the seed rows behind
+
         $studios = UbixDatabase::SOWINGME->databaseName();
 
         $this->insertSeedData(
-            'INSERT INTO ' . $studios . '.Broadcasters SET id=:id, name=:name, prospect_id=0, status=1',
-            ['id' => self::BROADCASTER_ID_ONE, 'name' => self::NAME_ONE],
+            'INSERT INTO ' . $studios . ".users SET id=:id, display_name=:name, email=:email, password_hash='x', status='active'",
+            ['id' => self::BROADCASTER_ID_ONE, 'name' => self::NAME_ONE, 'email' => self::NAME_ONE . '@example.test'],
         );
         $this->insertSeedData(
-            'INSERT INTO ' . $studios . '.Broadcasters SET id=:id, name=:name, prospect_id=0, status=1',
-            ['id' => self::BROADCASTER_ID_TWO, 'name' => self::NAME_TWO],
+            'INSERT INTO ' . $studios . ".users SET id=:id, display_name=:name, email=:email, password_hash='x', status='active'",
+            ['id' => self::BROADCASTER_ID_TWO, 'name' => self::NAME_TWO, 'email' => self::NAME_TWO . '@example.test'],
         );
         $this->insertSeedData(
-            'INSERT INTO ' . $studios . '.Broadcasters SET id=:id, name=:name, prospect_id=0, status=0',
-            ['id' => self::BROADCASTER_ID_THREE, 'name' => self::NAME_THREE],
+            'INSERT INTO ' . $studios . ".users SET id=:id, display_name=:name, email=:email, password_hash='x', status='inactive'",
+            ['id' => self::BROADCASTER_ID_THREE, 'name' => self::NAME_THREE, 'email' => self::NAME_THREE . '@example.test'],
         );
     }
 
@@ -66,7 +67,7 @@ final class MigrationPdoSqlServiceTest extends UbixConcreteClassOrEnumTestCase i
         $studios = UbixDatabase::SOWINGME->databaseName();
 
         $this->insertSeedData(
-            'DELETE FROM ' . $studios . '.Broadcasters WHERE id IN (:idOne, :idTwo, :idThree)',
+            'DELETE FROM ' . $studios . '.users WHERE id IN (:idOne, :idTwo, :idThree)',
             [
                 'idOne'   => self::BROADCASTER_ID_ONE,
                 'idThree' => self::BROADCASTER_ID_THREE,
@@ -98,7 +99,7 @@ final class MigrationPdoSqlServiceTest extends UbixConcreteClassOrEnumTestCase i
         $studios = UbixDatabase::SOWINGME->databaseName();
 
         $name = $this->buildMigrationSqlService()->getColumn(
-            'SELECT name FROM ' . $studios . '.Broadcasters WHERE id=:id',
+            'SELECT display_name FROM ' . $studios . '.users WHERE id=:id',
             ['id' => self::BROADCASTER_ID_ONE],
         );
 
@@ -118,7 +119,7 @@ final class MigrationPdoSqlServiceTest extends UbixConcreteClassOrEnumTestCase i
         $studios = UbixDatabase::SOWINGME->databaseName();
 
         $name = $this->buildMigrationSqlService()->getColumn(
-            'SELECT name FROM ' . $studios . '.Broadcasters WHERE id=:id',
+            'SELECT display_name FROM ' . $studios . '.users WHERE id=:id',
             ['id' => self::BROADCASTER_ID_THREE + 1000],
         );
 
@@ -137,7 +138,7 @@ final class MigrationPdoSqlServiceTest extends UbixConcreteClassOrEnumTestCase i
         $studios = UbixDatabase::SOWINGME->databaseName();
 
         $row = $this->buildMigrationSqlService()->getRow(
-            'SELECT id, name FROM ' . $studios . '.Broadcasters WHERE id=:id',
+            'SELECT id, display_name AS name FROM ' . $studios . '.users WHERE id=:id',
             ['id' => self::BROADCASTER_ID_TWO],
         );
 
@@ -159,7 +160,7 @@ final class MigrationPdoSqlServiceTest extends UbixConcreteClassOrEnumTestCase i
 
         $names = [];
         $rows  = $this->buildMigrationSqlService()->getRows(
-            'SELECT name FROM ' . $studios . '.Broadcasters WHERE id IN (:idOne, :idTwo, :idThree) ORDER BY id ASC',
+            'SELECT display_name AS name FROM ' . $studios . '.users WHERE id IN (:idOne, :idTwo, :idThree) ORDER BY id ASC',
             [
                 'idOne'   => self::BROADCASTER_ID_ONE,
                 'idThree' => self::BROADCASTER_ID_THREE,
@@ -189,7 +190,7 @@ final class MigrationPdoSqlServiceTest extends UbixConcreteClassOrEnumTestCase i
         // Seeded statuses are TWO=1 and THREE=0; updating both to 5 changes
         // both rows so MySQL's affected-row count is a clean 2.
         $affected = $sqlService->query(
-            'UPDATE ' . $studios . '.Broadcasters SET status=5 WHERE id IN (:idTwo, :idThree)',
+            'UPDATE ' . $studios . ".users SET status='suspended' WHERE id IN (:idTwo, :idThree)",
             ['idThree' => self::BROADCASTER_ID_THREE, 'idTwo' => self::BROADCASTER_ID_TWO],
         );
 
@@ -210,16 +211,16 @@ final class MigrationPdoSqlServiceTest extends UbixConcreteClassOrEnumTestCase i
         $sqlService = $this->buildMigrationSqlService();
 
         $sqlService->query(
-            'UPDATE ' . $studios . '.Broadcasters SET status=8 WHERE id=:id',
+            'UPDATE ' . $studios . ".users SET status='suspended' WHERE id=:id",
             ['id' => self::BROADCASTER_ID_ONE],
         );
 
         $status = $sqlService->getColumn(
-            'SELECT status FROM ' . $studios . '.Broadcasters WHERE id=:id',
+            'SELECT status FROM ' . $studios . '.users WHERE id=:id',
             ['id' => self::BROADCASTER_ID_ONE],
         );
 
-        $this->assertSame(8, (int) $status);
+        $this->assertSame('suspended', $status);
     }
 
     /**
@@ -238,7 +239,7 @@ final class MigrationPdoSqlServiceTest extends UbixConcreteClassOrEnumTestCase i
         $this->assertTrue($sqlService->inTransaction());
 
         $sqlService->query(
-            'UPDATE ' . $studios . '.Broadcasters SET status=7 WHERE id=:id',
+            'UPDATE ' . $studios . ".users SET status='pending' WHERE id=:id",
             ['id' => self::BROADCASTER_ID_TWO],
         );
         $sqlService->commit();
@@ -246,10 +247,10 @@ final class MigrationPdoSqlServiceTest extends UbixConcreteClassOrEnumTestCase i
         $this->assertFalse($sqlService->inTransaction());
 
         $status = $sqlService->getColumn(
-            'SELECT status FROM ' . $studios . '.Broadcasters WHERE id=:id',
+            'SELECT status FROM ' . $studios . '.users WHERE id=:id',
             ['id' => self::BROADCASTER_ID_TWO],
         );
-        $this->assertSame(7, (int) $status);
+        $this->assertSame('pending', $status);
     }
 
     /**
