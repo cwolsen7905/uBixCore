@@ -4,331 +4,158 @@
 
 {block head}
 <style>
-    .hero {
-        background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-dark) 100%);
-        color: var(--color-white);
-        padding: 100px 0;
-        text-align: center;
-    }
-
-    .hero h1 {
-        font-size: 3.5rem;
-        margin-bottom: 20px;
-    }
-
-    .hero .tagline {
-        font-size: 1.5rem;
-        font-weight: 600;
-        opacity: 0.92;
-        margin-bottom: 30px;
-    }
-
-    .hero p.sub {
-        font-size: 1.2rem;
-        max-width: 620px;
-        margin: 0 auto 40px;
-        opacity: 0.92;
-    }
-
-    .hero-buttons {
-        display: flex;
-        gap: 15px;
-        justify-content: center;
-        flex-wrap: wrap;
-    }
-
-    .hero .btn {
-        padding: 16px 32px;
-        font-size: 1.1rem;
-    }
-
-    .features {
-        padding: 100px 0;
-    }
-
-    .features-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-        gap: 32px;
-        margin-top: 60px;
-    }
-
-    .feature-card {
-        text-align: center;
-        padding: 40px 28px;
-        border-radius: var(--radius-lg);
-        background: var(--color-surface);
-        border: 1px solid var(--color-border);
-        box-shadow: var(--shadow-card);
-        transition: transform 0.3s;
-    }
-
-    .feature-card:hover {
-        transform: translateY(-5px);
-    }
-
-    .feature-icon {
-        width: 64px;
-        height: 64px;
-        border-radius: var(--radius-full);
-        background: var(--color-primary-soft);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        margin: 0 auto 20px;
-    }
-
-    .feature-icon svg {
-        width: 30px;
-        height: 30px;
-        stroke: var(--color-primary);
-    }
-
-    .feature-card h3 {
-        margin-bottom: 15px;
-        color: var(--color-primary);
-        font-size: 1.15rem;
-    }
-
-    .feature-card p {
-        color: var(--color-text-muted);
-        font-size: 0.95rem;
-        margin-bottom: 0;
-    }
-
-    .how-it-works-preview {
-        background: var(--color-surface-2);
-        padding: 100px 0;
-    }
-
-    .steps {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-        gap: 30px;
-        margin-top: 60px;
-    }
-
-    .step {
-        text-align: center;
-        padding: 30px;
-    }
-
-    .step-number {
-        width: 60px;
-        height: 60px;
-        border-radius: 50%;
-        background: var(--color-primary);
-        color: var(--color-white);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-family: var(--font-heading);
-        font-size: 1.5rem;
-        font-weight: 800;
-        margin: 0 auto 20px;
-    }
-
-    .step h3 {
-        margin-bottom: 10px;
-    }
-
-    .step p {
-        color: var(--color-text-muted);
-        font-size: 0.95rem;
-        margin-bottom: 0;
-    }
-
-    .cta-section {
-        background: var(--color-secondary);
-        color: var(--color-white);
-        padding: 80px 0;
-        text-align: center;
-    }
-
-    .cta-section h2 {
-        margin-bottom: 20px;
-        color: var(--color-white);
-    }
-
-    .cta-section p {
-        margin-bottom: 30px;
-        opacity: 0.92;
-        max-width: 600px;
-        margin-left: auto;
-        margin-right: auto;
-    }
-
-    .stats {
-        padding: 80px 0;
-        background: var(--color-white);
-    }
-
-    .stats-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-        gap: 40px;
-        text-align: center;
-    }
-
-    .stat-item h3 {
-        font-size: 3rem;
-        color: var(--color-primary);
-        margin-bottom: 10px;
-    }
-
-    .stat-item p {
-        color: var(--color-text-muted);
-        font-weight: 600;
-        margin-bottom: 0;
-    }
-
-    @media (max-width: 768px) {
-        .hero h1 {
-            font-size: 2.5rem;
-        }
-
-        .hero .tagline {
-            font-size: 1.2rem;
-        }
-
-        .features-grid,
-        .steps,
-        .stats-grid {
-            grid-template-columns: 1fr;
-        }
-    }
+  .hero{background:linear-gradient(180deg,#F2F7F2 0%,#fff 70%);padding:96px 0 88px}
+  .hero-grid{display:grid;grid-template-columns:1.15fr .85fr;gap:64px;align-items:center}
+  .hero .display{margin:18px 0 22px}
+  .hero .lede{max-width:470px}
+  .hero .btn-row{margin:34px 0 18px}
+  .hero-media{aspect-ratio:4/3}
+  .proof{border-top:1px solid var(--color-slate-100);border-bottom:1px solid var(--color-slate-100)}
+  .proof-grid{display:grid;grid-template-columns:repeat(3,1fr);padding:34px 0}
+  .proof-item{padding:0 32px;border-left:1px solid var(--color-slate-100)}
+  .proof-item:first-child{border-left:0;padding-left:0}
+  .proof-n{font-family:var(--font-heading);font-size:1.75rem;font-weight:800;letter-spacing:-.03em;color:var(--color-text);line-height:1.1}
+  .steps{margin-top:36px;display:grid;gap:2px}
+  .step{display:grid;grid-template-columns:44px 1fr;gap:18px;padding:24px 0;border-top:1px solid var(--color-slate-200)}
+  .step:last-child{border-bottom:1px solid var(--color-slate-200)}
+  .step-n{font-family:var(--font-heading);font-size:.8125rem;font-weight:700;letter-spacing:.1em;color:var(--color-primary);padding-top:4px}
+  .step p{color:var(--color-text-muted);font-size:.9375rem;margin-top:6px}
+  .how-grid{display:grid;grid-template-columns:1fr 1fr;gap:72px;align-items:center}
+  .how-media{aspect-ratio:3/4}
+  .quote{display:grid;grid-template-columns:120px 1fr;gap:44px;align-items:start}
+  .quote blockquote{margin:0;font-family:var(--font-heading);font-size:1.875rem;font-weight:600;line-height:1.35;letter-spacing:-.02em;color:#fff}
+  .quote cite{display:block;margin-top:22px;font-style:normal;font-size:.9375rem;color:var(--color-slate-400)}
+  .cta-grid{display:flex;align-items:flex-end;justify-content:space-between;gap:48px}
 </style>
 {/block}
 
 {block content}
+{* NOTE: proof-strip figures, the Marcus Ellery testimonial, and the "no platform
+   fee on your first $1,000" line are PLACEHOLDER copy from the design handoff —
+   verify or replace before promoting past dev. *}
 <section class="hero">
-    <div class="container">
-        <h1>Support Christian Creators</h1>
-        <p class="tagline">Planting. Believing. Thriving.</p>
-        <p class="sub">Sowing.me empowers faith-based creators to share their gifts while building a community of supporters who believe in their mission.</p>
-        <div class="hero-buttons">
-            <a href="/for-creators" class="btn btn-accent">Start Creating</a>
-            <a href="/how-it-works" class="btn btn-outline" style="border-color: white; color: white;">Learn More</a>
-        </div>
+  <div class="wrap hero-grid">
+    <div>
+      <span class="eyebrow">For Christian creators</span>
+      <h1 class="display">Build a ministry your community sustains.</h1>
+      <p class="lede">Sowing.me gives faith-based creators memberships, publishing, and payouts in one place — so support arrives every month instead of every campaign.</p>
+      <div class="btn-row">
+        <a href="/signup" class="btn btn-primary">Start creating</a>
+        <a href="/how-it-works" class="btn btn-ghost">See how it works</a>
+      </div>
+      <p class="micro">Free to start · No platform fee on your first $1,000</p>
     </div>
+    <div class="frame hero-media"><div class="img-ph">Creator page screenshot — 4:3</div></div>
+  </div>
 </section>
 
-<section class="features">
-    <div class="container">
-        <h2 class="section-title text-center">Why Choose Sowing.me?</h2>
-        <p class="section-subtitle text-center">A platform built on faith, designed for growth</p>
-
-        <div class="features-grid">
-            <div class="feature-card">
-                <div class="feature-icon">
-                    <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22V12M12 12C12 8 9 5 5 5c0 4 3 7 7 7zM12 12c0-4 3-7 7-7 0 4-3 7-7 7z"/></svg>
-                </div>
-                <h3>Faith-Centered Community</h3>
-                <p>Connect with supporters who share your values and understand your mission to spread faith through content.</p>
-            </div>
-
-            <div class="feature-card">
-                <div class="feature-icon">
-                    <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v10M9 9.5c0-1.4 1.3-2.5 3-2.5s3 1 3 2.3c0 3-6 1.5-6 4.5 0 1.4 1.3 2.5 3 2.5s3-1.1 3-2.5"/></svg>
-                </div>
-                <h3>Sustainable Income</h3>
-                <p>Build a reliable income stream through monthly memberships, allowing you to focus on creating meaningful content.</p>
-            </div>
-
-            <div class="feature-card">
-                <div class="feature-icon">
-                    <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 20v-1a4 4 0 0 0-4-4H7a4 4 0 0 0-4 4v1"/><circle cx="9" cy="7" r="4"/><path d="M23 20v-1a4 4 0 0 0-3-3.9M16 3.1a4 4 0 0 1 0 7.8"/></svg>
-                </div>
-                <h3>Direct Connection</h3>
-                <p>Engage directly with your supporters through exclusive content, messages, and community features.</p>
-            </div>
-
-            <div class="feature-card">
-                <div class="feature-icon">
-                    <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M7 14l4-4 3 3 5-6"/></svg>
-                </div>
-                <h3>Growth Tools</h3>
-                <p>Access analytics, promotional tools, and resources to help you grow your audience and increase your impact.</p>
-            </div>
-
-            <div class="feature-card">
-                <div class="feature-icon">
-                    <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="11" width="16" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>
-                </div>
-                <h3>Creator-Friendly Terms</h3>
-                <p>Keep more of what you earn with competitive rates and transparent pricing. No hidden fees.</p>
-            </div>
-
-            <div class="feature-card">
-                <div class="feature-icon">
-                    <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v6M12 22v-8M8 6l4-4 4 4M6 14h12l-1 8H7z"/></svg>
-                </div>
-                <h3>Aligned Values</h3>
-                <p>A platform that respects and supports Christian content creators without censorship of faith-based messaging.</p>
-            </div>
-        </div>
+<section class="proof">
+  <div class="wrap">
+    <div class="proof-grid">
+      <div class="proof-item"><div class="proof-n">1,000+</div><p class="small">Creators publishing on Sowing.me</p></div>
+      <div class="proof-item"><div class="proof-n">$2M+</div><p class="small">Paid out to creators to date</p></div>
+      <div class="proof-item"><div class="proof-n">50,000</div><p class="small">Supporters giving every month</p></div>
     </div>
+  </div>
 </section>
 
-<section class="how-it-works-preview">
-    <div class="container">
-        <h2 class="section-title text-center">How It Works</h2>
-        <p class="section-subtitle text-center">Get started in three simple steps</p>
-
-        <div class="steps">
-            <div class="step">
-                <div class="step-number">1</div>
-                <h3>Create Your Page</h3>
-                <p>Set up your creator profile, describe your mission, and define membership tiers with exclusive benefits.</p>
-            </div>
-
-            <div class="step">
-                <div class="step-number">2</div>
-                <h3>Share Your Content</h3>
-                <p>Post videos, podcasts, articles, or any content that inspires your community and shares your message.</p>
-            </div>
-
-            <div class="step">
-                <div class="step-number">3</div>
-                <h3>Grow & Thrive</h3>
-                <p>Build your supporter base, receive monthly income, and focus on what matters most—your ministry.</p>
-            </div>
-        </div>
-
-        <div class="text-center" style="margin-top: 40px;">
-            <a href="/how-it-works" class="btn btn-primary">Learn More</a>
-        </div>
+<section class="section">
+  <div class="wrap">
+    <div class="section-head">
+      <span class="eyebrow">Why Sowing.me</span>
+      <h2 class="h2">A platform that understands the work.</h2>
+      <p class="lede">Everything a faith-led creator needs to publish, earn, and stay close to the people who support them.</p>
     </div>
+    <div class="grid-3" style="margin-top:56px">
+      <div class="card">
+        <div class="icon-tile"><svg viewBox="0 0 24 24"><path d="M12 22V12M12 12C12 8 9 5 5 5c0 4 3 7 7 7zM12 12c0-4 3-7 7-7 0 4-3 7-7 7z"/></svg></div>
+        <h3 class="h3">Faith-centered community</h3>
+        <p>Reach supporters who share your values and already understand the mission behind your content.</p>
+      </div>
+      <div class="card">
+        <div class="icon-tile"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v10M9 9.5c0-1.4 1.3-2.5 3-2.5s3 1 3 2.3c0 3-6 1.5-6 4.5 0 1.4 1.3 2.5 3 2.5s3-1.1 3-2.5"/></svg></div>
+        <h3 class="h3">Predictable monthly income</h3>
+        <p>Recurring memberships replace one-off appeals, so you can plan a year of ministry instead of a week.</p>
+      </div>
+      <div class="card">
+        <div class="icon-tile"><svg viewBox="0 0 24 24"><path d="M17 20v-1a4 4 0 0 0-4-4H7a4 4 0 0 0-4 4v1"/><circle cx="9" cy="7" r="4"/><path d="M23 20v-1a4 4 0 0 0-3-3.9M16 3.1a4 4 0 0 1 0 7.8"/></svg></div>
+        <h3 class="h3">Direct connection</h3>
+        <p>Members-only posts, messages, and prayer threads keep you in conversation with your supporters.</p>
+      </div>
+      <div class="card">
+        <div class="icon-tile"><svg viewBox="0 0 24 24"><path d="M3 3v18h18"/><path d="M7 14l4-4 3 3 5-6"/></svg></div>
+        <h3 class="h3">Growth tools built in</h3>
+        <p>Audience analytics, share pages, and email tools show what's working and where to invest next.</p>
+      </div>
+      <div class="card">
+        <div class="icon-tile"><svg viewBox="0 0 24 24"><rect x="4" y="11" width="16" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></div>
+        <h3 class="h3">Transparent terms</h3>
+        <p>One clear rate, no hidden fees, and your members list is always yours to export.</p>
+      </div>
+      <div class="card">
+        <div class="icon-tile"><svg viewBox="0 0 24 24"><path d="M12 2v6M12 22v-8M8 6l4-4 4 4M6 14h12l-1 8H7z"/></svg></div>
+        <h3 class="h3">Aligned values</h3>
+        <p>Faith-based messaging is welcome here — no demonetization for preaching what you believe.</p>
+      </div>
+    </div>
+  </div>
 </section>
 
-<section class="stats">
-    <div class="container">
-        <div class="stats-grid">
-            <div class="stat-item">
-                <h3>1000+</h3>
-                <p>Active Creators</p>
-            </div>
-            <div class="stat-item">
-                <h3>50K+</h3>
-                <p>Monthly Supporters</p>
-            </div>
-            <div class="stat-item">
-                <h3>$2M+</h3>
-                <p>Paid to Creators</p>
-            </div>
-            <div class="stat-item">
-                <h3>95%</h3>
-                <p>Creator Satisfaction</p>
-            </div>
+<section class="section tint">
+  <div class="wrap how-grid">
+    <div>
+      <span class="eyebrow">How it works</span>
+      <h2 class="h2" style="margin:14px 0 16px">Three steps to your first supporter.</h2>
+      <p class="lede">Most creators launch in an afternoon and see their first monthly member the same week.</p>
+      <div class="steps">
+        <div class="step">
+          <div class="step-n">01</div>
+          <div>
+            <h3 class="h3">Create your page</h3>
+            <p>Set up your profile, describe your mission, and define membership tiers with the benefits you want to offer.</p>
+          </div>
         </div>
+        <div class="step">
+          <div class="step-n">02</div>
+          <div>
+            <h3 class="h3">Share your content</h3>
+            <p>Publish videos, teaching series, podcasts, or writing — public to grow, members-only to reward support.</p>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-n">03</div>
+          <div>
+            <h3 class="h3">Grow and thrive</h3>
+            <p>Track your supporter base, receive monthly payouts, and put your time back into the ministry itself.</p>
+          </div>
+        </div>
+      </div>
+      <div style="margin-top:32px"><a href="/how-it-works" class="arrow-link">Read the full walkthrough<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h13M13 6l6 6-6 6"/></svg></a></div>
     </div>
+    <div class="frame how-media"><div class="img-ph">Creator dashboard — 3:4</div></div>
+  </div>
 </section>
 
-<section class="cta-section">
-    <div class="container">
-        <h2>Ready to Start Your Journey?</h2>
-        <p>Join thousands of Christian creators who are building sustainable ministries through Sowing.me.</p>
-        <a href="/signup" class="btn btn-accent">Get Started Free</a>
+<section class="band section-sm">
+  <div class="wrap quote">
+    <div style="width:120px;height:120px;border-radius:var(--radius-full);overflow:hidden"><div class="img-ph" style="min-height:0;height:120px">Portrait</div></div>
+    <div>
+      <blockquote>“I spent years asking for support twice a year. Now 400 people sow into the work every month, and I can plan for the next one.”</blockquote>
+      <cite>Marcus Ellery · Bible teaching podcast, 2 years on Sowing.me</cite>
     </div>
+  </div>
+</section>
+
+<section class="cta-band">
+  <div class="wrap cta-grid">
+    <div>
+      <h2 class="h2">Ready to start your journey?</h2>
+      <p style="margin-top:14px">Join the creators building sustainable ministries on Sowing.me. Free to set up, no commitment.</p>
+    </div>
+    <div class="btn-row">
+      <a href="/signup" class="btn btn-light">Get started free</a>
+      <a href="/pricing" class="btn btn-onDark">See pricing</a>
+    </div>
+  </div>
 </section>
 {/block}

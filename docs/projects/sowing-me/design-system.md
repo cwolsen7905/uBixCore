@@ -69,7 +69,14 @@ None frozen yet. Candidates to register if they cross the design↔code↔wire b
 
 Run `/design-sync <project-id>` (user-invoked). On import: **tokens → primitives → composites → screens**; shared primitives land in `js/Ubix/src/lib/` (exported from `index.js`), app-specific in the app's `src/lib/`; tokens/assets port near-verbatim, components re-authored in Svelte 5 runes (`complete-js-guide.md`); **never rename or re-value imported tokens locally** (fix upstream, re-sync); then `php bin/ubix code:review` to zero + a test per component + MR into `dev`. The importing MR names its baseline (which project + components/tokens) so the next import knows where it left off.
 
+## 8. Sync log (baseline per import — handoff §6.6)
+
+| Date | Direction | Source project | → Codebase | Baseline / scope |
+|---|---|---|---|---|
+| 2026-08-28 | design → code | Marketing Site (`d8091133…`), "visual polish pass" | `SowingMeWeb` (`templates/sowing-me-web-v1/`) | Recreated `layout.latte` (shared header/footer + `site.css`/`header.css` + full token set) + `home`, `for-creators`, `how-it-works`, `pricing`, `signup`. Tokens unchanged (no re-sync to `SowingMeJs`). Signup form logic (names, handlers, `{$apiHostname}`, `{block scripts}`) preserved verbatim. Deviations: fonts still via Google Fonts CDN (not embedded woff2); image slots are styled placeholders (no photography); placeholder marketing copy (proof stats, Marcus Ellery quote, "92%", "no fee on first $1,000", fee %s) carried as-is and flagged for verification. Next import diffs against the project's current `pages/` state. |
+
 ## Document control
 | Version | Date | Change |
 |---|---|---|
 | 0.1 | 2026-08-28 | Initial record — 3 Claude Design projects created + seeded; project→codebase mapping; token map; type-mislabel + token-copy deviations. |
+| 0.2 | 2026-08-28 | Added §8 Sync log; recorded the first design→code import (Marketing Site polish pass → SowingMeWeb). |

@@ -1,364 +1,107 @@
 {extends 'layout.latte'}
 
+{var $activeNav = 'pricing'}
+
 {block title}Pricing{/block}
 
 {block head}
 <style>
-    .pricing-hero {
-        background: var(--color-surface-2);
-        padding: 80px 0;
-        text-align: center;
-    }
-
-    .pricing-hero h1 {
-        font-size: 3rem;
-        margin-bottom: 20px;
-    }
-
-    .pricing-hero p {
-        font-size: 1.2rem;
-        color: var(--color-text-muted);
-        margin-bottom: 0;
-    }
-
-    .pricing-cards {
-        padding: 80px 0;
-    }
-
-    .cards-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
-        gap: 32px;
-        max-width: 900px;
-        margin: 0 auto;
-    }
-
-    .pricing-card {
-        background: var(--color-surface);
-        border: 1px solid var(--color-border);
-        border-radius: var(--radius-lg);
-        padding: 40px;
-        box-shadow: var(--shadow-card);
-        text-align: center;
-        position: relative;
-    }
-
-    .pricing-card.featured {
-        border: 2px solid var(--color-primary);
-        box-shadow: var(--shadow-lg);
-    }
-
-    .pricing-card.featured::before {
-        content: "Most Popular";
-        position: absolute;
-        top: -14px;
-        left: 50%;
-        transform: translateX(-50%);
-        background: var(--color-primary);
-        color: white;
-        padding: 5px 18px;
-        border-radius: var(--radius-full);
-        font-size: 0.75rem;
-        font-weight: 700;
-    }
-
-    .pricing-card h3 {
-        font-size: 1.375rem;
-        margin-bottom: 6px;
-    }
-
-    .pricing-card .price {
-        font-size: 3rem;
-        font-weight: 800;
-        color: var(--color-primary);
-        margin: 16px 0;
-        font-family: var(--font-heading);
-    }
-
-    .pricing-card .price span {
-        font-size: 1rem;
-        font-weight: 400;
-        color: var(--color-text-muted);
-    }
-
-    .pricing-card .description {
-        color: var(--color-text-muted);
-        margin-bottom: 24px;
-    }
-
-    .pricing-card ul {
-        list-style: none;
-        padding: 0;
-        margin-bottom: 28px;
-        text-align: left;
-    }
-
-    .pricing-card li {
-        padding: 12px 0 12px 28px;
-        border-bottom: 1px solid var(--color-border);
-        position: relative;
-        font-size: 0.9rem;
-    }
-
-    .pricing-card li:last-child {
-        border-bottom: none;
-    }
-
-    .pricing-card li svg {
-        position: absolute;
-        left: 0;
-        top: 15px;
-        width: 16px;
-        height: 16px;
-        stroke: var(--color-primary);
-    }
-
-    .comparison {
-        padding: 80px 0;
-        background: var(--color-surface-2);
-    }
-
-    .comparison-table {
-        max-width: 900px;
-        margin: 48px auto 0;
-        background: var(--color-surface);
-        border-radius: var(--radius-lg);
-        overflow: hidden;
-        box-shadow: var(--shadow-card);
-        border: 1px solid var(--color-border);
-    }
-
-    .comparison-table table {
-        width: 100%;
-        border-collapse: collapse;
-    }
-
-    .comparison-table th,
-    .comparison-table td {
-        padding: 16px 20px;
-        text-align: left;
-        border-bottom: 1px solid var(--color-border);
-        font-size: 0.9rem;
-    }
-
-    .comparison-table th {
-        background: var(--color-primary);
-        color: white;
-        font-weight: 700;
-        font-family: var(--font-heading);
-    }
-
-    .comparison-table tr:last-child td {
-        border-bottom: none;
-    }
-
-    .comparison-table .check {
-        color: var(--color-primary);
-        font-weight: bold;
-    }
-
-    .comparison-table .dash {
-        color: var(--color-text-subtle);
-    }
-
-    .faq-preview {
-        padding: 80px 0;
-    }
-
-    .faq-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
-        gap: 28px;
-        margin-top: 48px;
-    }
-
-    .faq-item h4 {
-        margin-bottom: 8px;
-        color: var(--color-dark);
-    }
-
-    .faq-item p {
-        color: var(--color-text-muted);
-        margin-bottom: 0;
-    }
-
-    .cta-pricing {
-        background: var(--color-secondary);
-        color: var(--color-white);
-        padding: 80px 0;
-        text-align: center;
-    }
-
-    .cta-pricing h2 {
-        margin-bottom: 20px;
-        color: var(--color-white);
-    }
-
-    .cta-pricing p {
-        margin-bottom: 30px;
-        opacity: 0.92;
-    }
-
-    @media (max-width: 768px) {
-        .faq-grid {
-            grid-template-columns: 1fr;
-        }
-
-        .comparison-table {
-            overflow-x: auto;
-        }
-
-        .pricing-card {
-            padding: 28px;
-        }
-    }
+  .cta-grid{display:flex;align-items:flex-end;justify-content:space-between;gap:48px}
+  .plans{display:grid;grid-template-columns:1fr 1fr;gap:24px;max-width:840px;margin:0 auto}
+  .plan{position:relative;background:#fff;border:1px solid var(--color-slate-100);border-radius:16px;padding:36px 34px;display:flex;flex-direction:column}
+  .plan.featured{border-color:var(--color-primary);box-shadow:0 18px 44px rgba(38,50,56,.10)}
+  .plan .badge{position:absolute;top:-11px;left:34px;background:var(--color-primary);color:#fff;padding:4px 12px;border-radius:var(--radius-full);font-family:var(--font-heading);font-size:.6875rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase}
+  .plan .plan-name{font-family:var(--font-heading);font-size:1.0625rem;font-weight:700;letter-spacing:.02em;text-transform:uppercase;color:var(--color-text-muted)}
+  .plan .price{font-family:var(--font-heading);font-size:3rem;font-weight:800;letter-spacing:-.035em;line-height:1;margin:16px 0 12px}
+  .plan .price span{display:block;margin-top:10px;font-size:.875rem;font-weight:600;letter-spacing:0;color:var(--color-text-muted)}
+  .plan ul.checks{flex:1}
 </style>
 {/block}
 
 {block content}
-<section class="pricing-hero">
-    <div class="container">
-        <h1>Simple, Transparent Pricing</h1>
-        <p>Keep more of what you earn. No hidden fees, no surprises.</p>
-    </div>
+{* NOTE: fee percentages (8% Starter / 5% Pro, 2.9% + $0.30 processing) carried over
+   from the previous design — confirm they are current before promoting past dev. *}
+<section class="page-hero">
+  <div class="wrap">
+    <span class="eyebrow">Pricing</span>
+    <h1 class="h1">One clear rate. Nothing buried.</h1>
+    <p class="lede">You only pay when you earn. No monthly subscription, no setup fee, and your member list is always yours.</p>
+  </div>
 </section>
 
-<section class="pricing-cards">
-    <div class="container">
-        <div class="cards-grid">
-            <div class="pricing-card">
-                <h3>Starter</h3>
-                <div class="price">Free <span>to start</span></div>
-                <p class="description">Perfect for new creators just getting started</p>
-                <ul>
-                    <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M4 12l5 5 11-11"/></svg>Create your page for free</li>
-                    <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M4 12l5 5 11-11"/></svg>Up to 3 membership tiers</li>
-                    <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M4 12l5 5 11-11"/></svg>Basic analytics</li>
-                    <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M4 12l5 5 11-11"/></svg>Email support</li>
-                    <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M4 12l5 5 11-11"/></svg>8% platform fee on earnings</li>
-                </ul>
-                <a href="/signup" class="btn btn-outline" style="width: 100%;">Get Started</a>
-            </div>
-
-            <div class="pricing-card featured">
-                <h3>Pro</h3>
-                <div class="price">5% <span>platform fee</span></div>
-                <p class="description">For growing creators who want more features</p>
-                <ul>
-                    <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M4 12l5 5 11-11"/></svg>Everything in Starter</li>
-                    <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M4 12l5 5 11-11"/></svg>Unlimited membership tiers</li>
-                    <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M4 12l5 5 11-11"/></svg>Advanced analytics</li>
-                    <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M4 12l5 5 11-11"/></svg>Priority support</li>
-                    <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M4 12l5 5 11-11"/></svg>Custom page branding</li>
-                    <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M4 12l5 5 11-11"/></svg>Promotional tools</li>
-                </ul>
-                <a href="/signup" class="btn btn-primary" style="width: 100%;">Start Free Trial</a>
-            </div>
-        </div>
-
-        <p class="text-center" style="margin-top: 36px; color: var(--color-text-muted);">
-            * Plus standard payment processing fees (2.9% + $0.30 per transaction)
-        </p>
+<section class="section">
+  <div class="wrap">
+    <div class="plans">
+      <div class="plan">
+        <h3 class="plan-name">Starter</h3>
+        <div class="price">Free<span>to start</span></div>
+        <p class="small">For new creators finding their first supporters.</p>
+        <ul class="checks"><li><svg viewBox="0 0 24 24"><path d="M4 12l5 5 11-11"/></svg>Create your page for free</li><li><svg viewBox="0 0 24 24"><path d="M4 12l5 5 11-11"/></svg>Up to 3 membership tiers</li><li><svg viewBox="0 0 24 24"><path d="M4 12l5 5 11-11"/></svg>Basic analytics</li><li><svg viewBox="0 0 24 24"><path d="M4 12l5 5 11-11"/></svg>Email support</li><li><svg viewBox="0 0 24 24"><path d="M4 12l5 5 11-11"/></svg>8% platform fee on earnings</li></ul>
+        <a href="/signup" class="btn btn-ghost" style="width:100%;margin-top:30px">Get started</a>
+      </div>
+      <div class="plan featured">
+        <div class="badge">Most popular</div>
+        <h3 class="plan-name">Pro</h3>
+        <div class="price">5%<span>platform fee on earnings</span></div>
+        <p class="small">For growing creators who want the full toolkit.</p>
+        <ul class="checks"><li><svg viewBox="0 0 24 24"><path d="M4 12l5 5 11-11"/></svg>Everything in Starter</li><li><svg viewBox="0 0 24 24"><path d="M4 12l5 5 11-11"/></svg>Unlimited membership tiers</li><li><svg viewBox="0 0 24 24"><path d="M4 12l5 5 11-11"/></svg>Advanced analytics</li><li><svg viewBox="0 0 24 24"><path d="M4 12l5 5 11-11"/></svg>Priority support</li><li><svg viewBox="0 0 24 24"><path d="M4 12l5 5 11-11"/></svg>Custom page branding</li><li><svg viewBox="0 0 24 24"><path d="M4 12l5 5 11-11"/></svg>Promotional tools</li></ul>
+        <a href="/signup" class="btn btn-primary" style="width:100%;margin-top:30px">Start 30-day free trial</a>
+      </div>
     </div>
+    <p class="small" style="text-align:center;margin-top:26px">Plus standard payment processing: 2.9% + $0.30 per transaction.</p>
+  </div>
 </section>
 
-<section class="comparison">
-    <div class="container">
-        <h2 class="section-title text-center">Compare Plans</h2>
-
-        <div class="comparison-table">
-            <table>
-                <thead>
-                    <tr>
-                        <th>Feature</th>
-                        <th>Starter</th>
-                        <th>Pro</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr>
-                        <td>Platform Fee</td>
-                        <td>8%</td>
-                        <td>5%</td>
-                    </tr>
-                    <tr>
-                        <td>Membership Tiers</td>
-                        <td>Up to 3</td>
-                        <td>Unlimited</td>
-                    </tr>
-                    <tr>
-                        <td>Basic Analytics</td>
-                        <td class="check">&#10003;</td>
-                        <td class="check">&#10003;</td>
-                    </tr>
-                    <tr>
-                        <td>Advanced Analytics</td>
-                        <td class="dash">&mdash;</td>
-                        <td class="check">&#10003;</td>
-                    </tr>
-                    <tr>
-                        <td>Custom Branding</td>
-                        <td class="dash">&mdash;</td>
-                        <td class="check">&#10003;</td>
-                    </tr>
-                    <tr>
-                        <td>Promotional Tools</td>
-                        <td class="dash">&mdash;</td>
-                        <td class="check">&#10003;</td>
-                    </tr>
-                    <tr>
-                        <td>Priority Support</td>
-                        <td class="dash">&mdash;</td>
-                        <td class="check">&#10003;</td>
-                    </tr>
-                    <tr>
-                        <td>Early Access Features</td>
-                        <td class="dash">&mdash;</td>
-                        <td class="check">&#10003;</td>
-                    </tr>
-                </tbody>
-            </table>
-        </div>
+<section class="section tint">
+  <div class="wrap">
+    <div class="section-head" style="margin:0 auto 40px;text-align:center;max-width:520px">
+      <span class="eyebrow">Compare</span>
+      <h2 class="h2">What you get on each plan.</h2>
     </div>
+    <div class="panel" style="max-width:840px;margin:0 auto;overflow:hidden">
+      <table class="cmp">
+        <thead><tr><th>Feature</th><th>Starter</th><th>Pro</th></tr></thead>
+        <tbody>
+          <tr><th>Platform fee</th><td>8%</td><td>5%</td></tr>
+          <tr><th>Membership tiers</th><td>Up to 3</td><td>Unlimited</td></tr>
+          <tr><th>Basic analytics</th><td><span class="yes">&#10003;</span></td><td><span class="yes">&#10003;</span></td></tr>
+          <tr><th>Advanced analytics</th><td><span class="no">&mdash;</span></td><td><span class="yes">&#10003;</span></td></tr>
+          <tr><th>Custom branding</th><td><span class="no">&mdash;</span></td><td><span class="yes">&#10003;</span></td></tr>
+          <tr><th>Promotional tools</th><td><span class="no">&mdash;</span></td><td><span class="yes">&#10003;</span></td></tr>
+          <tr><th>Priority support</th><td><span class="no">&mdash;</span></td><td><span class="yes">&#10003;</span></td></tr>
+          <tr><th>Early access features</th><td><span class="no">&mdash;</span></td><td><span class="yes">&#10003;</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
 </section>
 
-<section class="faq-preview">
-    <div class="container">
-        <h2 class="section-title text-center">Pricing FAQ</h2>
-
-        <div class="faq-grid">
-            <div class="faq-item">
-                <h4>When do I get paid?</h4>
-                <p>We process payouts weekly or monthly (your choice) directly to your bank account or PayPal.</p>
-            </div>
-
-            <div class="faq-item">
-                <h4>Are there any hidden fees?</h4>
-                <p>No hidden fees. You pay the platform fee plus standard payment processing fees. That's it.</p>
-            </div>
-
-            <div class="faq-item">
-                <h4>Can I switch plans?</h4>
-                <p>Yes! You can upgrade to Pro anytime or downgrade at the end of your billing cycle.</p>
-            </div>
-
-            <div class="faq-item">
-                <h4>Is there a free trial for Pro?</h4>
-                <p>Yes, new creators get a 30-day free trial of Pro features to help you get started.</p>
-            </div>
-        </div>
-
-        <div class="text-center" style="margin-top: 40px;">
-            <a href="/faq" class="btn btn-outline">View All FAQs</a>
-        </div>
+<section class="section">
+  <div class="wrap">
+    <div class="section-head">
+      <span class="eyebrow">FAQ</span>
+      <h2 class="h2">Questions about money.</h2>
     </div>
+    <div class="faq">
+      <div class="faq-item"><h4>When do I get paid?</h4><p>Payouts run weekly or monthly — your choice — straight to your bank account or PayPal.</p></div>
+      <div class="faq-item"><h4>Are there hidden fees?</h4><p>No. The platform fee plus standard payment processing is the whole cost.</p></div>
+      <div class="faq-item"><h4>Can I switch plans?</h4><p>Upgrade to Pro anytime. Downgrades take effect at the end of your billing cycle.</p></div>
+      <div class="faq-item"><h4>Is there a Pro trial?</h4><p>Yes — new creators get 30 days of Pro features free.</p></div>
+    </div>
+    <div style="margin-top:34px"><a href="/faq" class="btn btn-ghost">View all FAQs</a></div>
+  </div>
 </section>
 
-<section class="cta-pricing">
-    <div class="container">
-        <h2>Start Creating Today</h2>
-        <p>Join thousands of Christian creators building their ministry on Sowing.me</p>
-        <a href="/signup" class="btn btn-accent">Create Your Free Page</a>
+<section class="cta-band">
+  <div class="wrap cta-grid">
+    <div>
+      <h2 class="h2">Start creating today.</h2>
+      <p style="margin-top:14px">Free to set up. You keep the relationship with every supporter.</p>
     </div>
+    <div class="btn-row">
+      <a href="/signup" class="btn btn-light">Create your free page</a>
+      <a href="/for-creators" class="btn btn-onDark">For creators</a>
+    </div>
+  </div>
 </section>
 {/block}

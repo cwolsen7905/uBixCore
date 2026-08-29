@@ -1,381 +1,205 @@
 {extends 'layout.latte'}
 
+{var $hideSignup = true}
+
 {block title}Sign In{/block}
 
 {block head}
 <style>
-    .auth-page {
-        min-height: calc(100vh - 200px);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        padding: 64px 20px 96px;
-        background: linear-gradient(135deg, var(--color-primary-soft) 0%, var(--color-surface-2) 100%);
-    }
-
-    .auth-container {
-        background: var(--color-surface);
-        border-radius: var(--radius-lg);
-        box-shadow: var(--shadow-lg);
-        padding: 44px;
-        width: 100%;
-        max-width: 460px;
-        border: 1px solid var(--color-border);
-    }
-
-    .auth-tabs {
-        display: flex;
-        margin-bottom: 28px;
-        border-bottom: 2px solid var(--color-surface-2);
-    }
-
-    .auth-tab {
-        flex: 1;
-        padding: 14px;
-        text-align: center;
-        font-weight: 700;
-        font-family: var(--font-heading);
-        color: var(--color-text-subtle);
-        cursor: pointer;
-        border: none;
-        background: none;
-        font-size: 0.9rem;
-        transition: color 0.2s;
-        position: relative;
-    }
-
-    .auth-tab.active {
-        color: var(--color-primary);
-    }
-
-    .auth-tab.active::after {
-        content: '';
-        position: absolute;
-        bottom: -2px;
-        left: 0;
-        right: 0;
-        height: 2px;
-        background: var(--color-primary);
-    }
-
-    .auth-tab:hover {
-        color: var(--color-primary);
-    }
-
-    .auth-form {
-        display: none;
-    }
-
-    .auth-form.active {
-        display: block;
-    }
-
-    .oauth-buttons {
-        display: flex;
-        flex-direction: column;
-        gap: 12px;
-        margin-bottom: 24px;
-    }
-
-    .oauth-btn {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        gap: 12px;
-        padding: 12px 20px;
-        border-radius: var(--radius-md);
-        font-weight: 600;
-        font-size: 0.9rem;
-        cursor: pointer;
-        transition: all 0.2s;
-        border: 1px solid var(--color-border);
-        background: var(--color-surface);
-        color: var(--color-text);
-    }
-
-    .oauth-btn:hover {
-        background: var(--color-surface-2);
-    }
-
-    .oauth-btn svg {
-        width: 18px;
-        height: 18px;
-    }
-
-    .oauth-btn.google {
-        border-color: #dadce0;
-    }
-
-    .oauth-btn.apple {
-        background: var(--color-slate-900);
-        color: #fff;
-        border-color: var(--color-slate-900);
-    }
-
-    .oauth-btn.apple:hover {
-        background: #333;
-    }
-
-    .divider {
-        display: flex;
-        align-items: center;
-        margin: 22px 0;
-        color: var(--color-text-subtle);
-        font-size: 0.9rem;
-    }
-
-    .divider::before,
-    .divider::after {
-        content: '';
-        flex: 1;
-        height: 1px;
-        background: var(--color-border);
-    }
-
-    .divider span {
-        padding: 0 14px;
-    }
-
-    .form-row {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 16px;
-    }
-
-    .form-group {
-        margin-bottom: 18px;
-    }
-
-    .form-group label {
-        display: block;
-        margin-bottom: 7px;
-        font-weight: 600;
-        color: var(--color-text);
-        font-size: 0.9rem;
-    }
-
-    .form-group input {
-        width: 100%;
-        padding: 11px 14px;
-        border: 1px solid var(--color-border);
-        border-radius: var(--radius-md);
-        font-size: 0.95rem;
-        font-family: var(--font-body);
-        color: var(--color-text);
-        transition: border-color 0.2s;
-        box-sizing: border-box;
-    }
-
-    .form-group input:focus {
-        outline: 2px solid var(--color-primary);
-        outline-offset: 1px;
-        border-color: var(--color-primary);
-    }
-
-    .form-options {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 20px;
-        font-size: 0.9rem;
-    }
-
-    .form-options label {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        cursor: pointer;
-    }
-
-    .form-options a {
-        color: var(--color-primary);
-    }
-
-    .submit-btn {
-        width: 100%;
-        padding: 14px;
-        background: var(--color-primary);
-        color: var(--color-on-primary);
-        border: none;
-        border-radius: var(--radius-md);
-        font-size: 1rem;
-        font-weight: 700;
-        font-family: var(--font-heading);
-        cursor: pointer;
-        transition: background 0.2s;
-        margin-top: 4px;
-    }
-
-    .submit-btn:hover {
-        background: var(--color-primary-dark);
-    }
-
-    .auth-footer {
-        text-align: center;
-        margin-top: 22px;
-        color: var(--color-text-muted);
-        font-size: 0.9rem;
-    }
-
-    .auth-footer a {
-        color: var(--color-primary);
-        font-weight: 700;
-    }
-
-    .terms-text {
-        font-size: 0.75rem;
-        color: var(--color-text-subtle);
-        text-align: center;
-        margin-top: 18px;
-        line-height: 1.5;
-    }
-
-    .terms-text a {
-        color: var(--color-primary);
-        font-weight: 600;
-    }
-
-    .password-requirements {
-        font-size: 0.75rem;
-        color: var(--color-text-subtle);
-        margin-top: 5px;
-    }
-
-    @media (max-width: 768px) {
-        .auth-container {
-            padding: 28px;
-        }
-
-        .form-row {
-            grid-template-columns: 1fr;
-            gap: 0;
-        }
-    }
+  .auth{display:grid;grid-template-columns:1fr 1fr;min-height:760px}
+  .auth-aside{background:var(--color-slate-900);color:#fff;padding:88px 72px 88px 0;display:flex;align-items:center;justify-content:flex-end}
+  .auth-aside-inner{max-width:400px}
+  .auth-aside .eyebrow{color:var(--color-brand-300)}
+  .auth-aside h2{font-family:var(--font-heading);color:#fff;font-size:2.125rem;font-weight:800;line-height:1.1;letter-spacing:-.03em;margin:14px 0 18px}
+  .auth-aside p{color:var(--color-slate-300)}
+  .aside-list{list-style:none;padding:0;margin:34px 0 0}
+  .aside-list li{position:relative;padding:14px 0 14px 30px;border-top:1px solid var(--color-slate-800);color:var(--color-slate-200);font-size:.9375rem}
+  .aside-list li svg{position:absolute;left:0;top:19px;width:16px;height:16px;stroke:var(--color-brand-300);stroke-width:3;fill:none;stroke-linecap:round}
+  .aside-quote{margin-top:40px;font-size:.9375rem;color:var(--color-slate-300);line-height:1.6}
+  .aside-quote cite{display:block;margin-top:12px;font-style:normal;font-size:.8125rem;color:var(--color-slate-500)}
+  .auth-main{padding:72px 0 88px 72px;display:flex;align-items:center}
+  .auth-container{width:100%;max-width:440px}
+  .auth-container h1{font-family:var(--font-heading);font-size:1.75rem;font-weight:800;letter-spacing:-.025em;margin:0}
+  .auth-container .sub{color:var(--color-text-muted);font-size:.9375rem;margin-top:8px}
+  .auth-tabs{display:flex;gap:4px;margin:28px 0 26px;background:var(--color-surface-2);padding:4px;border-radius:10px}
+  .auth-tab{flex:1;padding:10px;text-align:center;font-family:var(--font-heading);font-weight:700;font-size:.875rem;color:var(--color-text-muted);border-radius:7px;cursor:pointer;border:none;background:transparent;transition:background .15s ease,color .15s ease}
+  .auth-tab.active{background:#fff;color:var(--color-text);box-shadow:var(--shadow-sm)}
+  .auth-form{display:none}
+  .auth-form.active{display:block}
+  .oauth-buttons{display:grid;gap:10px}
+  .oauth-btn{display:flex;align-items:center;justify-content:center;gap:10px;padding:12px 20px;border-radius:var(--radius-md);font-family:var(--font-heading);font-weight:600;font-size:.9375rem;border:1px solid var(--color-border);background:#fff;color:var(--color-text);cursor:pointer;transition:background .15s ease,border-color .15s ease}
+  .oauth-btn:hover{background:var(--color-slate-50);border-color:var(--color-slate-400)}
+  .oauth-btn.apple{background:var(--color-slate-900);color:#fff;border-color:var(--color-slate-900)}
+  .oauth-btn.apple:hover{background:#000}
+  .oauth-btn svg{width:18px;height:18px}
+  .divider{display:flex;align-items:center;margin:22px 0;color:var(--color-text-subtle);font-size:.8125rem}
+  .divider::before,.divider::after{content:"";flex:1;height:1px;background:var(--color-slate-100)}
+  .divider span{padding:0 14px}
+  .form-row{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  .form-group{margin-bottom:16px}
+  .form-group label{display:block;margin-bottom:7px;font-family:var(--font-heading);font-weight:600;font-size:.8125rem;color:var(--color-text)}
+  .form-group input[type="email"],.form-group input[type="text"],.form-group input[type="password"]{width:100%;padding:12px 14px;border:1px solid var(--color-border);border-radius:var(--radius-md);font-size:.9375rem;font-family:var(--font-body);color:var(--color-text);background:#fff;transition:border-color .15s ease,box-shadow .15s ease}
+  .form-group input::placeholder{color:var(--color-slate-400)}
+  .form-group input:hover{border-color:var(--color-slate-400)}
+  .form-group input:focus{outline:none;border-color:var(--color-primary);box-shadow:0 0 0 3px rgba(46,125,50,.15)}
+  .password-requirements{font-size:.75rem;color:var(--color-text-subtle);margin-top:6px}
+  .form-options{display:flex;align-items:center;justify-content:space-between;margin:4px 0 18px;font-size:.875rem;color:var(--color-text-muted)}
+  .form-options label{display:flex;align-items:center;gap:7px}
+  .submit-btn{width:100%;padding:15px;background:var(--color-primary);color:#fff;border:none;border-radius:var(--radius-md);font-size:1rem;font-weight:700;font-family:var(--font-heading);margin-top:6px;cursor:pointer;box-shadow:0 1px 2px rgba(27,94,32,.24);transition:background .15s ease,box-shadow .15s ease,transform .15s ease}
+  .submit-btn:hover{background:var(--color-primary-hover);box-shadow:0 4px 14px rgba(27,94,32,.26);transform:translateY(-1px)}
+  .submit-btn:disabled{opacity:.6;cursor:default;transform:none;box-shadow:none}
+  .terms-text{font-size:.75rem;color:var(--color-text-subtle);margin-top:16px;line-height:1.55;text-align:center}
+  .terms-text a{font-weight:600}
+  .auth-footer{margin-top:22px;padding-top:20px;border-top:1px solid var(--color-slate-100);color:var(--color-text-muted);font-size:.9375rem;text-align:center}
+  .auth-footer a{font-family:var(--font-heading);font-weight:700}
 </style>
 {/block}
 
 {block content}
-<div class="auth-page">
-    <div class="auth-container">
-        <div class="auth-tabs">
-            <button class="auth-tab active" onclick="showForm('login')">Sign In</button>
-            <button class="auth-tab" onclick="showForm('register')">Create Account</button>
+{* Marketing copy in the aside (the "92%" line and Marcus Ellery quote) is PLACEHOLDER
+   from the design handoff — verify before promoting past dev. Form markup, field names,
+   handlers, and the scripts block are preserved from the working registration flow. *}
+<div class="auth">
+    <div class="auth-aside">
+        <div class="auth-aside-inner">
+            <span class="eyebrow">Free to start</span>
+            <h2>Your page can be live tonight.</h2>
+            <p>Set up membership tiers, publish your first post, and share one link. Sowing.me handles the rest.</p>
+            <ul class="aside-list">
+                <li><svg viewBox="0 0 24 24"><path d="M4 12l5 5 11-11"/></svg>No setup fee and no monthly subscription</li>
+                <li><svg viewBox="0 0 24 24"><path d="M4 12l5 5 11-11"/></svg>Keep up to 92% of what your members give</li>
+                <li><svg viewBox="0 0 24 24"><path d="M4 12l5 5 11-11"/></svg>Export your member list whenever you like</li>
+                <li><svg viewBox="0 0 24 24"><path d="M4 12l5 5 11-11"/></svg>Faith-based content welcome, never demonetized</li>
+            </ul>
+            <p class="aside-quote">“I launched on a Tuesday and had eleven monthly supporters by Sunday. It changed how I plan the whole year.”<cite>Marcus Ellery · Bible teaching podcast</cite></p>
         </div>
+    </div>
 
-        <!-- Login Form -->
-        <div id="login-form" class="auth-form active">
-            <div class="oauth-buttons">
-                <button class="oauth-btn google" onclick="loginWithGoogle()">
-                    <svg viewBox="0 0 24 24">
-                        <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
-                        <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
-                        <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
-                        <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
-                    </svg>
-                    Continue with Google
-                </button>
-                <button class="oauth-btn apple" onclick="loginWithApple()">
-                    <svg viewBox="0 0 24 24" fill="currentColor">
-                        <path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.81-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/>
-                    </svg>
-                    Continue with Apple
-                </button>
+    <div class="auth-main">
+        <div class="auth-container">
+            <h1>Welcome to Sowing.me</h1>
+            <p class="sub">Sign in to your account, or create one to start your ministry.</p>
+
+            <div class="auth-tabs">
+                <button class="auth-tab active" onclick="showForm('login')">Sign In</button>
+                <button class="auth-tab" onclick="showForm('register')">Create Account</button>
             </div>
 
-            <div class="divider"><span>or sign in with email</span></div>
-
-            <form onsubmit="handleLogin(event)">
-                <div class="form-group">
-                    <label for="login-email">Email</label>
-                    <input type="email" id="login-email" name="email" required placeholder="you@example.com">
+            <!-- Login Form -->
+            <div id="login-form" class="auth-form active">
+                <div class="oauth-buttons">
+                    <button class="oauth-btn google" onclick="loginWithGoogle()">
+                        <svg viewBox="0 0 24 24">
+                            <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+                            <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+                            <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
+                            <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+                        </svg>
+                        Continue with Google
+                    </button>
+                    <button class="oauth-btn apple" onclick="loginWithApple()">
+                        <svg viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.81-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/>
+                        </svg>
+                        Continue with Apple
+                    </button>
                 </div>
 
-                <div class="form-group">
-                    <label for="login-password">Password</label>
-                    <input type="password" id="login-password" name="password" required placeholder="Enter your password">
-                </div>
+                <div class="divider"><span>or sign in with email</span></div>
 
-                <div class="form-options">
-                    <label>
-                        <input type="checkbox" name="remember"> Remember me
-                    </label>
-                    <a href="/forgot-password">Forgot password?</a>
-                </div>
-
-                <button type="submit" class="submit-btn">Sign In</button>
-            </form>
-
-            <div class="auth-footer">
-                Don't have an account? <a href="#" onclick="showForm('register'); return false;">Create one</a>
-            </div>
-        </div>
-
-        <!-- Register Form -->
-        <div id="register-form" class="auth-form">
-            <div class="oauth-buttons">
-                <button class="oauth-btn google" onclick="loginWithGoogle()">
-                    <svg viewBox="0 0 24 24">
-                        <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
-                        <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
-                        <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
-                        <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
-                    </svg>
-                    Continue with Google
-                </button>
-                <button class="oauth-btn apple" onclick="loginWithApple()">
-                    <svg viewBox="0 0 24 24" fill="currentColor">
-                        <path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.81-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/>
-                    </svg>
-                    Continue with Apple
-                </button>
-            </div>
-
-            <div class="divider"><span>or register with email</span></div>
-
-            <form onsubmit="handleRegister(event)">
-                <div class="form-row">
+                <form onsubmit="handleLogin(event)">
                     <div class="form-group">
-                        <label for="register-first-name">First Name</label>
-                        <input type="text" id="register-first-name" name="first_name" required placeholder="Your first name">
+                        <label for="login-email">Email</label>
+                        <input type="email" id="login-email" name="email" required placeholder="you@example.com">
                     </div>
 
                     <div class="form-group">
-                        <label for="register-last-name">Last Name</label>
-                        <input type="text" id="register-last-name" name="last_name" required placeholder="Your last name">
+                        <label for="login-password">Password</label>
+                        <input type="password" id="login-password" name="password" required placeholder="Enter your password">
                     </div>
+
+                    <div class="form-options">
+                        <label>
+                            <input type="checkbox" name="remember"> Remember me
+                        </label>
+                        <a href="/forgot-password">Forgot password?</a>
+                    </div>
+
+                    <button type="submit" class="submit-btn">Sign In</button>
+                </form>
+
+                <div class="auth-footer">
+                    Don't have an account? <a href="#" onclick="showForm('register'); return false;">Create one</a>
+                </div>
+            </div>
+
+            <!-- Register Form -->
+            <div id="register-form" class="auth-form">
+                <div class="oauth-buttons">
+                    <button class="oauth-btn google" onclick="loginWithGoogle()">
+                        <svg viewBox="0 0 24 24">
+                            <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+                            <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+                            <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
+                            <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+                        </svg>
+                        Continue with Google
+                    </button>
+                    <button class="oauth-btn apple" onclick="loginWithApple()">
+                        <svg viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.81-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/>
+                        </svg>
+                        Continue with Apple
+                    </button>
                 </div>
 
-                <div class="form-group">
-                    <label for="register-display-name">Display Name</label>
-                    <input type="text" id="register-display-name" name="display_name" required placeholder="Choose a display name">
+                <div class="divider"><span>or register with email</span></div>
+
+                <form onsubmit="handleRegister(event)">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="register-first-name">First Name</label>
+                            <input type="text" id="register-first-name" name="first_name" required placeholder="Your first name">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="register-last-name">Last Name</label>
+                            <input type="text" id="register-last-name" name="last_name" required placeholder="Your last name">
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="register-display-name">Display Name</label>
+                        <input type="text" id="register-display-name" name="display_name" required placeholder="Choose a display name">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="register-email">Email</label>
+                        <input type="email" id="register-email" name="email" required placeholder="you@example.com">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="register-password">Password</label>
+                        <input type="password" id="register-password" name="password" required placeholder="Create a password" minlength="8">
+                        <p class="password-requirements">Must be at least 8 characters</p>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="register-confirm">Confirm Password</label>
+                        <input type="password" id="register-confirm" name="confirm_password" required placeholder="Confirm your password">
+                    </div>
+
+                    <button type="submit" class="submit-btn">Create Account</button>
+
+                    <p class="terms-text">
+                        By creating an account, you agree to our
+                        <a href="/terms">Terms of Service</a> and <a href="/privacy">Privacy Policy</a>
+                    </p>
+                </form>
+
+                <div class="auth-footer">
+                    Already have an account? <a href="#" onclick="showForm('login'); return false;">Sign in</a>
                 </div>
-
-                <div class="form-group">
-                    <label for="register-email">Email</label>
-                    <input type="email" id="register-email" name="email" required placeholder="you@example.com">
-                </div>
-
-                <div class="form-group">
-                    <label for="register-password">Password</label>
-                    <input type="password" id="register-password" name="password" required placeholder="Create a password" minlength="8">
-                    <p class="password-requirements">Must be at least 8 characters</p>
-                </div>
-
-                <div class="form-group">
-                    <label for="register-confirm">Confirm Password</label>
-                    <input type="password" id="register-confirm" name="confirm_password" required placeholder="Confirm your password">
-                </div>
-
-                <button type="submit" class="submit-btn">Create Account</button>
-
-                <p class="terms-text">
-                    By creating an account, you agree to our<br>
-                    <a href="/terms">Terms of Service</a> and <a href="/privacy">Privacy Policy</a>
-                </p>
-            </form>
-
-            <div class="auth-footer">
-                Already have an account? <a href="#" onclick="showForm('login'); return false;">Sign in</a>
             </div>
         </div>
     </div>
