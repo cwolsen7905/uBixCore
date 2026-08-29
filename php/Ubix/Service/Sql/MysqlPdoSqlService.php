@@ -26,13 +26,13 @@ final class MysqlPdoSqlService extends PdoSqlService
     ) {
         parent::__construct($logger);
 
-        $isPhpUnit = getenv('PHPUNIT_RUNNING') === '1';
+        $isPhpUnit = getenv('PHPUNIT_RUNNING') === '1'; // Under PHPUnit the read side falls back to TEST_MYSQL_WRITE_* (one unit-test DB)
 
         $readDsn = sprintf(
             self::DSN_SPRINTF_FORMAT,
-            $isPhpUnit ? getenv('TEST_MYSQL_READ_HOST') : getenv('MYSQL_READ_HOST'),
-            $isPhpUnit ? getenv('TEST_MYSQL_READ_PORT') : getenv('MYSQL_READ_PORT'),
-            $isPhpUnit ? getenv('TEST_MYSQL_READ_DATABASE') : getenv('MYSQL_READ_DATABASE'),
+            $isPhpUnit ? (getenv('TEST_MYSQL_READ_HOST') ?: getenv('TEST_MYSQL_WRITE_HOST')) : getenv('MYSQL_READ_HOST'),
+            $isPhpUnit ? (getenv('TEST_MYSQL_READ_PORT') ?: getenv('TEST_MYSQL_WRITE_PORT')) : getenv('MYSQL_READ_PORT'),
+            $isPhpUnit ? (getenv('TEST_MYSQL_READ_DATABASE') ?: getenv('TEST_MYSQL_WRITE_DATABASE')) : getenv('MYSQL_READ_DATABASE'),
         );
 
         $writeDsn = sprintf(
@@ -44,8 +44,8 @@ final class MysqlPdoSqlService extends PdoSqlService
 
         $this->initializePdoConstructorParameters(
             readDsn:       $readDsn,
-            readUsername:  (string)($isPhpUnit ? getenv('TEST_MYSQL_READ_USERNAME') : getenv('MYSQL_READ_USERNAME')),
-            readPassword:  (string)($isPhpUnit ? getenv('TEST_MYSQL_READ_PASSWORD') : getenv('MYSQL_READ_PASSWORD')),
+            readUsername:  (string)($isPhpUnit ? (getenv('TEST_MYSQL_READ_USERNAME') ?: getenv('TEST_MYSQL_WRITE_USERNAME')) : getenv('MYSQL_READ_USERNAME')),
+            readPassword:  (string)($isPhpUnit ? (getenv('TEST_MYSQL_READ_PASSWORD') ?: getenv('TEST_MYSQL_WRITE_PASSWORD')) : getenv('MYSQL_READ_PASSWORD')),
             writeDsn:      $writeDsn,
             writeUsername: (string)($isPhpUnit ? getenv('TEST_MYSQL_WRITE_USERNAME') : getenv('MYSQL_WRITE_USERNAME')),
             writePassword: (string)($isPhpUnit ? getenv('TEST_MYSQL_WRITE_PASSWORD') : getenv('MYSQL_WRITE_PASSWORD')),

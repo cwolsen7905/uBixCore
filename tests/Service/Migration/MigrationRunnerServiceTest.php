@@ -28,12 +28,12 @@ final class MigrationRunnerServiceTest extends UbixConcreteClassOrEnumTestCase i
      * A migration ID that is guaranteed to exist on disk in the committed
      * `sql/migrations/` directory — the same one the scanner test pins.
      */
-    private const KNOWN_MIGRATION_ID = '20260505143045_pre_attribution_referrer_tables';
+    private const KNOWN_MIGRATION_ID = '20260828000000_runner_service_fixture';
 
     /**
      * The target database declared in the known migration's header.
      */
-    private const KNOWN_MIGRATION_DATABASE = 'VSCASH';
+    private const KNOWN_MIGRATION_DATABASE = 'sowingme';
 
     /**
      * Seed-only tracker IDs this test inserts; removed in tearDown via
@@ -41,14 +41,59 @@ final class MigrationRunnerServiceTest extends UbixConcreteClassOrEnumTestCase i
      */
     private const SEED_TRACKER_ID = '9014000_runner_service_seed';
 
+    private string $migrationsPath = '';
+
     /**
      * Remove every tracker row this test seeded — both the synthetic
      * seed ID and any real committed ID we recorded as applied.
      *
      * @return void
      */
+
+    /**
+     * Write one fixture migration into a private temp directory so the runner
+     * scans a known file set (the committed sql/migrations/ only holds the
+     * bootstrap migration, which the scanner special-cases).
+     *
+     * @return void
+     */
+    public function setUp(): void
+    {
+        $this->migrationsPath = rtrim(sys_get_temp_dir(), '/') . '/ubix_runner_migrations_' . getmypid();
+        if (! is_dir($this->migrationsPath)) {
+            mkdir($this->migrationsPath);
+        }
+
+        file_put_contents(
+            $this->migrationsPath . '/' . self::KNOWN_MIGRATION_ID . '.sql',
+            implode("\n", [
+                '-- Migration: ' . self::KNOWN_MIGRATION_ID,
+                '-- Database: ' . self::KNOWN_MIGRATION_DATABASE,
+                '-- Description: Runner service fixture',
+                '-- Author: Ubix Test',
+                '',
+                'CREATE TABLE IF NOT EXISTS ' . self::KNOWN_MIGRATION_DATABASE . '.Runner_Service_Fixture (id INT UNSIGNED NOT NULL, PRIMARY KEY (id)) ENGINE=InnoDB;',
+                '',
+            ]),
+        );
+    }
+
+    /**
+     * Remove the fixture directory and any tracker rows this test wrote.
+     *
+     * @return void
+     */
     public function tearDown(): void
     {
+        foreach ((array) glob($this->migrationsPath . '/*') as $file) {
+            if (is_string($file)) {
+                unlink($file);
+            }
+        }
+        if (is_dir($this->migrationsPath)) {
+            rmdir($this->migrationsPath);
+        }
+
         $table = UbixDatabase::SYSTEMS->databaseName() . '.Schema_Migrations';
         $this->getSqlService()->query(
             'DELETE FROM ' . $table . ' WHERE id IN (:seedId, :knownId)',
@@ -219,7 +264,7 @@ final class MigrationRunnerServiceTest extends UbixConcreteClassOrEnumTestCase i
         $scanner = new MigrationFileScannerService(
             $logger,
             new MigrationFileParserService($logger, new DestructiveStatementDetectorService($logger), new HotTableAlterDetectorService($logger)),
-            dirname(__DIR__, 3) . '/sql/migrations',
+            $this->migrationsPath,
         );
 
         $reader = new SchemaMigrationSqlRepository($logger, $this->getSqlService());
