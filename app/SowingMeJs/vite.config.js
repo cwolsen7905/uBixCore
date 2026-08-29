@@ -34,15 +34,15 @@ export default defineConfig({
 		]
 	},
 	server: {
-        host: true,
-        allowedHosts: [
-            '.vsmedia.net' // allows all subdomains of vsmedia.net
-        ],
-	    cors: {
-          origin: '*', // or '*' for all origins
-          credentials: true
-       }
-    },
+		host: true,
+		allowedHosts: [
+			'.vsmedia.net' // allows all subdomains of vsmedia.net
+		],
+		cors: {
+			origin: '*', // or '*' for all origins
+			credentials: true
+		}
+	},
 	preview: {
 		allowedHosts: [
 			'app-sowing-me.dev.ubixsys.com',
