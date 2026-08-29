@@ -134,8 +134,12 @@ class RouteSortingSniff implements Sniff
             */
         }
 
-        // compute the “correct” offsets:
+        // compute the “correct” offsets (nothing to align when the file has no map() routes):
         $firstCols  = array_column($offsets, 0);
+        if ($firstCols === []) {
+            return;
+        }
+
         $expected1  = min($firstCols);
         $expected2  = $expected1 + ($maxLengths[0] ?? 0) + 2;
         $expected3  = $expected2 + ($maxLengths[1] ?? 0) + 2;
