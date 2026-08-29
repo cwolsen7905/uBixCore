@@ -127,7 +127,7 @@ final class EmailConfirmationTokenSqlRepository implements EmailConfirmationToke
         $objects = [];
 
         /**
- * @var array<string, mixed> $row
+ * @var array<string, bool|float|int|string|null> $row
 */
         foreach ($this->sqlService->getRows($sqlQuery->sql, $sqlQuery->parameters, true) as $row) {
             $objects[] = $this->hydrateToken($row);
