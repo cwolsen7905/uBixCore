@@ -27,6 +27,8 @@ use Ubix\Enum\Exception\ExceptionCode;
 use Ubix\HttpClient\CurlHttpClient;
 use Ubix\Middleware\CorsMiddleware;
 use Ubix\Middleware\SessionAuthenticationMiddleware;
+use Ubix\Repository\Creator\CreatorReaderInterface as CreatorReader;
+use Ubix\Repository\Creator\CreatorSqlRepository;
 use Ubix\Repository\EmailConfirmationToken\EmailConfirmationTokenReaderInterface as EmailConfirmationTokenReader;
 use Ubix\Repository\EmailConfirmationToken\EmailConfirmationTokenSqlRepository;
 use Ubix\Repository\EmailConfirmationToken\EmailConfirmationTokenWriterInterface as EmailConfirmationTokenWriter;
@@ -97,6 +99,7 @@ return static function (): Container {
         },
         PasswordResetTokenReader::class        => autowire(PasswordResetTokenSqlRepository::class),
         PasswordResetTokenWriter::class        => autowire(PasswordResetTokenSqlRepository::class),
+        CreatorReader::class                   => autowire(CreatorSqlRepository::class),
         UserReader::class                      => autowire(UserSqlRepository::class),
         UserWriter::class                      => autowire(UserSqlRepository::class),
         SessionAuthenticationMiddleware::class => autowire()->constructorParameter('excludedRoutes', [
@@ -104,6 +107,7 @@ return static function (): Container {
             ['method' => 'OPTIONS', 'path' => '/auth'],
             ['method' => 'POST', 'path' => '/register'],
             ['method' => 'GET', 'path' => '/confirm-email'],
+            ['method' => 'GET', 'path' => '/creators/*'],
             ['method' => 'POST', 'path' => '/auth/password-reset/request'],
             ['method' => 'POST', 'path' => '/auth/password-reset/confirm'],
         ]),

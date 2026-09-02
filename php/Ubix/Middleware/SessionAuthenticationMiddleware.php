@@ -29,7 +29,7 @@ final class SessionAuthenticationMiddleware implements Middleware
      * @param ResponseFactory                            $responseFactory Response factory for creating responses
      * @param JsonService                                $jsonService     JSON encoder for error bodies
      * @param UserService                                $userService     Re-checks account status per request (FR-52)
-     * @param array<array{method: string, path: string}> $excludedRoutes  Routes to exclude from authentication
+     * @param array<array{method: string, path: string}> $excludedRoutes  Routes to exclude from authentication (a trailing '*' on a path matches by prefix)
      */
     public function __construct(
         private Logger $logger,
@@ -55,7 +55,9 @@ final class SessionAuthenticationMiddleware implements Middleware
         $path   = $request->getUri()->getPath();
 
         foreach ($this->excludedRoutes as $route) {
-            if ($route['method'] === $method && $route['path'] === $path) {
+            $excludedPath = $route['path'];
+            $pathMatches  = str_ends_with($excludedPath, '*') ? str_starts_with($path, substr($excludedPath, 0, -1)) : $excludedPath === $path;
+            if ($route['method'] === $method && $pathMatches) {
                 return $handler->handle($request);
             }
         }
