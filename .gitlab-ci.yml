@@ -36,6 +36,7 @@ stages:
       RUNTIME_SHA_REF="${CI_REGISTRY_IMAGE}:${CI_COMMIT_REF_SLUG}-${CI_COMMIT_SHA}"
       TEST_REF="${CI_REGISTRY_IMAGE}:${CI_COMMIT_SHA}-test"
       NODE_REF="${CI_REGISTRY_IMAGE}:${CI_COMMIT_REF_SLUG}-node"
+      NODE_SHA_REF="${CI_REGISTRY_IMAGE}:${CI_COMMIT_SHA}-node"
       REF_CAP="$(printf '%s' "$CI_COMMIT_REF_SLUG" | cut -c1 | tr '[:lower:]' '[:upper:]')$(printf '%s' "$CI_COMMIT_REF_SLUG" | cut -c2-)"
 
       docker buildx build --provenance=false --sbom=false --platform linux/amd64,linux/arm64 --push \
@@ -109,7 +110,10 @@ build-main:
   timeout: 20 minutes
   script:
     - |
-      docker run --rm --workdir /app "${CI_REGISTRY_IMAGE}:${CI_COMMIT_REF_SLUG}-node" \
+      # The per-commit tag forces a registry pull: buildx (docker-container
+      # driver) pushes without loading locally, so the mutable -node tag on the
+      # runner can be stale (bit us on pipeline 4691: linted pre-fix code).
+      docker run --rm --workdir /app "${CI_REGISTRY_IMAGE}:${CI_COMMIT_SHA}-node" \
         sh -c "set -e && npm run lint && npm run check"
 
 static-checks-dev: { extends: .static_checks, only: [dev] }
