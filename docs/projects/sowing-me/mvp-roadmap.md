@@ -24,7 +24,7 @@ Status vocabulary per row: `Todo` · `Docs` (SRS/spec in progress) · `Build` ·
 |---|---|---|---|---|
 | M1-01 | Auth hardening: lockout logic, password reset (token table reuse), secure cookie flags, role middleware | M | Review | 2026-09-01 MR: lockout (env-driven LockoutPolicy, FR-20..23), password reset end-to-end (hashed single-use tokens, FR-30..34), RoleAuthorizationMiddleware (FR-41), session status re-check (FR-52), CORS allow-list via CorsMiddleware (FR-61/62), forgot/reset-password pages. Cookie flags were already set in SessionMiddleware |
 | M1-02 | Creator onboarding wizard (JS) + `POST /creators` (API) | M | Todo | S2/S3 |
-| M1-03 | Public creator page `/c/{slug}` (SSR in SvelteKit, `GET /creators/{slug}`) | M | Todo | S3 |
+| M1-03 | Public creator page `/c/{slug}` (SSR in SvelteKit, `GET /creators/{slug}`) | M | Review | S3. 2026-09-01 MR: Creator read domain (Model/Options/Reader/SqlRepository/CreatorProfileService/CreatorController), slug→301→404 resolution per TDS §3, SSR `/c/[slug]` page with canonical redirect; rider: wired M1-01's missing password-reset routes. Write path (POST /creators) stays M1-02. |
 | M1-04 | Tiers: spec, migration, CRUD API, creator UI | M | Todo | S4 |
 | M1-05 | Posts: spec, migration, CRUD API, visibility rules, creator library page becomes real | L | Todo | S5; existing `creator/library` shell |
 | M1-06 | Media: spec, presigned S3 upload, `post_media`, limits | M | Todo | S6; Q4 |

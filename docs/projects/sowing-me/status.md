@@ -9,6 +9,18 @@
 
 Rolling session journal. Newest block first. Decisions recorded here the session they're made; roadmap rows flip in the same commit.
 
+## 2026-09-01 — M1-03 in review: public creator page (read path)
+
+### Work this session
+- Built the Creator **read** domain to the creator-profile TDS: `Creator` model, `CreatorOptions`, `CreatorReaderInterface` + `CreatorSqlRepository` (`query(Options)` pattern, slug-history join), `CreatorProfileService` (resolve: active→found, draft/suspended→404, retired slug→301; compose: sibling sections omitted until their surfaces exist), `CreatorController` `GET /creators/{slug}`, `CreatorCategory`/`CreatorStatus` enums, `CreatorSlug` DataType.
+- SvelteKit `/c/[slug]` SSR page: server load via the layout\'s `apiBaseUrl`, canonical 301 on retired slugs, graceful optional sections; vitest spec; eslint/prettier/svelte-check clean.
+- `SessionAuthenticationMiddleware` exclusions now support a trailing-`*` prefix match (needed for the parameterised public route).
+- **Rider fix:** M1-01 landed `PasswordResetController` + DI exclusions but never added its routes — `POST /auth/password-reset/{request,confirm}` now wired in `Routes.php`.
+
+### Next
+- M1-03 → Done once the MR lands and the page is exercised against a seeded creator row.
+- M1-02 (onboarding wizard + `POST /creators`) is the natural next lane — the read domain it writes into now exists.
+
 ## 2026-09-01 — M0-05 closed: creator-profile docs synced to the landed schema
 
 ### Work this session
