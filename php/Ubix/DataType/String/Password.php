@@ -22,6 +22,7 @@ class Password extends StringDataType
      * @param string $input The input value
      */
     public function __construct(
+        // @phpstan-ignore property.onlyWritten (The promoted $input property carries the validation attributes read via reflection in validate(); the value itself is exposed through the parent DataType)
         #[Length(min: 8, max: 255)]
         #[NotBlank]
         #[PasswordStrength(minScore: PasswordStrength::STRENGTH_MEDIUM)]

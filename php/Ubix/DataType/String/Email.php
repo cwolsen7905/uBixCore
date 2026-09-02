@@ -22,6 +22,7 @@ class Email extends StringDataType
      * @param string $input The input value
      */
     public function __construct(
+        // @phpstan-ignore property.onlyWritten (The promoted $input property carries the validation attributes read via reflection in validate(); the value itself is exposed through the parent DataType)
         #[EmailConstraint]
         #[Length(max: 255)]
         #[NotBlank]

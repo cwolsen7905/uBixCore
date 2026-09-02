@@ -27,7 +27,7 @@ final class ReviewCommand extends Command
      * @param MachineCodeReviewService $machineCodeReviewService Machine code review service
      */
     public function __construct(
-        private Logger $logger,
+        private Logger $logger, // @phpstan-ignore property.onlyWritten (Logger is a required dependency of most VSM classes but has not been implemented in this class yet)
         private MachineCodeReviewService $machineCodeReviewService,
     ) {
         parent::__construct($logger);

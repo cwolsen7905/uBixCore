@@ -32,7 +32,7 @@ final class CommitCommand extends Command
      * @return void
      */
     public function __construct(
-        private Logger $logger,
+        private Logger $logger, // @phpstan-ignore property.onlyWritten (Logger is a required dependency of most VSM classes but has not been implemented in this class yet)
         private GitService $gitService,
         private MachineCodeReviewService $machineCodeReviewService,
     ) {

@@ -20,6 +20,7 @@ class MediumInt extends IntDataType
      * @param int $input The input value
      */
     public function __construct(
+        // @phpstan-ignore property.onlyWritten (The promoted $input property carries the validation attributes read via reflection in validate(); the value itself is exposed through the parent DataType)
         #[Range(min: -8388608, max: 8388607)]
         private int $input,
     ) {

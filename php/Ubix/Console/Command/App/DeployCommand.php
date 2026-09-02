@@ -29,7 +29,7 @@ final class DeployCommand extends Command
      * @param ProcessService $processService Process service instance
      */
     public function __construct(
-        private Logger $logger,
+        private Logger $logger, // @phpstan-ignore property.onlyWritten (Logger is a required dependency of most VSM classes but has not been implemented in this class yet)
         private ProcessService $processService,
     ) {
         parent::__construct($logger);

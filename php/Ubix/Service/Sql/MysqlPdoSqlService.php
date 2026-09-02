@@ -22,7 +22,7 @@ final class MysqlPdoSqlService extends PdoSqlService
      * @param Logger $logger Logger
      */
     public function __construct(
-        private Logger $logger,
+        private Logger $logger, // @phpstan-ignore property.onlyWritten (Logger is a required dependency of most VSM classes but has not been implemented in this class yet)
     ) {
         parent::__construct($logger);
 
