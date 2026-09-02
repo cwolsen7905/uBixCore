@@ -306,6 +306,7 @@ enum ExceptionCode: int
     //  Zack Ford's exception codes should use integers from 29000 to 29999
     //
     case ZACK_FORD_PLACEHOLDER = 29000;
+    case VALIDATION_FAILED     = 29003;
 
     //
     //  If you don't see your name in this list then speak to your manager and they will assign you a range of exception codes to use
