@@ -1,6 +1,6 @@
 # Creator Profile — Software Requirements Specification (SRS)
 
-**Surface:** `creator-profile` · **Status:** Draft v0.1 · 2026-08-27 · Owner: Christopher W. Olsen
+**Surface:** `creator-profile` · **Status:** Draft v0.2 · 2026-09-01 · Owner: Christopher W. Olsen
 **Milestone:** M1 (build-ready) · **Prerequisites:** none (this surface is a prerequisite of `subscription-tiers`, `content-posts`, `live-streaming`)
 **Companion docs:** [`technical-spec.md`](technical-spec.md) · [`README.md`](README.md) · parent [`../../projects/sowing-me/platform/srs.md`](../../projects/sowing-me/platform/srs.md) §5.3 (FR-PROF)
 
@@ -116,7 +116,7 @@ The public page is the composition point for four surfaces: this one (identity/b
 |---|---|---|---|
 | Q1 | Is `display_name` distinct from the `users` display name, or always mirrored? | Distinct — creator identity may differ from account name | §6.1 |
 | Q2 | Slug suggestion algorithm (from display name vs. manual only)? | Slugify display name, editable before first publish | §6.2 |
-| Q3 | Category/faith-topic — free text or a fixed enum now (ahead of `explore`'s M2 taxonomy)? | Fixed enum now (`CreatorCategoryEnum`), small starter set, additive later | §6.1, `explore` |
+| Q3 | Category/faith-topic — free text or a fixed enum now (ahead of `explore`'s M2 taxonomy)? | Fixed enum now (`CreatorCategory`), small starter set, additive later — **adopted as built**: `category` ENUM landed in the M0-06 migration with the starter set | §6.1, `explore` |
 | Q4 | Does `draft` status block the slug from resolving at all, or show a "coming soon" page? | Not-found (404) until `active` | §6.3 |
 
 ## 12. Traceability
@@ -127,3 +127,4 @@ Each FR maps to endpoints/components in [`technical-spec.md`](technical-spec.md)
 | Version | Date | Change |
 |---|---|---|
 | 0.1 | 2026-08-27 | Initial SRS. |
+| 0.2 | 2026-09-01 | M0-05 close-out: Q3 marked adopted-as-built (M0-06 migration); requirements unchanged. |

@@ -1,6 +1,6 @@
 # Creator Profile — Technical Specification
 
-**Surface:** `creator-profile` · **Status:** Draft v0.1 · 2026-08-27 · Owner: Christopher W. Olsen
+**Surface:** `creator-profile` · **Status:** Draft v0.2 · 2026-09-01 · Owner: Christopher W. Olsen
 **Companion docs:** [`srs.md`](srs.md) (what/why) · [`README.md`](README.md) · platform [`technical-spec.md`](../../projects/sowing-me/platform/technical-spec.md) (shared layering/seams — this doc documents only deltas)
 
 > **How in code.** Follows [`complete-php-guide.md`](../../architecture/complete-php-guide.md) (DataType / Payload / DTO / Repository) and [`complete-js-guide.md`](../../architecture/complete-js-guide.md). Every table lands via `bin/ubix migrate:*` per [`migrations.md`](../../standards/migrations.md).
@@ -9,21 +9,21 @@
 
 | Component | Where | Responsibility |
 |---|---|---|
-| Creator domain | `php/Ubix/` (Model, Repository, DTOs, DataTypes, Controller, Service) | `creators`, slug history, profile CRUD, page composition |
+| Creator domain | `php/Ubix/` (Model, Repository, DTOs, DataTypes, Controller, Service) | `creators`, slug history, profile CRUD, page composition. Controllers depend on `CreatorProfileService`, never repositories; SQL repositories follow the `query(CreatorOptions)` reader pattern with `void` writers (house standards, enforced by the standards test suite since MR !89) |
 | Creator API | `app/SowingMeApi/` routes → `Controller/SowingMeApi/CreatorController` | Public profile read, authenticated profile write, slug management |
 | Admin API | `app/SowingMeAdminApi/` | Suspend/reinstate (stub until `admin-console`) |
 | Public page | `app/SowingMeJs/` route `/c/[slug]` | Renders composed profile |
 | Profile editor | `app/SowingMeJs/` route `/creator/dashboard/profile` (existing dashboard becomes real) | Self-service edit form, slug change |
 
-## 2. Data model (new migrations)
+## 2. Data model
 
-All tables `InnoDB`, snake_case, `created_at`/`updated_at`.
+**As built** — landed 2026-09-01 as `sql/migrations/20260901000000_create_creators_and_slug_history.sql` (roadmap M0-06). All tables `InnoDB`, snake_case, `created_at`/`updated_at`. Integer key types follow `users.id` (`INT(10) UNSIGNED`), not the platform-TDS default of BIGINT — the FK requires the referenced type.
 
 ### 2.1 `creators`
 | Column | Type | Notes |
 |---|---|---|
-| `id` | BIGINT PK | |
-| `user_id` | BIGINT FK → `users.id`, UNIQUE | 1:1 (SRS FR-101) |
+| `id` | INT(10) UNSIGNED PK | matches `users.id` type |
+| `user_id` | INT(10) UNSIGNED FK → `users.id`, UNIQUE | 1:1 (SRS FR-101) |
 | `slug` | VARCHAR(64) UNIQUE | FR-201 |
 | `display_name` | VARCHAR(120) | |
 | `bio` | TEXT NULL | |
@@ -32,8 +32,8 @@ All tables `InnoDB`, snake_case, `created_at`/`updated_at`.
 | `category` | ENUM (`CreatorCategoryEnum`) | starter set: `pastor`,`worship`,`teacher`,`podcaster`,`author`,`artist`,`other` |
 | `faith_topic` | VARCHAR(120) NULL | free text at M1; denomination/topic taxonomy is an `explore` (M2) concern |
 | `external_links` | JSON NULL | `[{label, url}]`, app-layer cap (e.g. 5) |
-| `organization_id` | BIGINT NULL | **reserved**, no FK constraint yet — added when `organizations` (M3+) exists (ADR-007) |
-| `payout_account_id` | BIGINT NULL | **reserved**, no FK constraint yet — added when `payouts` (M2) creates `payout_accounts` |
+| `organization_id` | BIGINT UNSIGNED NULL | **reserved**, no FK constraint yet — added when `organizations` (M3+) exists (ADR-007) |
+| `payout_account_id` | BIGINT UNSIGNED NULL | **reserved**, no FK constraint yet — added when `payouts` (M2) creates `payout_accounts` |
 | `status` | ENUM (`CreatorStatusEnum`: `draft`,`active`,`suspended`) | FR-103 |
 | `published_at` | DATETIME NULL | set on first `draft`→`active` transition |
 
@@ -42,12 +42,12 @@ Indexes: UNIQUE `slug`; UNIQUE `user_id`; index on `status` (page-availability c
 ### 2.2 `creator_slug_history`
 | Column | Type | Notes |
 |---|---|---|
-| `id` | BIGINT PK | |
-| `creator_id` | BIGINT FK → `creators.id` | |
+| `id` | INT(10) UNSIGNED PK | |
+| `creator_id` | INT(10) UNSIGNED FK → `creators.id` | |
 | `old_slug` | VARCHAR(64) UNIQUE | unique across this table (FR-203); app-layer also checks against live `creators.slug` |
-| `retired_at` | DATETIME | |
+| `retired_at` | DATETIME | DEFAULT CURRENT_TIMESTAMP (as built) |
 
-DataTypes: `php/Ubix/Enum/CreatorCategoryEnum`, `CreatorStatusEnum` + matching `DataType/Enum/*` wrappers per the framework; a `CreatorSlug` DataType (format/length validation, shared by both tables' writes).
+DataTypes: `php/Ubix/Enum/Creator/CreatorCategory`, `CreatorStatus` (house enum naming — no `Enum` suffix, per `Ubix\Enum\User\UserStatus`) + matching `DataType/Enum/*` wrappers per the framework; a `CreatorSlug` DataType (format/length validation, shared by both tables' writes).
 
 ## 3. Slug redirect resolution
 
@@ -98,7 +98,7 @@ This "call if present, omit if absent" composition is what lets `content-posts` 
 
 - `/c/[slug]` (public, SvelteKit): profile header (avatar/banner/bio/category/links), tiers grid (from `subscription-tiers`' shared component), recent-posts list (conditional), upcoming/live banner (conditional), subscribe CTA. Reuses `ThemeToggle`.
 - `/creator/dashboard/profile` (existing dashboard page becomes real): edit form bound to the PATCH endpoints; slug-change control shows the redirect-history list and the current rate-limit state.
-- Onboarding wizard step (existing shell): profile step calls `POST /creator/profile`, then hands off to the `subscription-tiers` step.
+- Onboarding wizard step (new — no wizard shell exists in `SowingMeJs` today; the wizard is specified in the registration TDS §4.2): profile step calls `POST /creator/profile`, then hands off to the `subscription-tiers` step.
 
 ## 7. External-seam usage
 
@@ -132,3 +132,4 @@ None — this surface has no gated content of its own. It only *consumes* `subsc
 | Version | Date | Change |
 |---|---|---|
 | 0.1 | 2026-08-27 | Initial technical spec. |
+| 0.2 | 2026-09-01 | Synced to as-built state (M0-05 close-out): §2 reflects the landed M0-06 migration (`INT(10) UNSIGNED` keys, `BIGINT UNSIGNED` reserved columns, `retired_at` default); enum naming to house convention; service-layer/repository standards noted; onboarding-shell claim corrected. |
