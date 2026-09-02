@@ -21,6 +21,7 @@ class UnsignedBigInt extends IntDataType
      * @param int $input The input value
      */
     public function __construct(
+        // @phpstan-ignore property.onlyWritten (The promoted $input property carries the validation attributes read via reflection in validate(); the value itself is exposed through the parent DataType)
         #[Range(min: 0, max: 18446744073709551615)]
         private int $input,
     ) {

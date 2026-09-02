@@ -11,7 +11,7 @@ This surface inherits the **Platform ADS** ([`../../projects/sowing-me/platform/
 
 ## Status
 
-Draft v0.1 (2026-08-27). **Build-ready for supporter + creator paths.** `users`, `email_confirmation_tokens`, `AuthController::register`, `EmailConfirmationController`, and `DuplicateProspectSqlRepository` already exist. Organization onboarding (FR-ONB-3) is a stub pending the `organizations` entity (platform FR-ORG, M3+).
+Draft v0.2 (2026-09-01). **Build-ready for supporter + creator paths.** `users`, `email_confirmation_tokens`, `AuthController::register`, `EmailConfirmationController`, `UserService`, and `EmailConfirmationTokenService` already exist. (The neptune-era `DuplicateProspectSqlRepository` was removed in M0-01; the anti-abuse table in the TDS is a fresh build.) Organization onboarding (FR-ONB-3) is a stub pending the `organizations` entity (platform FR-ORG, M3+).
 
 ## Companion docs
 

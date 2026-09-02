@@ -1,6 +1,6 @@
 # Registration — Technical Specification
 
-**Surface:** `registration` · **Status:** Draft v0.1 · 2026-08-27 · Owner: Christopher W. Olsen
+**Surface:** `registration` · **Status:** Draft v0.2 · 2026-09-01 · Owner: Christopher W. Olsen
 **Companion docs:** [`srs.md`](srs.md) (what/why) · [`README.md`](README.md)
 **Cites:** [`../../projects/sowing-me/platform/technical-spec.md`](../../projects/sowing-me/platform/technical-spec.md) (Platform TDS — layering, API conventions, domain model §3, cited not restated) · [`../authentication/technical-spec.md`](../authentication/technical-spec.md) (role assignment, session start on auto-login) · [`../../architecture/complete-php-guide.md`](../../architecture/complete-php-guide.md) · [`../../standards/migrations.md`](../../standards/migrations.md)
 
@@ -10,12 +10,12 @@
 
 | Component | Where | Responsibility |
 |---|---|---|
-| `AuthController::register` | `php/Ubix/Controller/SowingMeApi/AuthController.php` (existing, hardened) | Creates `users` row, issues confirmation token, sends email; fixed to persist selected role (§3) |
+| `AuthController::register` | `php/Ubix/Controller/SowingMeApi/AuthController.php` (existing, hardened) | Creates `users` row, issues confirmation token, sends email; fixed to persist selected role (§3). Persistence via `UserService`/`EmailConfirmationTokenService` — controllers never touch repositories (house standard since MR !89) |
 | `EmailConfirmationController` | `php/Ubix/Controller/SowingMeApi/EmailConfirmationController.php` (existing) | `confirmEmail` unchanged; gains a sibling `resendConfirmation` action |
 | `RegistrationRequestPayload` | `php/Ubix/Payload/Request/RegistrationRequestPayload.php` (existing) | Extended with a `role` field (`supporter`\|`creator`) for FR-20/21 |
-| `EmailConfirmationToken` model/repo | `php/Ubix/Model/EmailConfirmationToken.php`, `php/Ubix/Repository/EmailConfirmationToken/*` (existing) | Token issuance/lookup/mark-used; resend supersedes prior tokens (§4) |
+| `EmailConfirmationToken` model/repo/service | `php/Ubix/Model/EmailConfirmationToken.php`, `php/Ubix/Repository/EmailConfirmationToken/*`, `php/Ubix/Service/EmailConfirmationTokenService.php` (existing) | Token issuance/lookup/mark-used via the service facade; reader uses `query(EmailConfirmationTokenOptions)`, writers return `void`; resend supersedes prior tokens (§4) |
 | `CreatorOnboardingController` (new) | `php/Ubix/Controller/SowingMeApi/CreatorOnboardingController.php` | Wizard step endpoints: get progress, advance step, hand off to owning surfaces |
-| `DuplicateProspectSqlRepository` | `php/Ubix/Repository/DuplicateProspect/*` (existing) | Repurposed for registration-attempt duplicate tracking (§6) |
+| `DuplicateRegistrationProspect` repo (new) | `php/Ubix/Repository/DuplicateRegistrationProspect/*` | Registration-attempt duplicate tracking (§6); the neptune-era `DuplicateProspect` repo was removed in M0-01 — this is a fresh build, not a repurposing |
 | Registration / wizard pages | `app/SowingMeJs/src/routes/signup` (supporter), `creator/onboarding/*` (new) | Forms calling the endpoints below |
 
 ## 2. Data model (new migrations)
@@ -41,7 +41,7 @@ Tracks wizard position per the SRS §10 Q2 default (derive-where-possible, persi
 DataType: `OnboardingStepEnum` under `php/Ubix/Enum/` with a matching `DataType/Enum/*` wrapper, per the platform TDS §3 enum convention. This table is intentionally thin — it exists only to answer "resume where?" cheaply; FR-22/23/24's actual schema (`creators`, `tiers`, payout account) belongs to their owning future surfaces and is not defined here (platform TDS §12 per-surface delta rule).
 
 ### 2.4 `duplicate_registration_prospects` (new)
-A registration-scoped sibling to the existing `DuplicateProspect` pattern (existing repo targets a different domain's submissions; this is a parallel table, not a shared one, to avoid overloading an unrelated model):
+A registration-scoped table. (The neptune-era `DuplicateProspect` repo that inspired the pattern was removed in M0-01 — nothing is shared or repurposed; this is a fresh table + repo + service following current house standards.)
 
 | Column | Type | Notes |
 |---|---|---|
@@ -98,7 +98,7 @@ No endpoints at M1. Reserved path: `POST /organizations` (FR-30) — full spec d
 
 1. Look up user by email (payload `email`); if not found or already `active`, return the same generic 200 acknowledgement as a found-and-pending user (FR-44, no enumeration).
 2. If found and `pending`: check last token's `created_at` against the rate-limit window (FR-43, config-driven like `authentication`'s lockout thresholds — e.g. `REGISTRATION_RESEND_COOLDOWN_SECONDS`); if within cooldown, return the same generic 200 (silently no-op) rather than an error that would leak timing signal.
-3. Otherwise: mark any outstanding unused tokens for the user as used (supersession, FR-42), generate a new token via the same `bin2hex(random_bytes(32))` + `EmailConfirmationToken` + `tokenWriter->createToken` mechanics as `register`, send via `EmailService::sendRegistrationConfirmation` (reused, not duplicated).
+3. Otherwise: mark any outstanding unused tokens for the user as used (supersession, FR-42), generate a new token via the same `bin2hex(random_bytes(32))` + `EmailConfirmationToken` + `EmailConfirmationTokenService::createToken` mechanics as `register`, send via `EmailService::sendRegistrationConfirmation` (reused, not duplicated).
 
 ## 6. Anti-abuse — duplicate prospects
 
@@ -110,7 +110,7 @@ At the top of `register` (before user creation), a lightweight check queries `du
 
 ## 7. Frontend (SvelteKit)
 
-- `app/SowingMeJs/src/routes/signup` (existing, per brief a stub) — becomes the real supporter fast sign-up form; a role toggle/link routes into the creator path instead of a separate top-level route, per SRS Q1 default.
+- `app/SowingMeJs/src/routes/signup` (new — no such SPA route exists today; the current supporter sign-up form lives on the Latte marketing site, `templates/sowing-me-web-v1/signup.latte`, posting straight to `/register`) — becomes the real supporter fast sign-up form in the product SPA; a role toggle/link routes into the creator path instead of a separate top-level route, per SRS Q1 default. The Latte form stays as a marketing-site entry point until this route lands.
 - `app/SowingMeJs/src/routes/creator/onboarding/{identity,profile,tier,payout}` (new) — wizard shell with a step indicator; `GET /creator/onboarding` on mount decides which step to render; each step's form posts to its hand-off endpoint (§4.2) then re-fetches progress.
 - `app/SowingMeJs/src/routes/confirm-email` (existing, 281 lines) — gains a "resend" affordance calling `/confirm-email/resend` when a token is expired/invalid, instead of a dead end.
 - Reuses `js/Ubix/` shared components (`ThemeToggle`, `CreatorSidebar` for the wizard shell) per `complete-js-guide.md`.
@@ -147,3 +147,4 @@ At the top of `register` (before user creation), a lightweight check queries `du
 | Version | Date | Change |
 |---|---|---|
 | 0.1 | 2026-08-27 | Initial technical spec. |
+| 0.2 | 2026-09-01 | Synced to built code (M0-04 close-out): service-layer dependency (MR !89), `DuplicateProspect` repo removal (M0-01) — §2.4/§6 now a fresh build; §7 corrected — the supporter sign-up form lives on the Latte marketing site, the SPA `signup` route is new. |

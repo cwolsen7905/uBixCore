@@ -1,6 +1,6 @@
 # Authentication — Technical Specification
 
-**Surface:** `authentication` · **Status:** Draft v0.1 · 2026-08-27 · Owner: Christopher W. Olsen
+**Surface:** `authentication` · **Status:** Draft v0.2 · 2026-09-01 · Owner: Christopher W. Olsen
 **Companion docs:** [`srs.md`](srs.md) (what/why) · [`README.md`](README.md)
 **Cites:** [`../../projects/sowing-me/platform/technical-spec.md`](../../projects/sowing-me/platform/technical-spec.md) (Platform TDS — layering, API conventions, access control §6, cited not restated) · [`../../architecture/complete-php-guide.md`](../../architecture/complete-php-guide.md) · [`../../standards/migrations.md`](../../standards/migrations.md)
 
@@ -10,13 +10,14 @@
 
 | Component | Where | Responsibility |
 |---|---|---|
-| `AuthController` | `php/Ubix/Controller/SowingMeApi/AuthController.php` (existing, hardened) | `authenticate`, `validateSession`, `logout`, CORS `options`; add lockout checks |
+| `AuthController` | `php/Ubix/Controller/SowingMeApi/AuthController.php` (existing, hardened) | `authenticate`, `validateSession`, `logout`, CORS `options`; add lockout checks. Depends on `UserService`/`EmailConfirmationTokenService` — controllers never touch repositories (house standard, enforced by the standards test suite since MR !89) |
 | `PasswordResetController` (new) | `php/Ubix/Controller/SowingMeApi/PasswordResetController.php` | Request + confirm reset endpoints |
-| `User` model / `UserSqlRepository` | `php/Ubix/Model/User.php`, `php/Ubix/Repository/User/*` (existing) | Reads/writes `status`, `roles`, `failed_login_attempts`, `last_failed_login`, `password_hash` |
-| `PasswordResetToken` (new) | `php/Ubix/Model/PasswordResetToken.php`, `php/Ubix/Repository/PasswordResetToken/*` | Mirrors `EmailConfirmationToken` shape/lifecycle |
+| `UserService` / `EmailConfirmationTokenService` | `php/Ubix/Service/*Service.php` (existing) | Service layer between controllers and repositories; lockout counter updates and reset-token invalidation live here |
+| `User` model / `UserSqlRepository` | `php/Ubix/Model/User.php`, `php/Ubix/Repository/User/*` (existing) | Reads/writes `status`, `roles`, `failed_login_attempts`, `last_failed_login`, `password_hash`; reader methods go through the private `query(UserOptions)` pattern |
+| `PasswordResetToken` (new) | `php/Ubix/Model/PasswordResetToken.php`, `php/Ubix/Repository/PasswordResetToken/*`, `php/Ubix/Service/PasswordResetTokenService.php` | Mirrors `EmailConfirmationToken` shape/lifecycle (model + Reader/Writer interfaces + SQL repo + service facade) |
 | `RoleAuthorizationMiddleware` (new) | `php/Ubix/Middleware/RoleAuthorizationMiddleware.php` | Resolves session roles, rejects (403) routes missing a required role |
 | `SessionAuthenticationMiddleware` | `php/Ubix/Middleware/SessionAuthenticationMiddleware.php` (existing) | Confirms an active session before role/ownership checks run |
-| `AccountAuthenticationMiddleware` | `php/Ubix/Middleware/AccountAuthenticationMiddleware.php` (existing) | Reviewed/extended for lockout + status gating at the auth boundary |
+| ~~`AccountAuthenticationMiddleware`~~ | *(removed in M0-01)* | The neptune-era middleware no longer exists; its status-gating duty moves into `SessionAuthenticationMiddleware` (§5) |
 | `EmailService` | `php/Ubix/Service/EmailService.php` (existing) | Add `sendPasswordReset(...)`, mirroring `sendRegistrationConfirmation(...)` |
 | Login / reset pages | `app/SowingMeJs/src/routes/login`, `forgot-password` (new), `reset-password` (new) | SvelteKit forms calling the endpoints below |
 
@@ -41,11 +42,13 @@ Mirrors `email_confirmation_tokens` exactly in shape, per platform TDS §3 (reus
 
 DataType: `PasswordResetTokenId` under `php/Ubix/DataType/Int/`, following the `UserId` pattern.
 
+Repository standards (as now enforced by the standards test suite): `PasswordResetTokenSqlRepository` implements `PasswordResetTokenReaderInterface` + `PasswordResetTokenWriterInterface`, reader methods go through a private `query(PasswordResetTokenOptions)` (new DTO under `DataTransferObject/SqlRepository/`), and writer methods return `void` — `createToken()` stamps the new id via `Model::setId()` — matching `EmailConfirmationTokenSqlRepository` post-MR !89.
+
 **Note on hashing vs. the existing pattern:** `EmailConfirmationToken` currently stores the raw 64-hex token directly (per `EmailConfirmationTokenSqlRepository`); this surface stores `password_reset_tokens.token_hash` (SHA-256) instead, since a reset token is a stronger authorization bearer (it changes a credential, not just a status flag). Lookup hashes the incoming token before querying, mirroring `live_stream_keys.key_hash` in the live-streaming surface.
 
 ## 3. Account lockout logic
 
-Implemented in `AuthController::authenticate` (or a new `LoginAttemptService` it calls), evaluated in this order once the user row is found:
+Implemented in the service layer — `UserService`, or a dedicated `LoginAttemptService` wrapping it (controllers depend on services, never repositories; house standard) — invoked from `AuthController::authenticate` and evaluated in this order once the user row is found:
 
 ```
 if user.status !== ACTIVE            → 401 (status-specific message, FR-51)
@@ -77,14 +80,14 @@ All payloads use the existing DataType/Payload validation system; responses are 
 ## 5. Session, cookie & status-change interaction
 
 - Session cookie attributes set at session-start (`session_set_cookie_params` before `session_start()`, or ini equivalent in the app bootstrap): `Secure`, `SameSite=Lax`, `HttpOnly`, `path` scoped to the API route prefix — realises FR-60.
-- On an admin-initiated status change to `suspended`/`inactive` (owned by the future `admin-console` surface), this surface's contract is: the *next* request through `SessionAuthenticationMiddleware`/`AccountAuthenticationMiddleware` re-checks `users.status` (not just session presence) and terminates the session if no longer `active` — closing the gap noted in SRS Q2 as a best-effort, not a push-based kill.
+- On an admin-initiated status change to `suspended`/`inactive` (owned by the future `admin-console` surface), this surface's contract is: the *next* request through `SessionAuthenticationMiddleware` re-checks `users.status` (not just session presence) and terminates the session if no longer `active` — closing the gap noted in SRS Q2 as a best-effort, not a push-based kill.
 - CORS: `options()` and all real responses read the request `Origin`, compare against an allow-list (config, not `*`), and only echo it back + set `Access-Control-Allow-Credentials: true` when it matches — realises FR-61/62. This replaces the current `AuthController::options()` behavior of echoing any origin verbatim.
 
 ## 6. Role & ownership middleware
 
 - `RoleAuthorizationMiddleware` reads `$_SESSION['user']['roles']` (already populated by `authenticate`/`confirmEmail`), parses the multi-value field, and rejects (403) unless the route's declared required role is present — mirrors platform TDS §6 "Middleware resolves role; services resolve ownership."
 - Ownership checks stay in the owning surface's Service layer (e.g. "is this creator's post" lives in `content-posts`), never in this middleware — this surface only proves *who* and *what roles*, per SRS FR-42.
-- Route wiring (Slim 4 group middleware) declares required roles per route group in the owning app's routes file, consistent with existing `SessionAuthenticationMiddleware`/`AccountAuthenticationMiddleware` registration.
+- Route wiring (Slim 4 group middleware) declares required roles per route group in the owning app's routes file, consistent with the existing `SessionAuthenticationMiddleware` registration.
 
 ## 7. Frontend (SvelteKit)
 
@@ -117,10 +120,11 @@ All payloads use the existing DataType/Payload validation system; responses are 
 | FR-20..24 | `LockoutPolicy` + `users.failed_login_attempts`/`last_failed_login` |
 | FR-30..34 | `PasswordResetController`, `password_reset_tokens`, `EmailService::sendPasswordReset` |
 | FR-40..43 | `users.roles`, `RoleAuthorizationMiddleware`, onboarding default-role assignment (see `registration`) |
-| FR-50..52 | `UserStatus` enum, `AccountAuthenticationMiddleware` status re-check |
+| FR-50..52 | `UserStatus` enum, `SessionAuthenticationMiddleware` status re-check (§5) |
 | FR-60..62 | Session cookie params, `AuthController::options` origin allow-list |
 
 ## Document control
 | Version | Date | Change |
 |---|---|---|
 | 0.1 | 2026-08-27 | Initial technical spec. |
+| 0.2 | 2026-09-01 | Synced to built code (M0-03 close-out): controllers now depend on `UserService`/`EmailConfirmationTokenService` (MR !89); `AccountAuthenticationMiddleware` was removed in M0-01 — status re-check reassigned to `SessionAuthenticationMiddleware`; repository reader/writer standards spelled out for the password-reset repo. |

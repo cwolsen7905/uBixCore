@@ -41,7 +41,7 @@ Each app carries `dev-/staging-/main-/sandbox-*.yaml` K8s manifests.
 ### 3.2 Domain layer (`php/Ubix/`)
 
 - **Models:** `User`, `EmailConfirmationToken`, plus neptune carry-overs (`AttributionLog`, `Country`, `State`, `Transaction`, `MachineCodeReview*`).
-- **Repositories:** `User`, `EmailConfirmationToken`, `BillingTransaction`, `Country`, `State`, `DuplicateProspect`, `SchemaMigration`.
+- **Repositories:** `User`, `EmailConfirmationToken`, `Country`, `State`, `SchemaMigration`. *(`BillingTransaction` and `DuplicateProspect` were neptune leftovers, removed in M0-01.)*
 - **Controllers:** `SowingMeApi/AuthController`, `SowingMeApi/EmailConfirmationController`, `SowingMeWeb/SowingMeWebController`.
 - **Services:** mailer (Symfony Mailer), AWS SDK present (no S3 usage yet), migration subsystem.
 

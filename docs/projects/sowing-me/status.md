@@ -9,6 +9,23 @@
 
 Rolling session journal. Newest block first. Decisions recorded here the session they're made; roadmap rows flip in the same commit.
 
+## 2026-09-01 — M0-03 / M0-04 closed: auth + registration docs synced to built code
+
+### Work this session
+- Verified `docs/surfaces/authentication/` and `docs/surfaces/registration/` (SRS + TDS) line-by-line against the code actually on `dev`, and bumped both surfaces to **v0.2**:
+  - Controllers now depend on `UserService` / `EmailConfirmationTokenService` (MR !89 service-layer refactor); repos use the `query(Options)` reader pattern and `void` writers — the planned `PasswordResetToken*` stack is specified to match.
+  - `AccountAuthenticationMiddleware` and `DuplicateProspectSqlRepository` no longer exist (M0-01 sweep) — the auth status re-check moves to `SessionAuthenticationMiddleware`; registration anti-abuse is a fresh build, not a repurposing.
+  - Corrected the frontend picture: there is no SPA `signup` route today — the supporter form lives on the Latte marketing site (`templates/sowing-me-web-v1/signup.latte`) posting to `/register`.
+- Flipped roadmap rows **M0-03** and **M0-04** to Done (same commit).
+
+### Decisions
+- Requirements were already right; only realisation details had drifted. SRS content unchanged except the registration §3 context correction — no FR renumbering.
+- Doc-drift rule reaffirmed: a code refactor that changes how an FR is realised re-versions the TDS even when no FR changes.
+
+### Next
+- M0-05 (`creator-profile` docs verification) is the last Docs-state M0 row; M0-06 (creators migration) awaits the M0-02 Q2 sign-off; M0-07 needs one green `dev` pipeline to tick.
+- M1-01 (auth hardening) and M1-02 (creator onboarding) are now fully specced and unblocked.
+
 ## 2026-08-27 — Full surface set authored (21 surfaces)
 
 ### Work this session
