@@ -45,7 +45,7 @@ stages:
         --build-arg RUNTIME_IMAGE="$RUNTIME_SHA_REF" \
         -t "$TEST_REF" -f Dockerfile_Test .
       docker buildx build --provenance=false --sbom=false --platform linux/amd64,linux/arm64 --push \
-        -t "$NODE_REF" -f "Dockerfile_Node_${REF_CAP}" .
+        -t "$NODE_REF" -t "$NODE_SHA_REF" -f "Dockerfile_Node_${REF_CAP}" .
 
 build-dev:
   extends: .build
