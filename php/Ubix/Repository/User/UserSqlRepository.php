@@ -183,6 +183,42 @@ final class UserSqlRepository implements UserReader, UserWriter
     }
 
     /**
+     * {@inheritDoc}
+     */
+    public function recordFailedLogin(int $userId): void
+    {
+        $sql = 'UPDATE sowingme.users
+                SET failed_login_attempts = failed_login_attempts + 1,
+                    last_failed_login = NOW()
+                WHERE id = :id';
+
+        $this->sqlService->query($sql, ['id' => $userId]);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public function recordSuccessfulLogin(int $userId): void
+    {
+        $sql = 'UPDATE sowingme.users
+                SET failed_login_attempts = 0,
+                    last_login = NOW()
+                WHERE id = :id';
+
+        $this->sqlService->query($sql, ['id' => $userId]);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public function updatePasswordHash(int $userId, string $passwordHash): void
+    {
+        $sql = 'UPDATE sowingme.users SET password_hash = :password_hash WHERE id = :id';
+
+        $this->sqlService->query($sql, ['id' => $userId, 'password_hash' => $passwordHash]);
+    }
+
+    /**
      * Generate and execute a database query then return its results
      *
      * @param UserOptions $options DTO of options to generate the query

@@ -4,13 +4,16 @@ declare(strict_types=1);
 
 namespace Ubix\Middleware;
 
+use Exception;
 use Psr\Http\Message\ResponseFactoryInterface as ResponseFactory;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
 use Psr\Http\Server\MiddlewareInterface as Middleware;
 use Psr\Http\Server\RequestHandlerInterface as Handler;
 use Psr\Log\LoggerInterface as Logger;
+use Ubix\DataType\Int\UserId;
 use Ubix\Service\JsonService;
+use Ubix\Service\UserService;
 
 /**
  * Middleware to authenticate requests using PHP session user data
@@ -25,12 +28,14 @@ final class SessionAuthenticationMiddleware implements Middleware
      * @param Logger                                     $logger          Logger
      * @param ResponseFactory                            $responseFactory Response factory for creating responses
      * @param JsonService                                $jsonService     JSON encoder for error bodies
+     * @param UserService                                $userService     Re-checks account status per request (FR-52)
      * @param array<array{method: string, path: string}> $excludedRoutes  Routes to exclude from authentication
      */
     public function __construct(
-        private Logger $logger, // @phpstan-ignore property.onlyWritten (Logger is a required dependency of most VSM classes but has not been implemented in this class yet)
+        private Logger $logger,
         private ResponseFactory $responseFactory,
         private JsonService $jsonService,
+        private UserService $userService,
         private array $excludedRoutes = [],
     ) {
     }
@@ -57,12 +62,45 @@ final class SessionAuthenticationMiddleware implements Middleware
 
         $sessionUser = $_SESSION['user'] ?? null;
         if (!is_array($sessionUser) || !isset($sessionUser['id'])) {
-            $response = $this->responseFactory->createResponse(401);
-            $response->getBody()->write($this->jsonService->encode(['message' => 'Not Authenticated']));
+            return $this->unauthenticated();
+        }
 
-            return $response->withHeader('Content-Type', 'application/json');
+        // Status re-check (FR-52): a suspended/deactivated account loses its
+        // session on the next request, not only at the next login.
+        $sessionUserId = $sessionUser['id'];
+        assert(is_int($sessionUserId) || is_string($sessionUserId));
+
+        try {
+            $user = $this->userService->getUserById(new UserId((int) $sessionUserId));
+        } catch (Exception $e) {
+            $this->logger->info('Session status re-check could not load the user', ['error' => $e->getMessage()]);
+            $user = null;
+        }
+
+        if ($user === null || $user->getStatus()?->value !== 'active') {
+            $_SESSION = [];
+            if (session_status() === PHP_SESSION_ACTIVE) {
+                session_destroy();
+            }
+            $this->logger->info('Session terminated: account no longer active', [
+                'user_id' => $sessionUser['id'],
+            ]);
+            return $this->unauthenticated();
         }
 
         return $handler->handle($request);
+    }
+
+    /**
+     * Build the standard 401 response
+     *
+     * @return Response The 401 JSON response
+     */
+    private function unauthenticated(): Response
+    {
+        $response = $this->responseFactory->createResponse(401);
+        $response->getBody()->write($this->jsonService->encode(['message' => 'Not Authenticated']));
+
+        return $response->withHeader('Content-Type', 'application/json');
     }
 }

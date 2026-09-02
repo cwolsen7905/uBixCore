@@ -22,7 +22,7 @@ Status vocabulary per row: `Todo` · `Docs` (SRS/spec in progress) · `Build` ·
 
 | ID | Task | Effort | Status | Notes |
 |---|---|---|---|---|
-| M1-01 | Auth hardening: lockout logic, password reset (token table reuse), secure cookie flags, role middleware | M | Todo | S1 |
+| M1-01 | Auth hardening: lockout logic, password reset (token table reuse), secure cookie flags, role middleware | M | Review | 2026-09-01 MR: lockout (env-driven LockoutPolicy, FR-20..23), password reset end-to-end (hashed single-use tokens, FR-30..34), RoleAuthorizationMiddleware (FR-41), session status re-check (FR-52), CORS allow-list via CorsMiddleware (FR-61/62), forgot/reset-password pages. Cookie flags were already set in SessionMiddleware |
 | M1-02 | Creator onboarding wizard (JS) + `POST /creators` (API) | M | Todo | S2/S3 |
 | M1-03 | Public creator page `/c/{slug}` (SSR in SvelteKit, `GET /creators/{slug}`) | M | Todo | S3 |
 | M1-04 | Tiers: spec, migration, CRUD API, creator UI | M | Todo | S4 |

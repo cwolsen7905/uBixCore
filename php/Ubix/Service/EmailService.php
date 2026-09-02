@@ -76,6 +76,43 @@ final class EmailService
     }
 
     /**
+     * Send the password reset link
+     *
+     * @param string $toEmail   Recipient address
+     * @param string $firstName Recipient first name (may be empty)
+     * @param string $resetUrl  The single-use reset URL
+     *
+     * @return bool True when the message was handed to the mailer
+     */
+    public function sendPasswordReset(
+        string $toEmail,
+        string $firstName,
+        string $resetUrl,
+    ): bool {
+        try {
+            $greeting = $firstName !== '' ? 'Hi ' . $firstName : 'Hi';
+            $email    = (new Email())
+                ->from('no-reply@ubixstudios.com')
+                ->to($toEmail)
+                ->subject('SowingMe - Reset Your Password')
+                ->html('<p>' . htmlspecialchars($greeting) . ',</p><p>We received a request to reset your password. This link is valid for one hour and can be used once:</p><p><a href="' . htmlspecialchars($resetUrl) . '">Reset your password</a></p><p>If you did not request this, you can ignore this email.</p>')
+                ->text($greeting . ",\n\nWe received a request to reset your password. This link is valid for one hour and can be used once:\n\n" . $resetUrl . "\n\nIf you did not request this, you can ignore this email.\n");
+
+            $this->mailer->send($email);
+            $this->logger->info('Password reset email sent', ['to' => $toEmail]);
+
+            return true;
+        } catch (TransportException $e) {
+            $this->logger->error('Password reset email failed', [
+                'error' => $e->getMessage(),
+                'to'    => $toEmail,
+            ]);
+
+            return false;
+        }
+    }
+
+    /**
      * Get HTML content for registration email
      *
      * @param string $firstName       The recipient's first name

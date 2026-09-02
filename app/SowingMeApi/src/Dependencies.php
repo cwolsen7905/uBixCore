@@ -22,6 +22,7 @@ use Slim\Psr7\Factory\ResponseFactory as SlimResponseFactory;
 use Symfony\Component\Mailer\Mailer;
 use Symfony\Component\Mailer\MailerInterface;
 use Symfony\Component\Mailer\Transport;
+use Ubix\DataTransferObject\LockoutPolicy;
 use Ubix\Enum\Exception\ExceptionCode;
 use Ubix\HttpClient\CurlHttpClient;
 use Ubix\Middleware\CorsMiddleware;
@@ -29,6 +30,9 @@ use Ubix\Middleware\SessionAuthenticationMiddleware;
 use Ubix\Repository\EmailConfirmationToken\EmailConfirmationTokenReaderInterface as EmailConfirmationTokenReader;
 use Ubix\Repository\EmailConfirmationToken\EmailConfirmationTokenSqlRepository;
 use Ubix\Repository\EmailConfirmationToken\EmailConfirmationTokenWriterInterface as EmailConfirmationTokenWriter;
+use Ubix\Repository\PasswordResetToken\PasswordResetTokenReaderInterface as PasswordResetTokenReader;
+use Ubix\Repository\PasswordResetToken\PasswordResetTokenSqlRepository;
+use Ubix\Repository\PasswordResetToken\PasswordResetTokenWriterInterface as PasswordResetTokenWriter;
 use Ubix\Repository\User\UserReaderInterface as UserReader;
 use Ubix\Repository\User\UserSqlRepository;
 use Ubix\Repository\User\UserWriterInterface as UserWriter;
@@ -85,6 +89,14 @@ return static function (): Container {
         ResponseFactory::class                 => autowire(SlimResponseFactory::class),
         EmailConfirmationTokenReader::class    => autowire(EmailConfirmationTokenSqlRepository::class),
         EmailConfirmationTokenWriter::class    => autowire(EmailConfirmationTokenSqlRepository::class),
+        LockoutPolicy::class                   => static function (): LockoutPolicy {
+            return new LockoutPolicy(
+                threshold: (int) (getenv('AUTH_LOCKOUT_THRESHOLD') ?: 5),
+                minutes:   (int) (getenv('AUTH_LOCKOUT_MINUTES') ?: 15),
+            );
+        },
+        PasswordResetTokenReader::class        => autowire(PasswordResetTokenSqlRepository::class),
+        PasswordResetTokenWriter::class        => autowire(PasswordResetTokenSqlRepository::class),
         UserReader::class                      => autowire(UserSqlRepository::class),
         UserWriter::class                      => autowire(UserSqlRepository::class),
         SessionAuthenticationMiddleware::class => autowire()->constructorParameter('excludedRoutes', [
@@ -92,6 +104,8 @@ return static function (): Container {
             ['method' => 'OPTIONS', 'path' => '/auth'],
             ['method' => 'POST', 'path' => '/register'],
             ['method' => 'GET', 'path' => '/confirm-email'],
+            ['method' => 'POST', 'path' => '/auth/password-reset/request'],
+            ['method' => 'POST', 'path' => '/auth/password-reset/confirm'],
         ]),
         SessionHandler::class                  => autowire(SimpleCacheLegacySessionHandler::class),
         SimpleCache::class                     => autowire(MemcachedLegacySimpleCache::class)->constructorParameter('servers', $memcacheServers),
