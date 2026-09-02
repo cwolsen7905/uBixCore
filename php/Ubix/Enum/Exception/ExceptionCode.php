@@ -310,4 +310,6 @@ enum ExceptionCode: int
     //
     //  If you don't see your name in this list then speak to your manager and they will assign you a range of exception codes to use
     //
+    case CREATOR_ALREADY_EXISTS = 29001;
+    case CREATOR_SLUG_TAKEN     = 29002;
 }

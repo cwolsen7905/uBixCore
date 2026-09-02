@@ -26,9 +26,11 @@ use Ubix\DataTransferObject\LockoutPolicy;
 use Ubix\Enum\Exception\ExceptionCode;
 use Ubix\HttpClient\CurlHttpClient;
 use Ubix\Middleware\CorsMiddleware;
+use Ubix\Middleware\RoleAuthorizationMiddleware;
 use Ubix\Middleware\SessionAuthenticationMiddleware;
 use Ubix\Repository\Creator\CreatorReaderInterface as CreatorReader;
 use Ubix\Repository\Creator\CreatorSqlRepository;
+use Ubix\Repository\Creator\CreatorWriterInterface as CreatorWriter;
 use Ubix\Repository\EmailConfirmationToken\EmailConfirmationTokenReaderInterface as EmailConfirmationTokenReader;
 use Ubix\Repository\EmailConfirmationToken\EmailConfirmationTokenSqlRepository;
 use Ubix\Repository\EmailConfirmationToken\EmailConfirmationTokenWriterInterface as EmailConfirmationTokenWriter;
@@ -100,6 +102,8 @@ return static function (): Container {
         PasswordResetTokenReader::class        => autowire(PasswordResetTokenSqlRepository::class),
         PasswordResetTokenWriter::class        => autowire(PasswordResetTokenSqlRepository::class),
         CreatorReader::class                   => autowire(CreatorSqlRepository::class),
+        CreatorWriter::class                   => autowire(CreatorSqlRepository::class),
+        RoleAuthorizationMiddleware::class     => autowire()->constructorParameter('requiredRole', 'creator'),
         UserReader::class                      => autowire(UserSqlRepository::class),
         UserWriter::class                      => autowire(UserSqlRepository::class),
         SessionAuthenticationMiddleware::class => autowire()->constructorParameter('excludedRoutes', [

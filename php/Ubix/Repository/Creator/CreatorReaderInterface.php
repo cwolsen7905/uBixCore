@@ -37,4 +37,13 @@ interface CreatorReaderInterface
      * @return ?string The current slug, or null if the slug was never retired
      */
     public function getCurrentSlugForRetiredSlug(string $slug): ?string;
+
+    /**
+     * Whether a slug is taken, across live creators and retired slugs (FR-203)
+     *
+     * @param string $slug The slug to check
+     *
+     * @return bool True when the slug is unavailable
+     */
+    public function slugExists(string $slug): bool;
 }

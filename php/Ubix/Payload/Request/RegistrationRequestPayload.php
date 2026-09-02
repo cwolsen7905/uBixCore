@@ -9,6 +9,7 @@ use Ubix\DataType\String\Email;
 use Ubix\DataType\String\FirstName;
 use Ubix\DataType\String\LastName;
 use Ubix\DataType\String\Password;
+use Ubix\Enum\User\RegistrationRole;
 use Ubix\Payload\AbstractPayload as Payload;
 use Ubix\Payload\RequestPayloadInterface as RequestPayload;
 
@@ -31,6 +32,8 @@ final class RegistrationRequestPayload extends Payload implements RequestPayload
 
     public Password $confirmPassword;
 
+    public ?RegistrationRole $role;
+
     /**
      * Constructor
      *
@@ -40,6 +43,7 @@ final class RegistrationRequestPayload extends Payload implements RequestPayload
      * @param ?string $email           The email address
      * @param ?string $password        The password
      * @param ?string $confirmPassword The password confirmation
+     * @param ?string $role            The selected role (supporter|creator; default supporter)
      */
     public function __construct(
         ?string $displayName,
@@ -48,6 +52,7 @@ final class RegistrationRequestPayload extends Payload implements RequestPayload
         ?string $email,
         ?string $password,
         ?string $confirmPassword,
+        ?string $role = null,
     ) {
         $this->validateAndMapField('displayName', 'displayName', $displayName);
         $this->validateAndMapField('firstName', 'firstName', $firstName);
@@ -55,6 +60,7 @@ final class RegistrationRequestPayload extends Payload implements RequestPayload
         $this->validateAndMapField('email', 'email', $email);
         $this->validateAndMapField('password', 'password', $password);
         $this->validateAndMapField('confirmPassword', 'confirmPassword', $confirmPassword);
+        $this->validateAndMapField('role', 'role', $role);
         parent::__construct();
     }
 }

@@ -11,6 +11,7 @@ use Ubix\Enum\Creator\CreatorCategory;
 use Ubix\Enum\Creator\CreatorStatus;
 use Ubix\Model\Creator;
 use Ubix\Repository\Creator\CreatorReaderInterface as CreatorReader;
+use Ubix\Repository\Creator\CreatorWriterInterface as CreatorWriter;
 use Ubix\Service\Sql\SqlServiceInterface as SqlService;
 
 /**
@@ -18,7 +19,7 @@ use Ubix\Service\Sql\SqlServiceInterface as SqlService;
  *
  * @see \Ubix\Tests\Repository\Creator\CreatorSqlRepositoryTest PHPUnit test case
  */
-final class CreatorSqlRepository implements CreatorReader
+final class CreatorSqlRepository implements CreatorReader, CreatorWriter
 {
     /**
      * Constructor
@@ -62,6 +63,38 @@ final class CreatorSqlRepository implements CreatorReader
         $current = $this->sqlService->getColumn($sql, ['oldSlug' => $slug]);
 
         return is_string($current) ? $current : null;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public function slugExists(string $slug): bool
+    {
+        $sql = 'SELECT EXISTS (SELECT 1 FROM sowingme.creators WHERE slug = :slug)
+                + EXISTS (SELECT 1 FROM sowingme.creator_slug_history WHERE old_slug = :slug)';
+
+        return (int) $this->sqlService->getColumn($sql, ['slug' => $slug], true) > 0;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public function createCreator(Creator $creator): void
+    {
+        $sql = 'INSERT INTO sowingme.creators (user_id, slug, display_name, bio, category, faith_topic, status)
+                VALUES (:user_id, :slug, :display_name, :bio, :category, :faith_topic, :status)';
+
+        $this->sqlService->query($sql, [
+            'bio'          => $creator->getBio(),
+            'category'     => $creator->getCategory()->value ?? 'other',
+            'display_name' => $creator->getDisplayName(),
+            'faith_topic'  => $creator->getFaithTopic(),
+            'slug'         => $creator->getSlug(),
+            'status'       => $creator->getStatus()->value ?? 'draft',
+            'user_id'      => $creator->getUserId(),
+        ]);
+
+        $creator->setId((int) $this->sqlService->lastInsertId());
     }
 
     /**
