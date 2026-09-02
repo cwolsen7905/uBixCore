@@ -11,6 +11,11 @@ parameters:
     - public
     - tests
 
+  # Some @phpstan-ignore identifiers (e.g. property.onlyWritten on framework
+  # Logger deps) match under PHP 8.4 but not 8.5 — the CI image and local dev
+  # can differ, so an unmatched ignore must not fail the gate.
+  reportUnmatchedIgnoredErrors: false
+
   tmpDir: .phpstan.cache
 
   treatPhpDocTypesAsCertain: false # TODO: experiment with removing this line
