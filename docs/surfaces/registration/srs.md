@@ -1,6 +1,6 @@
 # Registration — Software Requirements Specification (SRS)
 
-**Surface:** `registration` · **Status:** Draft v0.1 · 2026-08-27 · Owner: Christopher W. Olsen
+**Surface:** `registration` · **Status:** Draft v0.2 · 2026-09-01 · Owner: Christopher W. Olsen
 **Milestone:** M1 (supporter + creator paths); org path M3+ · **Refines:** Platform [`srs.md`](../../projects/sowing-me/platform/srs.md) §5.2 FR-ONB-1..3
 **Companion docs:** [`technical-spec.md`](technical-spec.md) · [`README.md`](README.md)
 **Upstream:** [`../../projects/sowing-me/platform/srs.md`](../../projects/sowing-me/platform/srs.md) (Platform SRS) · [`../../projects/sowing-me/charter.md`](../../projects/sowing-me/charter.md) (S2) · [`../../projects/sowing-me/brief.md`](../../projects/sowing-me/brief.md) §3.2
@@ -19,7 +19,7 @@ Get a supporter or creator from "nothing" to an authenticated, `active` account 
 
 ## 3. Context — what exists today
 
-Per [`brief.md`](../../projects/sowing-me/brief.md) §3.2/§3.3: `POST /register` (`AuthController::register`) already creates a `users` row with `status = PENDING`, `roles = 'user'`, issues a 64-hex confirmation token (`bin2hex(random_bytes(32))`), and emails `APP_URL/confirm-email?token=...` via `EmailService`. `GET /confirm-email` (`EmailConfirmationController::confirmEmail`) validates the token (not found / already used / expired), flips `users.status` to `ACTIVE`, marks the token used, and auto-logs-in the user. `DuplicateProspectSqlRepository` exists as an anti-abuse seed (currently used for a different domain's duplicate-submission tracking; this surface repurposes the pattern for duplicate-registration-attempt tracking, not the same rows). This SRS specifies: hardening the existing path for two distinct personas (supporter vs. creator), the creator wizard sequencing, resend/expiry, and anti-abuse.
+Per [`brief.md`](../../projects/sowing-me/brief.md) §3.2/§3.3: `POST /register` (`AuthController::register`) already creates a `users` row with `status = PENDING`, `roles = 'user'`, issues a 64-hex confirmation token (`bin2hex(random_bytes(32))`), and emails `APP_URL/confirm-email?token=...` via `EmailService`. `GET /confirm-email` (`EmailConfirmationController::confirmEmail`) validates the token (not found / already used / expired), flips `users.status` to `ACTIVE`, marks the token used, and auto-logs-in the user. The neptune-era `DuplicateProspectSqlRepository` was removed in M0-01; this surface introduces its own registration-scoped duplicate tracking (technical-spec §2.4) rather than resurrecting it. This SRS specifies: hardening the existing path for two distinct personas (supporter vs. creator), the creator wizard sequencing, resend/expiry, and anti-abuse.
 
 ## 4. Definitions
 
@@ -68,7 +68,7 @@ Per [`brief.md`](../../projects/sowing-me/brief.md) §3.2/§3.3: `POST /register
 - **FR-44** Requesting a resend for an email that is already `active` or does not exist returns the same generic acknowledgement (no user enumeration), matching the non-enumeration posture used elsewhere ([`authentication`](../authentication/README.md) FR-30).
 
 ### 6.5 Anti-abuse — duplicate prospects (FR-5x)
-- **FR-50** Registration attempts are checked against recent attempts (by email, and where available IP/fingerprint signal) using the `DuplicateProspect` pattern; a flagged attempt does not block registration outright at M1 but is recorded for review (`admin-console` surface, future) rather than silently ignored.
+- **FR-50** Registration attempts are checked against recent attempts (by email, and where available IP/fingerprint signal) and recorded in a registration-scoped duplicate-prospect table (technical-spec §2.4); a flagged attempt does not block registration outright at M1 but is recorded for review (`admin-console` surface, future) rather than silently ignored.
 - **FR-51** A high-confidence duplicate/abuse signal (e.g. many registrations from the same source in a short window) may throttle further attempts from that source, distinct from the per-account lockout owned by [`authentication`](../authentication/README.md).
 - **FR-52** Anti-abuse checks never block a legitimate first-time registration; false-positive risk is resolved toward allowing registration and flagging for review, not rejecting outright, at this milestone.
 
@@ -113,3 +113,4 @@ Each FR maps to endpoints/components in [`technical-spec.md`](technical-spec.md)
 | Version | Date | Change |
 |---|---|---|
 | 0.1 | 2026-08-27 | Initial SRS. |
+| 0.2 | 2026-09-01 | Synced to built code (M0-04 close-out): `DuplicateProspect` repo removal (M0-01) reflected in §3/FR-50 — requirements themselves unchanged. |

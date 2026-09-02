@@ -11,7 +11,7 @@ This surface inherits the **Platform ADS** ([`../../projects/sowing-me/platform/
 
 ## Status
 
-Draft v0.1 (2026-08-27). **Build-ready** — `users` table, `email_confirmation_tokens`, and `AuthController` already exist; this surface specifies the hardening work (lockout logic, password reset, role model, cookie policy) needed before M1 exits.
+Draft v0.2 (2026-09-01). **Build-ready** — `users` table, `email_confirmation_tokens`, and `AuthController` already exist; this surface specifies the hardening work (lockout logic, password reset, role model, cookie policy) needed before M1 exits.
 
 ## Companion docs
 
