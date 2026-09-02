@@ -7,6 +7,20 @@
 # lint-and-test is BLOCKING (gate green 2026-08-28: phpcs 0, phpstan 0, 259 tests;
 # eslint 0, prettier clean, svelte-check 0 errors).
 
+# Auto-retry: every job retries twice on infrastructure-class failures so a
+# runner hiccup never needs a human click; build jobs also retry script
+# failures (registry/network blips during docker push present as those).
+# Genuine red stays red — lint/test jobs do not retry script failures.
+default:
+  retry:
+    max: 2
+    when:
+      - runner_system_failure
+      - stuck_or_timeout_failure
+      - api_failure
+      - scheduler_failure
+      - unknown_failure
+
 stages:
   - test
   - build
@@ -29,6 +43,15 @@ stages:
   extends: .registry_login
   stage: build
   tags: [shell]
+  retry:
+    max: 2
+    when:
+      - script_failure
+      - runner_system_failure
+      - stuck_or_timeout_failure
+      - api_failure
+      - scheduler_failure
+      - unknown_failure
   script:
     - |
       set -euo pipefail
