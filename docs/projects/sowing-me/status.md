@@ -9,6 +9,19 @@
 
 Rolling session journal. Newest block first. Decisions recorded here the session they're made; roadmap rows flip in the same commit.
 
+## 2026-09-02 — M1-02 in review: creator onboarding (write path + wizard)
+
+### Work this session
+- **Role-on-create fix** (registration TDS §3): `RegistrationRequestPayload.role` constrained by a new `RegistrationRole` enum (`supporter`|`creator` — admin never payload-assignable), `register()` persists it (default supporter, replacing the `'user'` literal).
+- **Creator write path:** `CreatorWriterInterface` + `createCreator` (void, `setId`), `slugExists` across live + retired slugs (FR-203), `CreatorProfileService::{createCreatorProfile,getOwnCreator,getOnboardingState}` (state derived from entity presence, not stored — registration TDS §2.3 default), new `CREATOR_ALREADY_EXISTS`/`CREATOR_SLUG_TAKEN` exception codes.
+- **API:** `POST/GET /creator/profile`, `GET /creator/onboarding`, wired behind `RoleAuthorizationMiddleware` (requiredRole creator) — first real use of M1-01\'s middleware.
+- **Wizard** (`/creator/onboarding`): profile step live (slug auto-suggest from display name, category select, field-scoped errors); tier/payout steps visible but stubbed until `subscription-tiers`/`payouts` exist.
+- **Rider fix:** deployed M1-03 500\'d — the PHP-DI Slim bridge injects route placeholders by name, so `getBySlug(..., array $args)` became `(..., string $slug)`.
+
+### Next
+- M1-03 → Done and M1-02 E2E both still need a real dev login/creator flow exercised — blocked locally on rotated DB creds (ubixvault token needed).
+- M1-04 (tiers) is the next unclaimed row; its docs are authored.
+
 ## 2026-09-01 — M1-03 in review: public creator page (read path)
 
 ### Work this session

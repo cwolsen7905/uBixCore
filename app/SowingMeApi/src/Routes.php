@@ -9,6 +9,7 @@ use Ubix\Controller\SowingMeApi\AuthController;
 use Ubix\Controller\SowingMeApi\CreatorController;
 use Ubix\Controller\SowingMeApi\EmailConfirmationController;
 use Ubix\Controller\SowingMeApi\PasswordResetController;
+use Ubix\Middleware\RoleAuthorizationMiddleware;
 
 return static function (App $app): void {
 	// phpcs:disable Generic.Functions.FunctionCallArgumentSpacing.TooMuchSpaceAfterComma -- disable this rule to allow for vertical spacing of the route parameters
@@ -19,6 +20,9 @@ return static function (App $app): void {
     $app->map(['POST'],    '/logout',                      AuthController::class . ':logout');
     $app->map(['POST'],    '/register',                    AuthController::class . ':register');
     $app->map(['GET'],     '/confirm-email',               EmailConfirmationController::class . ':confirmEmail');
+    $app->map(['POST'],    '/creator/profile',             CreatorController::class . ':createProfile')->add(RoleAuthorizationMiddleware::class);
+    $app->map(['GET'],     '/creator/profile',             CreatorController::class . ':getOwnProfile')->add(RoleAuthorizationMiddleware::class);
+    $app->map(['GET'],     '/creator/onboarding',          CreatorController::class . ':getOnboarding')->add(RoleAuthorizationMiddleware::class);
     $app->map(['GET'],     '/creators/{slug}',             CreatorController::class . ':getBySlug');
     $app->map(['OPTIONS'], '/{routes:.*}',                 AuthController::class . ':options');
 	// phpcs:enable Generic.Functions.FunctionCallArgumentSpacing.TooMuchSpaceAfterComma

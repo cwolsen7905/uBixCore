@@ -289,7 +289,7 @@ final class AuthController extends Controller
             firstName:           $payload->firstName->value,
             lastName:            $payload->lastName->value,
             status:              UserStatus::PENDING,
-            roles:               'user',
+            roles:               $payload->role->value ?? 'supporter', // Selected at sign-up (registration TDS §3); default supporter
             failedLoginAttempts: 0,
             lastFailedLogin:     null,
             lastLogin:           null,
