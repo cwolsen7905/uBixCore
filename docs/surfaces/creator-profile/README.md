@@ -11,7 +11,7 @@ No `architecture.md` for this surface — it inherits the platform ADS in full (
 
 ## Status
 
-Draft v0.1 (2026-08-27). **Build-ready for M1.** `creators` does not exist yet; it lands via `bin/ubix migrate:*` as part of this surface, alongside `creator_slug_history`. The `organization_id` and `payout_account_id` columns are reserved (nullable, no FK constraint yet) so the M3+ `organizations` entity and the M2 `payouts` surface attach without a `creators` schema rework (NFR-EXT).
+Draft v0.2 (2026-09-01). **Schema landed; app layer build-ready for M1.** `creators` and `creator_slug_history` exist as of `sql/migrations/20260901000000_create_creators_and_slug_history.sql` (M0-06, applied to the test DB); the PHP domain (Model/Repository/Service/Controller) and both frontend routes are still to build (M1-02/M1-03). The `organization_id` and `payout_account_id` columns are reserved (nullable, no FK constraint yet) so the M3+ `organizations` entity and the M2 `payouts` surface attach without a `creators` schema rework (NFR-EXT).
 
 ## Companion docs
 

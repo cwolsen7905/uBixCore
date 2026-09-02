@@ -9,6 +9,20 @@
 
 Rolling session journal. Newest block first. Decisions recorded here the session they're made; roadmap rows flip in the same commit.
 
+## 2026-09-01 — M0-05 closed: creator-profile docs synced to the landed schema
+
+### Work this session
+- Verified `docs/surfaces/creator-profile/` (SRS + TDS) against `dev` and bumped both to **v0.2**:
+  - TDS §2 now records the **as-built** M0-06 migration (`20260901000000_create_creators_and_slug_history`): `INT(10) UNSIGNED` keys matching `users.id` (the TDS had said BIGINT), `BIGINT UNSIGNED` reserved columns, `retired_at` default.
+  - Enum naming corrected to house convention (`Ubix\Enum\Creator\CreatorCategory`/`CreatorStatus`, no `Enum` suffix).
+  - Service-layer + `query(Options)`/void-writer repository standards noted for the upcoming Creator domain build; the onboarding-wizard "existing shell" claim corrected (no shell exists — it is new work, specified in registration TDS §4.2).
+  - SRS Q3 (fixed category enum) marked **adopted as built**.
+- Flipped roadmap row **M0-05** to Done (same commit).
+
+### Next
+- M0 is now docs-complete: remaining rows are M0-02 (Q2 final sign-off — schema already reflects the default), and M0-07 (tick after one green `dev` pipeline).
+- M1 build can start: M1-01 (auth hardening), M1-02 (onboarding + `POST /creators`), M1-03 (`/c/{slug}` page) are all fully specced.
+
 ## 2026-09-01 — M0-03 / M0-04 closed: auth + registration docs synced to built code
 
 ### Work this session
