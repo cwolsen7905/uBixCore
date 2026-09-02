@@ -43,6 +43,30 @@ final class CreatorProfileService
     }
 
     /**
+     * The creator row owned by a user, if any (onboarding/ownership checks)
+     *
+     * @param int $userId The user id
+     *
+     * @return ?Creator The creator, or null when the user has none
+     */
+    public function getCreatorByUserId(int $userId): ?Creator
+    {
+        return $this->creatorReader->getCreatorByUserId($userId);
+    }
+
+    /**
+     * The creator behind a live slug, if any
+     *
+     * @param string $slug The profile slug
+     *
+     * @return ?Creator The creator, or null when unknown
+     */
+    public function getCreatorBySlug(string $slug): ?Creator
+    {
+        return $this->creatorReader->getCreatorBySlug($slug);
+    }
+
+    /**
      * Resolve a requested slug per TDS §3
      *
      * @param string $slug The requested slug

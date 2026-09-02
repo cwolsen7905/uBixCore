@@ -37,6 +37,12 @@ use Ubix\Repository\EmailConfirmationToken\EmailConfirmationTokenWriterInterface
 use Ubix\Repository\PasswordResetToken\PasswordResetTokenReaderInterface as PasswordResetTokenReader;
 use Ubix\Repository\PasswordResetToken\PasswordResetTokenSqlRepository;
 use Ubix\Repository\PasswordResetToken\PasswordResetTokenWriterInterface as PasswordResetTokenWriter;
+use Ubix\Repository\Subscription\SubscriptionReaderInterface as SubscriptionReader;
+use Ubix\Repository\Subscription\SubscriptionSqlRepository;
+use Ubix\Repository\Subscription\SubscriptionWriterInterface as SubscriptionWriter;
+use Ubix\Repository\Tier\TierReaderInterface as TierReader;
+use Ubix\Repository\Tier\TierSqlRepository;
+use Ubix\Repository\Tier\TierWriterInterface as TierWriter;
 use Ubix\Repository\User\UserReaderInterface as UserReader;
 use Ubix\Repository\User\UserSqlRepository;
 use Ubix\Repository\User\UserWriterInterface as UserWriter;
@@ -104,6 +110,10 @@ return static function (): Container {
         CreatorReader::class                   => autowire(CreatorSqlRepository::class),
         CreatorWriter::class                   => autowire(CreatorSqlRepository::class),
         RoleAuthorizationMiddleware::class     => autowire()->constructorParameter('requiredRole', 'creator'),
+        SubscriptionReader::class              => autowire(SubscriptionSqlRepository::class),
+        SubscriptionWriter::class              => autowire(SubscriptionSqlRepository::class),
+        TierReader::class                      => autowire(TierSqlRepository::class),
+        TierWriter::class                      => autowire(TierSqlRepository::class),
         UserReader::class                      => autowire(UserSqlRepository::class),
         UserWriter::class                      => autowire(UserSqlRepository::class),
         SessionAuthenticationMiddleware::class => autowire()->constructorParameter('excludedRoutes', [
