@@ -117,6 +117,8 @@ final class AuthController extends Controller
             ], StatusCode::UNAUTHORIZED);
         }
 
+        $this->userService->recordSuccessfulLogin($user);
+
         // Set session data
         $_SESSION['user'] = [
             'creatorName' => $user->getCreatorName(),
@@ -384,11 +386,8 @@ final class AuthController extends Controller
             'referrer' => $request->getHeaderLine('Referer'),
         ]);
 
-        return $response
-        ->withHeader('Access-Control-Allow-Origin', $origin) // Or specify your allowed origin
-        ->withHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With')
-        ->withHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS')
-        ->withHeader('Access-Control-Allow-Credentials', 'true')
-        ->withStatus(204);
+        // CORS headers come from CorsMiddleware, which only echoes an origin
+        // on its configured allow-list (FR-61/62) — nothing is echoed here.
+        return $response->withStatus(204);
     }
 }
