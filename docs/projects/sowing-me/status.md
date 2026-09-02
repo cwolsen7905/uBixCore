@@ -1,5 +1,12 @@
 # Sowing.me — Working Status
 
+## 2026-09-01 — M0 complete
+
+### Work this session
+- M0-06: `creators` + `creator_slug_history` migration (`20260901000000_…`) authored per creator-profile TDS §2 and applied to the unit-test DB via `migrate:up --target=test`. Reserved nullable `organization_id`/`payout_account_id` (no FKs) per ADR-007. No `users` change (registration TDS §2.1: roles fix is behavior-only, lands with M1).
+- M0-07 closed by the ci-parity gate work (blocking + green since 2026-08-28).
+- **M0 is done** — next: M1-01 (auth hardening) or M1-02/03 (creator onboarding + public page), which now have their schema.
+
 Rolling session journal. Newest block first. Decisions recorded here the session they're made; roadmap rows flip in the same commit.
 
 ## 2026-08-27 — Full surface set authored (21 surfaces)

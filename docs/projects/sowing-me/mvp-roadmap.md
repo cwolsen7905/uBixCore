@@ -15,8 +15,8 @@ Status vocabulary per row: `Todo` · `Docs` (SRS/spec in progress) · `Build` ·
 | M0-03 | SRS + tech spec for `authentication` (`docs/surfaces/authentication/`) — current session flow, lockout, password reset, roles | S | Docs | |
 | M0-04 | SRS + tech spec for `registration` — supporter vs creator sign-up, onboarding wizard | S | Docs | Email confirmation already built; document it |
 | M0-05 | SRS + tech spec for `creator-profile` | S | Docs | |
-| M0-06 | Migration: `creators` table + `users.roles` cleanup | S | Todo | `bin/ubix migrate:*`; after M0-02 |
-| M0-07 | CI: confirm phpunit/phpstan/phpcs + vitest run green on `dev` for all SowingMe apps | S | Todo | Baseline before build |
+| M0-06 | Migration: `creators` table + `users.roles` cleanup | S | Done | 2026-09-01: `20260901000000_create_creators_and_slug_history` (creators + creator_slug_history per creator-profile TDS §2, applied on the test DB). No `users` change — the roles fix is behavior-only per registration TDS §2.1 |
+| M0-07 | CI: confirm phpunit/phpstan/phpcs + vitest run green on `dev` for all SowingMe apps | S | Done | lint-and-test stage blocking and green since 2026-08-28 (docs/projects/ci-parity CP-05/CP-18) |
 
 ## M1 — Creator can publish
 
