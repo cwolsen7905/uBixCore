@@ -67,6 +67,31 @@ Dockerfiles run `composer update`. An image can therefore change with no commit
 behind it. Once the framework is a dependency, the lock is the only record of
 which uBixCore built the image (OSS-06).
 
+### Source of the package: GitLab first, GitHub as a mirror
+
+`ubixsys/ubixcore` is only a name; the host's `composer.json` decides where it is
+fetched from. Sequence (Christopher, 2026-09-02):
+
+1. **Transition — VCS repository.** In `kitg/kitg`:
+   ```json
+   "repositories": [{ "type": "vcs", "url": "git@gitlab.brainchurts.com:ubixsys/ubixcore.git" }],
+   "require": { "ubixsys/ubixcore": "dev-dev" }
+   ```
+   Composer reads branches/tags straight from GitLab; every push to ubixcore
+   `dev` is consumable at once. CI authenticates with a GitLab deploy token via
+   `COMPOSER_AUTH` (`gitlab-token`), stored in ubixvault like the other CI tokens.
+2. **Tagged — GitLab Composer package registry.** A ubixcore CI job publishes
+   each `v*` tag to the `ubixsys` group registry; kitg switches to
+   `{ "type": "composer", "url": "https://gitlab.brainchurts.com/api/v4/group/<id>/-/packages/composer/packages.json" }`
+   and `"ubixsys/ubixcore": "^0.1"`. The lock then pins a tag, not a branch commit.
+3. **Public — mirror + Packagist.** Once the app layer is gone from ubixcore,
+   GitLab push-mirrors the repo to GitHub and Packagist is pointed at a public
+   URL (Packagist accepts a public GitLab URL directly; the GitHub mirror is for
+   discoverability). kitg keeps using the private registry unless switched.
+
+The same shape applies to npm: GitLab's npm registry for `@ubixsys/ubixcore`
+first, npmjs.com when public.
+
 ### Maintaining both at once
 
 As a third party the flow above is complete. As the author of both repos:
