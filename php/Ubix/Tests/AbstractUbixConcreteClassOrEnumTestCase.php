@@ -60,6 +60,53 @@ abstract class AbstractUbixConcreteClassOrEnumTestCase extends TestCase
     ];
 
     /**
+     * Known family segments: the folder right under a vendor root (`Ubix\Model`) or
+     * under a vendor + product root (`Kitg\SowingMe\Model`) that decides which
+     * house rules apply. Order does not matter; the first segment after the
+     * vendor that is in this list wins, so `Ubix\Enum\Exception\ExceptionCode`
+     * is an Enum, not an Exception.
+     */
+    private const FAMILIES = [
+        'Bootstrap', 'Collection', 'Console', 'Controller', 'DataTransferObject', 'DataType', 'Enum', 'Exception', 'External',
+        'Filters', 'HttpClient', 'Middleware', 'Model', 'Payload', 'Renderer', 'Repository', 'Service', 'SessionHandler',
+        'SimpleCache', 'SlimApp', 'SlimHandler', 'Sniffs', 'Tests',
+    ];
+
+    /**
+     * Whether a class belongs to a house family, regardless of vendor or product namespace
+     *
+     * `isInFamily('Kitg\SowingMe\Service\Sql\FooService', 'Service\Sql')` is true;
+     * so is `isInFamily('Ubix\Controller\AbstractController', 'Controller')`. Replaces
+     * the former `str_starts_with($class, 'Ubix\<Family>\')` checks so host projects
+     * (any vendor root, optional product segment) get the same rules as the framework.
+     *
+     * @param string $className Fully-qualified class name
+     * @param string $family    Family path, e.g. `Model` or `Service\Sql`
+     *
+     * @return bool
+     */
+    protected function isInFamily(string $className, string $family): bool
+    {
+        $parts = explode('\\', ltrim($className, '\\'));
+        $index = null;
+        foreach ($parts as $i => $segment) {
+            if ($i === 0) { // The vendor root is never a family
+                continue;
+            }
+            if (in_array($segment, self::FAMILIES, true)) {
+                $index = $i;
+                break;
+            }
+        }
+        if ($index === null) {
+            return false;
+        }
+        $wanted = explode('\\', $family);
+
+        return array_slice($parts, $index, count($wanted)) === $wanted;
+    }
+
+    /**
      * Test that the class follows VSM standards
      *
      * @param string $className The class to test
@@ -84,37 +131,37 @@ abstract class AbstractUbixConcreteClassOrEnumTestCase extends TestCase
         // NOT_IMPLEMENTED: should I add an enum option here? should it check for methods and ban them? (* with exemptions?) probably not, probably rethink the structure and don't run classes and enums through the same method
         // NOT_IMPLEMENTED: Payloads
         // NOT_IMPLEMENTED: DataTypes
-        if (str_starts_with($className, 'Ubix\\Collection\\')) {
+        if ($this->isInFamily($className, 'Collection')) {
             $this->testCollectionClassFollowingUbixStandards($className);
-        } elseif (str_starts_with($className, 'Ubix\\Console\\Command\\')) {
+        } elseif ($this->isInFamily($className, 'Console\\Command')) {
             $this->testConsoleCommandClassFollowingUbixStandards($className);
-        } elseif (str_starts_with($className, 'Ubix\\Controller\\')) {
+        } elseif ($this->isInFamily($className, 'Controller')) {
             $this->testControllerClassFollowingUbixStandards($className);
             $this->unitTestControllerClass($className);
-        } elseif (str_starts_with($className, 'Ubix\\DataTransferObject\\')) {
+        } elseif ($this->isInFamily($className, 'DataTransferObject')) {
             $this->testDtoClassFollowingUbixStandards($className);
             $this->unitTestDtoClass($className);
-        } elseif (str_starts_with($className, 'Ubix\\Exception\\')) {
+        } elseif ($this->isInFamily($className, 'Exception')) {
             $this->testExceptionClassFollowingUbixStandards($className);
             $this->unitTestExceptionClass($className);
-        } elseif (str_starts_with($className, 'Ubix\\HttpClient\\')) {
+        } elseif ($this->isInFamily($className, 'HttpClient')) {
             $this->testHttpClientClassFollowingUbixStandards($className);
-        } elseif (str_starts_with($className, 'Ubix\\Middleware\\')) {
+        } elseif ($this->isInFamily($className, 'Middleware')) {
             $this->testMiddlewareClassFollowingUbixStandards($className);
-        } elseif (str_starts_with($className, 'Ubix\\Model\\')) {
+        } elseif ($this->isInFamily($className, 'Model')) {
             $this->testModelClassFollowingUbixStandards($className);
             $this->unitTestModelClass($className);
-        } elseif (str_starts_with($className, 'Ubix\\Renderer\\')) {
+        } elseif ($this->isInFamily($className, 'Renderer')) {
             $this->testRendererClassFollowingUbixStandards($className);
-        } elseif (str_starts_with($className, 'Ubix\\Repository\\')) {
+        } elseif ($this->isInFamily($className, 'Repository')) {
             $this->testRepositoryClassFollowingUbixStandards($className);
-        } elseif (str_starts_with($className, 'Ubix\\Service\\')) {
+        } elseif ($this->isInFamily($className, 'Service')) {
             $this->testServiceClassFollowingUbixStandards($className);
-        } elseif (str_starts_with($className, 'Ubix\\SessionHandler\\')) {
+        } elseif ($this->isInFamily($className, 'SessionHandler')) {
             $this->testSessionHandlerClassFollowingUbixStandards($className);
-        } elseif (str_starts_with($className, 'Ubix\\SimpleCache\\')) {
+        } elseif ($this->isInFamily($className, 'SimpleCache')) {
             $this->testSimpleCacheClassFollowingUbixStandards($className);
-        } elseif (str_starts_with($className, 'Ubix\\SlimHandler\\')) {
+        } elseif ($this->isInFamily($className, 'SlimHandler')) {
             $this->testSlimHandlerClassFollowingUbixStandards($className);
         }
     }
@@ -205,7 +252,7 @@ abstract class AbstractUbixConcreteClassOrEnumTestCase extends TestCase
         //
         //  Test the parent class if one exists
         //
-        if ($class->getParentClass() !== false && str_starts_with($class->getParentClass()->getName(), 'Ubix\\Controller\\')) {
+        if ($class->getParentClass() !== false && $this->isInFamily($class->getParentClass()->getName(), 'Controller')) {
             $this->testControllerClassFollowingUbixStandards($class->getParentClass()->getName());
         }
     }
@@ -1064,19 +1111,20 @@ abstract class AbstractUbixConcreteClassOrEnumTestCase extends TestCase
         $class = $this->getReflectionClass($className);
 
         //
-        //  Ensure the type of repository is included as the third subnamespace
+        //  Ensure the type of repository is the subnamespace right after `Repository`
+        //  (`Ubix\Repository\User\…`, `Kitg\SowingMe\Repository\User\…`)
         //
         $subnamespaces    = explode('\\', $class->getNamespaceName());
-        $typeSubnamespace = count($subnamespaces) >= 3 ? $subnamespaces[2] : null;
+        $repositoryIndex  = array_search('Repository', $subnamespaces, true);
+        $typeSubnamespace = $repositoryIndex !== false ? ($subnamespaces[$repositoryIndex + 1] ?? null) : null;
 
-        $this->assertGreaterThanOrEqual(
-            3,
-            count($subnamespaces),
-            'All repository classes/interfaces must have at least three subnamespaces but `' . $class->getName() . '` has ' . count($subnamespaces),
+        $this->assertNotNull(
+            $typeSubnamespace,
+            'All repository classes/interfaces must have a type subnamespace after `Repository` but `' . $class->getName() . '` does not',
         );
 
         $this->assertTrue(
-            str_starts_with($class->getShortName(), $typeSubnamespace ?? ''),
+            str_starts_with($class->getShortName(), $typeSubnamespace),
             'All repository class/interface short names must be prefixed with their type but `' . $class->getShortName() . '` of `' . $class->getName() . '` doesn\'t begin with ' . $typeSubnamespace,
         );
 
@@ -1105,7 +1153,7 @@ abstract class AbstractUbixConcreteClassOrEnumTestCase extends TestCase
 
                     foreach ($method->getParameters() as $parameter) {
                         $this->assertTrue(
-                            $parameter->getType() !== null && str_starts_with((string)$parameter->getType(), 'Ubix\\Model\\'),
+                            $parameter->getType() !== null && $this->isInFamily((string)$parameter->getType(), 'Model'),
                             'All repository writer interface method parameters must be of a model type but `' . $parameter->getName() . '` of `' . $method->getName() . '` of `' . $class->getName() . '` is not',
                         );
                     }
@@ -1135,7 +1183,7 @@ abstract class AbstractUbixConcreteClassOrEnumTestCase extends TestCase
 
             foreach ($class->getInterfaceNames() as $interfaceName) {
                 $this->assertTrue(
-                    str_starts_with($interfaceName, 'Ubix\\Repository\\'),
+                    $this->isInFamily($interfaceName, 'Repository'),
                     'All repository concrete classes must only implement VSM repository interfaces but `' . $class->getName() . '` implements `' . $interfaceName . '`',
                 );
 
@@ -1152,8 +1200,8 @@ abstract class AbstractUbixConcreteClassOrEnumTestCase extends TestCase
 
             if ($implementsReaderInterface && str_ends_with($class->getShortName(), 'SqlRepository')) {
                 $this->assertTrue(
-                    $class->hasMethod('query') && $class->getMethod('query')->isPrivate() && (string) $class->getMethod('query')->getParameters()[0]->getType() === 'Ubix\\DataTransferObject\\SqlRepository\\' . $typeSubnamespace . 'Options',
-                    'All SQL repository classes that implement a reader interface must have a private method called `query` with a first parameter of type `Ubix\\DataTransferObject\\SqlRepository\\' . $typeSubnamespace . 'Options` but `' . $class->getName() . '` does not',
+                    $class->hasMethod('query') && $class->getMethod('query')->isPrivate() && $this->isInFamily((string) $class->getMethod('query')->getParameters()[0]->getType(), 'DataTransferObject\\SqlRepository') && str_ends_with((string) $class->getMethod('query')->getParameters()[0]->getType(), '\\DataTransferObject\\SqlRepository\\' . $typeSubnamespace . 'Options'),
+                    'All SQL repository classes that implement a reader interface must have a private method called `query` with a first parameter of type `<vendor>\\DataTransferObject\\SqlRepository\\' . $typeSubnamespace . 'Options` but `' . $class->getName() . '` does not',
                 );
             }
 
@@ -1161,7 +1209,7 @@ abstract class AbstractUbixConcreteClassOrEnumTestCase extends TestCase
             //  Test any VSM interfaces implemented
             //
             foreach ($class->getInterfaceNames() as $interface) {
-                if (str_starts_with($interface, 'Ubix\\Repository\\')) {
+                if ($this->isInFamily($interface, 'Repository')) {
                     $this->testRepositoryClassFollowingUbixStandards($interface);
                 }
             }
@@ -1225,7 +1273,7 @@ abstract class AbstractUbixConcreteClassOrEnumTestCase extends TestCase
         //
         //  Test the parent class if one exists
         //
-        if ($class->getParentClass() !== false && str_starts_with($class->getParentClass()->getName(), 'Ubix\\Service\\')) {
+        if ($class->getParentClass() !== false && $this->isInFamily($class->getParentClass()->getName(), 'Service')) {
             $this->testServiceClassFollowingUbixStandards($class->getParentClass()->getName());
         }
 
@@ -1233,7 +1281,7 @@ abstract class AbstractUbixConcreteClassOrEnumTestCase extends TestCase
         //  Test the interfaces implemented if any exist
         //
         foreach ($class->getInterfaceNames() as $interface) {
-            if (str_starts_with($interface, 'Ubix\\Service\\')) {
+            if ($this->isInFamily($interface, 'Service')) {
                 $this->testServiceClassFollowingUbixStandards($interface);
             }
         }
@@ -1300,7 +1348,7 @@ abstract class AbstractUbixConcreteClassOrEnumTestCase extends TestCase
         //
         //  Test the parent class if one exists
         //
-        if ($class->getParentClass() !== false && str_starts_with($class->getParentClass()->getName(), 'Ubix\\SimpleCache\\')) {
+        if ($class->getParentClass() !== false && $this->isInFamily($class->getParentClass()->getName(), 'SimpleCache')) {
             $this->testSimpleCacheClassFollowingUbixStandards($class->getParentClass()->getName());
         }
     }
@@ -1333,14 +1381,14 @@ abstract class AbstractUbixConcreteClassOrEnumTestCase extends TestCase
         //  Ensure a correct parent class is used
         //
         $this->assertTrue(
-            $class->getParentClass() !== false && ($class->getParentClass()->getName() === ErrorHandler::class || str_starts_with($class->getParentClass()->getName(), 'Ubix\\SlimHandler\\')),
+            $class->getParentClass() !== false && ($class->getParentClass()->getName() === ErrorHandler::class || $this->isInFamily($class->getParentClass()->getName(), 'SlimHandler')),
             'All Slim handler classes must extend the `' . ErrorHandler::class . '` class or another VSM Slim handler class but `' . $class->getName() . '` does not',
         );
 
         //
         //  Test the parent class if one exists
         //
-        if (str_starts_with($class->getParentClass()->getName(), 'Ubix\\SlimHandler\\')) {
+        if ($this->isInFamily($class->getParentClass()->getName(), 'SlimHandler')) {
             $this->testSlimHandlerClassFollowingUbixStandards($class->getParentClass()->getName());
         }
     }
@@ -1444,10 +1492,10 @@ abstract class AbstractUbixConcreteClassOrEnumTestCase extends TestCase
                 //
                 //  Ban the mixed type
                 //
-                $isExempt = str_starts_with($class->getName(), 'Ubix\\Collection\\')
-                || str_starts_with($class->getName(), 'Ubix\\DataTransferObject\\')
-                || str_starts_with($class->getName(), 'Ubix\\Exception\\')
-                || str_starts_with($class->getName(), 'Ubix\\SlimHandler\\')
+                $isExempt = $this->isInFamily($class->getName(), 'Collection')
+                || $this->isInFamily($class->getName(), 'DataTransferObject')
+                || $this->isInFamily($class->getName(), 'Exception')
+                || $this->isInFamily($class->getName(), 'SlimHandler')
                 || ($class->isSubclassOf(SymfonyCommand::class) && in_array($property->getName(), self::SYMFONY_COMMAND_MIXED_PROPERTY_EXEMPTIONS, true));
 
                 $this->assertTrue(
@@ -1472,7 +1520,7 @@ abstract class AbstractUbixConcreteClassOrEnumTestCase extends TestCase
                 //
                 //  Ensure that all properties declared in the class (as opposed to inherited) that have a corresponding constructor parameter are promoted
                 //
-                $isExempt = str_starts_with($class->getName(), 'Ubix\\Payload\\');
+                $isExempt = $this->isInFamily($class->getName(), 'Payload');
                 if ($property->getDeclaringClass()->getName() === $class->getName() && $class->hasMethod('__construct')) {
                     $constructor = $class->getMethod('__construct');
                     foreach ($constructor->getParameters() as $parameter) {
@@ -1539,7 +1587,7 @@ abstract class AbstractUbixConcreteClassOrEnumTestCase extends TestCase
 
         if (count($class->getMethods()) > 0) {
             foreach ($class->getMethods() as $method) {
-                $isExempt = str_starts_with($class->getName(), 'Ubix\\Payload\\');
+                $isExempt = $this->isInFamily($class->getName(), 'Payload');
 
                 //
                 //  Ban static methods
@@ -1583,12 +1631,12 @@ abstract class AbstractUbixConcreteClassOrEnumTestCase extends TestCase
         //
         $requiresLogger = !$class->isEnum() // NOT_IMPLEMENTED: phpcs should do one extra indent
         && !$class->isInterface()
-        && !str_starts_with($class->getName(), 'Ubix\\Collection\\')
-        && !str_starts_with($class->getName(), 'Ubix\\DataTransferObject\\')
-        && !str_starts_with($class->getName(), 'Ubix\\DataType\\')
-        && !str_starts_with($class->getName(), 'Ubix\\Exception\\')
-        && !str_starts_with($class->getName(), 'Ubix\\Model\\')
-        && !str_starts_with($class->getName(), 'Ubix\\Payload\\');
+        && !$this->isInFamily($class->getName(), 'Collection')
+        && !$this->isInFamily($class->getName(), 'DataTransferObject')
+        && !$this->isInFamily($class->getName(), 'DataType')
+        && !$this->isInFamily($class->getName(), 'Exception')
+        && !$this->isInFamily($class->getName(), 'Model')
+        && !$this->isInFamily($class->getName(), 'Payload');
 
         if ($requiresLogger) {
             $hasLoggerDependency = $class->hasMethod('__construct')
@@ -1610,8 +1658,8 @@ abstract class AbstractUbixConcreteClassOrEnumTestCase extends TestCase
                 //
                 //  Ensure repositories are only dependencies of supported classes
                 //
-                $isRepositoryDependency    = str_starts_with((string)$parameter->getType(), 'Ubix\\Repository\\');
-                $classSupportsRepositories = str_starts_with($class->getName(), 'Ubix\\Service\\');
+                $isRepositoryDependency    = $this->isInFamily((string)$parameter->getType(), 'Repository');
+                $classSupportsRepositories = $this->isInFamily($class->getName(), 'Service');
 
                 $this->assertTrue(
                     !$isRepositoryDependency || $classSupportsRepositories,
@@ -1621,8 +1669,8 @@ abstract class AbstractUbixConcreteClassOrEnumTestCase extends TestCase
                 //
                 //  Ensure SQL services are only dependencies of supported classes
                 //
-                $isSqlServiceDependency   = str_starts_with((string)$parameter->getType(), 'Ubix\\Service\\Sql\\');
-                $classSupportsSqlServices = str_starts_with($class->getName(), 'Ubix\\Repository\\') && str_ends_with($class->getShortName(), 'SqlRepository');
+                $isSqlServiceDependency   = $this->isInFamily((string)$parameter->getType(), 'Service\\Sql');
+                $classSupportsSqlServices = $this->isInFamily($class->getName(), 'Repository') && str_ends_with($class->getShortName(), 'SqlRepository');
 
                 $this->assertTrue(
                     !$isSqlServiceDependency || $classSupportsSqlServices,

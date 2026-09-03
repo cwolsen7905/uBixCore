@@ -400,3 +400,64 @@ subtree split), `@ubixsys/ubixcore` 0.1.1 (npm, ubixcore project registry).
 Verified by listing `Packages::Package` on the GitLab server. One tag now
 releases the PHP framework, the JS library and the skeleton with matching
 version numbers — that is the release model going forward.
+## 2026-09-04 — OSS-04a: the house rules stop caring what the vendor is called
+
+**Why now.** kitg is bootstrapped and the next thing to move is SowingMeApi with
+its DataTypes, Models, Payloads and DTOs. The standards checker every test runs
+(`testFollowingUbixStandards`) chose its rule family with
+`str_starts_with($class, 'Ubix\\Model\\')` and friends — 39 places — and used the
+same test to exempt DataTypes/DTOs/Models/Payloads from the logger-first
+constructor rule. A `Kitg\SowingMe\DataType\Int\PostId` would have got no
+DataType rules and been told it needs a `Logger`.
+
+**Change.** One helper, `isInFamily($fqcn, $family)`: walk the segments after the
+vendor root, the first one that is a known family (`Controller`, `Model`,
+`DataType`, `Service`, …) decides, and compound families (`Service\Sql`,
+`Console\Command`) match from there. So `Ubix\Controller\X`,
+`Kitg\Controller\X` and `Kitg\SowingMe\Controller\Api\X` are all controllers,
+while `Ubix\Enum\Exception\ExceptionCode` stays an enum because `Enum` comes
+first. The repository `query()` rule now checks the Options DTO by suffix.
+The sniffs needed nothing: `DemandCustomDataTypes` and `ModelPropertiesType`
+already reflect on `AbstractDataType` / `AbstractModel`.
+
+**Proof.** `tests/Tests/FamilyDetectionTest.php` with framework, host and
+host-with-product names; the full suite is unchanged for every existing class.
+Then the real test: SowingMeApi's 66 classes copied into kitg under
+`Kitg\\SowingMe\\` ran the same standards suite — 67 tests green after one more
+positional assumption fell (the repository rule read the type from the third
+namespace segment; it now reads the segment after `Repository`).
+
+**Aside.** `ubixsys/ubixcore-skeleton` now push-mirrors to
+https://github.com/cwolsen7905/ubixcore-skeleton. The skeleton is public while
+its dependency still resolves from the private GitLab registry, which is fine as
+a preview; Packagist for the framework itself waits on OSS-10.
+
+## 2026-09-04 — SowingMeApi in kitg, and a namespace decision reversed
+
+**The move.** SowingMeApi's closure — 66 classes, 54 tests, the app folder,
+templates, `sowingme.sql`, four migrations — copied into kitg under
+`Kitg\SowingMe\` (controllers as `Controller\Api`). Two extra classes joined
+because the reverse-dependency check caught the framework depending on product
+code: `SessionAuthenticationMiddleware` (needs `UserId`/`UserService`) and
+`TierPrecedenceService`. `Email` and `Password` DataTypes stayed: they are
+generic. After OSS-04a the kitg gate is green on the moved code with no edits
+beyond one missing `use` (a class that had shared a namespace with `JsonService`)
+and phpcbf import ordering. ubixcore's copies stay until kitg serves traffic.
+
+**Pipeline.** kitg's `.gitlab-ci.yml` is ubixcore's minus JS and publish jobs.
+The runtime image needs uBixCore from the private `ubixsys` group Composer
+registry, so the build passes `auth.json` as a BuildKit secret (a deploy token
+from `secret/kitg/composer`, else the job token) and the Dockerfile mounts it
+for the `composer install` step only. Consequence for the lock: a lock generated
+against a `vcs` source pins a git URL and cannot be installed inside Docker, so
+kitg's `composer.json` points at the group registry and its lock must be
+regenerated with a read token — the step that needs Christopher.
+
+**Namespaces.** I had proposed `kitg-{dev,staging,prod}` and built the
+manifests and doc rows. Christopher: "why are we changing them ... that
+shouldn't change." He is right about the cost/benefit: `regcred` is already a
+personal-token credential that pulls any path, the Vault role is already bound
+to `ws-*`/`live-*`, and applying over the existing Deployment/Ingress names
+makes the first kitg deploy the cutover with no interim hostnames. Reverted;
+the plan §5 now records the decision and the one rule it creates (ubixcore
+stops applying those manifests once kitg owns them).
