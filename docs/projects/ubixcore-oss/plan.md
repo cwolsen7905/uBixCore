@@ -80,8 +80,10 @@ fetched from. Sequence (Christopher, 2026-09-02):
    Composer reads branches/tags straight from GitLab; every push to ubixcore
    `dev` is consumable at once. CI authenticates with a GitLab deploy token via
    `COMPOSER_AUTH` (`gitlab-token`), stored in ubixvault like the other CI tokens.
-2. **Tagged — GitLab Composer package registry.** A ubixcore CI job publishes
-   each `v*` tag to the `ubixsys` group registry; kitg switches to
+2. **Tagged — GitLab Composer package registry.** On each `v*` tag the
+   `deploy-composer` job publishes the framework to this project's registry and
+   `publish-skeleton` (`bin/publish-skeleton.sh`) subtree-splits `skeleton/` into
+   the `ubixsys/ubixcore-skeleton` project and publishes it there; kitg switches to
    `{ "type": "composer", "url": "https://gitlab.brainchurts.com/api/v4/group/<id>/-/packages/composer/packages.json" }`
    and `"ubixsys/ubixcore": "^0.1"`. The lock then pins a tag, not a branch commit.
 3. **Public — mirror + Packagist.** Once the app layer is gone from ubixcore,

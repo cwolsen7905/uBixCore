@@ -300,3 +300,35 @@ is the manual form and is documented; the scaffolder is nicer, not blocking.
 the GitLab registry; add the `skeleton/` subtree split so
 `ubixsys/ubixcore-skeleton` resolves without a path repository. Then the kitg
 repo can be created from it for real.
+
+## 2026-09-03 — OSS-09: publishing, one job away from a first tag
+
+**Framework.** `deploy-composer` (neptune-inherited) already publishes any `v*`
+tag to this project's GitLab Composer registry; it only gained `--fail` so a
+rejected publish turns the job red instead of silently passing.
+
+**Skeleton.** A GitLab project registry holds one package per project and reads
+the repo's root `composer.json`, so `skeleton/` cannot be published from
+ubixcore's own registry. `bin/publish-skeleton.sh` does what Symfony's
+read-only split repos do: `git subtree split --prefix=skeleton` at the tag,
+force-push that history as `main` plus the same tag to
+`ubixsys/ubixcore-skeleton`, then call the Composer packages API on *that*
+project to publish the tag. The `publish-skeleton` job runs it after
+`deploy-composer` on tag pipelines. Without `GITLAB_SKELETON_TOKEN` it exits
+0 with a notice, so a tag never goes red on an optional step.
+
+**Why a separate token.** `GITLAB_PROMOTE_TOKEN` is a project access token on
+ubixcore and cannot push to another project. The skeleton project needs its own
+(Maintainer, `api` + `write_repository`), stored as a masked CI variable on
+ubixcore.
+
+**Manual steps (Christopher):** create the empty `ubixsys/ubixcore-skeleton`
+project (no README, no default branch protection on `main` for the CI token),
+add `GITLAB_SKELETON_TOKEN`, then tag: `git tag v0.1.0 <dev sha> && git push
+origin v0.1.0`. The tag pipeline publishes both packages. After that, a host's
+`composer.json` uses the group Composer registry (one `composer` repository
+entry for both packages) and `create-project ubixsys/ubixcore-skeleton` works
+with no path repository.
+
+**Deferred to after OSS-10.** GitHub push mirror and Packagist: not until the
+app layer has left this repo, since a public mirror would publish Sowing.me.

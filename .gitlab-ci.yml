@@ -196,11 +196,25 @@ promote-to-main-destructive:
   variables: { GIT_DEPTH: "0", PROMOTE_ACK_DESTRUCTIVE: "1" }
   script: [bash bin/promote.sh main]
 
+# ---------------------------------------------------------------------------
+# publish — on a v* tag: the framework (ubixsys/ubixcore) to this project's
+# Composer registry, then skeleton/ split out and published as
+# ubixsys/ubixcore-skeleton (bin/publish-skeleton.sh; needs GITLAB_SKELETON_TOKEN,
+# skips politely without it). See docs/projects/ubixcore-oss/plan.md §2.
+# ---------------------------------------------------------------------------
 deploy-composer:
   stage: deploy
   tags: [shell]
   script:
-    - '/usr/bin/curl --header "Job-Token: $CI_JOB_TOKEN" --data tag=$CI_COMMIT_TAG "${CI_API_V4_URL}/projects/$CI_PROJECT_ID/packages/composer"'
+    - '/usr/bin/curl --fail --header "Job-Token: $CI_JOB_TOKEN" --data tag=$CI_COMMIT_TAG "${CI_API_V4_URL}/projects/$CI_PROJECT_ID/packages/composer"'
+  only: [tags]
+
+publish-skeleton:
+  stage: deploy
+  tags: [shell]
+  needs: [deploy-composer]
+  variables: { GIT_DEPTH: "0" }
+  script: [bash bin/publish-skeleton.sh]
   only: [tags]
 
 # ---------------------------------------------------------------------------
