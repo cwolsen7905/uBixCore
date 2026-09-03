@@ -13,7 +13,7 @@ COPY config/devops/nginx.conf /etc/nginx/nginx.conf
 USER www
 
 
-COPY --chown=www composer.json /web/
+COPY --chown=www composer.json composer.lock /web/
 COPY --chown=www public/ /web/public/
 COPY --chown=www php/ /web/php/
 COPY --chown=www templates/ /web/templates/
@@ -23,7 +23,10 @@ COPY --chown=www bin/ /web/bin/
 #Temporary fix for dotenv
 COPY --chown=www .env_dev /web/.env
 
-RUN composer update --working-dir=/web/
+# Reproducible: install exactly what composer.lock pins (no dev tools in live pods;
+# Dockerfile_Test adds them). `composer update` here would let an image change
+# with no commit behind it.
+RUN composer install --working-dir=/web/ --no-dev --no-interaction --prefer-dist --no-progress
 
 RUN mkdir -p /web/var/cache/latte
 RUN chmod -R 777 /web/var

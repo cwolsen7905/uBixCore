@@ -156,7 +156,7 @@ configs, CI) are yours; the changelog says when an upgrade wants a change there.
 | Step | Exists today? | Delivered by |
 |---|---|---|
 | 1 `create-project` skeleton | No — the repo *is* the product monorepo | OSS-07, OSS-09 |
-| 2 git shape | Partly — `composer.lock` is gitignored, Dockerfile runs `composer update` | OSS-06 |
+| 2 git shape | Yes — lock committed, images `composer install` from it (OSS-06) | — |
 | 3 `app:init` + own namespace | Partly — host command namespaces are discovered (OSS-03); no scaffolder yet; controllers still live in `Ubix\` | OSS-04, OSS-07 |
 | 4 `app:run` | Yes — resolves `app/` through `ProjectRootService` (OSS-02) | — |
 | 5 `AbstractController` in `Ubix\` | Yes | — |
