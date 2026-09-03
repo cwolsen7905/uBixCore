@@ -20,8 +20,9 @@ class MinorUnitAmount extends IntDataType
      * @param int $input The amount in minor units, zero or more
      */
     public function __construct(
+        // @phpstan-ignore property.onlyWritten (The promoted $input property carries the validation attributes read via reflection in validate(); the value itself is exposed through the parent DataType)
         #[PositiveOrZero]
-        private int $input, // @phpstan-ignore property.onlyWritten (The promoted $input property carries the validation attributes read via reflection in validate(); the value itself is exposed through the parent DataType)
+        private int $input,
     ) {
         $this->validate();
         parent::__construct($input);
