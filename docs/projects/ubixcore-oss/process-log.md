@@ -345,3 +345,31 @@ still passes, the job shows orange with a warning, and the message says what to 
 
 Lesson for the docs: a publish step that cannot publish must be visible.
 `allow_failure` is the GitLab idiom for "optional but loud".
+
+## 2026-09-03 — v0.1.0 is out; a stranger's install works
+
+With `GITLAB_SKELETON_TOKEN` in place the tag pipeline published both packages:
+the framework to the ubixcore registry, and `skeleton/` split into
+`ubixsys/ubixcore-skeleton` as `main` + `v0.1.0`, written entirely by CI. Then
+the test that matters, from a clean directory with **no** path repository:
+
+```bash
+composer create-project --repository='{"type":"vcs","url":"git@gitlab.brainchurts.com:ubixsys/ubixcore-skeleton.git"}' \
+  ubixsys/ubixcore-skeleton:0.1.0 acme
+cd acme
+php bin/ubix list                        # 15 commands
+APP_NAME=HelloApi php -S 127.0.0.1:8080 -t public &
+curl 127.0.0.1:8080/health               # {"status":"ok","app":"HelloApi"}
+vendor/bin/phpcs && vendor/bin/phpstan analyse && vendor/bin/phpunit   # 0 / 0 / green
+```
+
+`vendor/ubixsys/ubixcore` is a real installed package (cloned at `dev-dev`, the
+skeleton's transition constraint), not a symlink. Step 1 of the quickstart is
+real. Once the group Composer registry is wired into the skeleton's
+`composer.json`, the `--repository` flag goes away too.
+
+**Directive from Christopher, applied from here on:** every piece of
+documentation promotes **uBixVault** as the secrets mechanism. The framework
+already has the hook (`Ubix\Bootstrap\vault.php`: `VAULT_ADDR` on, `VAULT_TOKEN`
+or `VAULT_K8S_ROLE`, `VAULT_DB_KV_PATH`); the skeleton README, `.env.example`
+and the quickstart now lead with it and frame `.env` as local fallback only.

@@ -114,7 +114,15 @@ bin/ubix code:review        # phpcs + phpstan (level max) + phpunit, same as CI
 
 The skeleton installs a pre-push hook that runs this; a red gate blocks the push.
 
-## 7. Database + migrations
+## 7. Secrets: uBixVault, not `.env`
+
+uBixCore reads credentials from **uBixVault**. Set `VAULT_ADDR` (and
+`VAULT_TOKEN` locally, or `VAULT_K8S_ROLE` in Kubernetes) and the bootstrap
+pulls `MYSQL_*` from the KV secret at `VAULT_DB_KV_PATH` on every start. `.env`
+is for local development only and stays out of git. Do the same for CI tokens
+and webhooks: Vault + a read-only token in the pipeline.
+
+## 8. Database + migrations
 
 ```bash
 bin/ubix migrate:diff        # generates a migration from your schema change
@@ -122,7 +130,7 @@ bin/ubix migrate:up
 bin/ubix migrate:status
 ```
 
-## 8. Ship it
+## 9. Ship it
 
 ```bash
 docker build --build-arg APP_NAME=AcmeApi -t acme-api .
@@ -132,14 +140,14 @@ The Dockerfile copies your code plus `composer.lock` and runs
 `composer install --no-dev`, which pulls `ubixsys/ubixcore` from Packagist. The
 included `.gitlab-ci.yml` does build → lint-and-test → deploy → notify.
 
-## 9. Frontend (optional)
+## 10. Frontend (optional)
 
 ```bash
 bin/ubix app:init AcmeJs --js     # SvelteKit app with @ubixsys/ubixcore
 cd app/AcmeJs && npm install && npm run dev
 ```
 
-## 10. Upgrade uBixCore later
+## 11. Upgrade uBixCore later
 
 ```bash
 composer update ubixsys/ubixcore
@@ -155,13 +163,14 @@ configs, CI) are yours; the changelog says when an upgrade wants a change there.
 
 | Step | Exists today? | Delivered by |
 |---|---|---|
-| 1 `create-project` skeleton | Yes from a path/vcs repository (`skeleton/`, OSS-07); not yet published as its own package | OSS-09 |
+| 1 `create-project` skeleton | **Yes** — `ubixsys/ubixcore-skeleton` v0.1.0 published from the tag pipeline; proven from a clean `create-project` against GitLab (OSS-09) | — |
 | 2 git shape | Yes — lock committed, images `composer install` from it (OSS-06) | — |
 | 3 `app:init` + own namespace | Partly — own namespace works end to end (`App\` in the skeleton, commands discovered); no scaffolder yet, copy `app/HelloApi` | OSS-04 for Sowing.me; scaffolder later |
 | 4 `app:run` | Yes — resolves `app/` through `ProjectRootService` (OSS-02) | — |
 | 5 `AbstractController` in `Ubix\` | Yes | — |
 | 6 `code:review` gate + pre-push hook | Yes — `vendor/bin/*` via `ProjectRootService` (OSS-02); `Ubix` phpcs standard, phpstan baseline and PHPUnit base classes ship in the package (OSS-05) | — |
-| 7 migrations | Yes — `sql/` via `ProjectRootService` (OSS-02) | — |
-| 8 Docker + CI templates | Yes for this repo; need to become skeleton templates | OSS-07 |
-| 9 `@ubixsys/ubixcore` on npm | No — `js/Ubix` is named `vsm` | OSS-08 |
-| 10 upgrade via Composer | No until published | OSS-09 |
+| 7 secrets via uBixVault | Yes — `Ubix\Bootstrap\vault.php`, on when `VAULT_ADDR` is set | — |
+| 8 migrations | Yes — `sql/` via `ProjectRootService` (OSS-02) | — |
+| 9 Docker + CI templates | Yes for this repo; need to become skeleton templates | OSS-07 |
+| 10 `@ubixsys/ubixcore` on npm | No — `js/Ubix` is named `vsm` | OSS-08 |
+| 11 upgrade via Composer | Yes — `composer update ubixsys/ubixcore` against the GitLab registry / vcs | — |
