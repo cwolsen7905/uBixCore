@@ -90,3 +90,59 @@ anything that reaches above the package boundary is a bug.
 
 **Next:** OSS-03 — `bin/ubix` and `public/index.php` become thin skeleton files
 that hand the root and a command-namespace list to a framework bootstrap.
+
+## 2026-09-03 — OSS-03: the entry points belong to the host, the bootstrap to the framework
+
+**Problem.** `bin/ubix` was 120 lines that globbed `php/Ubix/Console/Command/**`
+ten levels deep to find commands and hard-required `app/UbixCli/src/Dependencies.php`;
+`public/index.php` built `app/<APP_NAME>` next to itself; both loaded
+`php/Ubix/Bootstrap/vault.php` by relative path. A host copying these would have
+been copying framework internals.
+
+**Design.** Everything that is framework behaviour moved into
+`php/Ubix/Bootstrap/bootstrap.php` as namespaced functions, loaded through
+Composer's `files` autoload so a host calls `\Ubix\Bootstrap\console()` without
+knowing where the package is installed:
+
+- `environment($projectRoot)` — timezone, `.env`, exports `UBIX_PROJECT_ROOT`,
+  vault hook, sandbox error display. Returns the normalised root.
+- `console($dependenciesFile, $commandNamespaces, $argv)` — builds the container
+  and registers every command found under the given namespaces.
+- `http($projectRoot, $appName)` — the Slim app for `app/<APP_NAME>`.
+- `discoverClasses($namespace)` — walks Composer's registered PSR-4 map
+  (`ClassLoader::getRegisteredLoaders()`), so `'Acme\\Console\\Command'` in a host
+  resolves to `php/Acme/Console/Command/` with no framework change.
+
+Functions rather than a class on purpose: the bootstrap runs before the container
+exists, so it cannot satisfy the class standards (logger-first constructor, no
+statics), and `Ubix\Bootstrap\` is already the scanner-exempt home for `vault.php`.
+
+The host's files are now what the skeleton will ship:
+
+```php
+// bin/ubix
+$projectRoot = environment(dirname(__DIR__));
+console(
+    dependenciesFile:  $projectRoot . '/app/UbixCli/src/Dependencies.php',
+    commandNamespaces: ['Ubix\\Console\\Command'],   // a host appends its own
+    argv:              $argv ?? [],
+)->run();
+
+// public/index.php
+http(environment(dirname(__DIR__)), (string) getenv('APP_NAME'))->run();
+```
+
+**Found while there.** The old `bin/ubix` referenced `ExceptionCode::MissingCommandClass`
+and `::InvalidCommandClass`, which do not exist (the cases are
+`MISSING_COMMAND_CLASS` / `INVALID_COMMAND_CLASS`). It never fataled because the
+branch only runs on a broken command class, and phpstan never saw it because
+`bin/ubix` has no `.php` extension. Moving the logic into an analysed file
+caught it.
+
+**Verified.** `php bin/ubix list` shows the same 15 commands; `cron:*` gating
+unchanged; `APP_NAME=SowingMeApi php -S … -t public` serves the API (401 from the
+session middleware, as before). phpcs 0, phpstan 0.
+
+**Next:** OSS-04 — move Sowing.me controllers, repositories, services, models and
+payloads out of `Ubix\` into `Kitg\SowingMe\` (in this repo first, so the move
+to `kitg/kitg` later is a directory copy, not a rename).

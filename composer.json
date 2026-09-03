@@ -14,7 +14,10 @@
         "PHP_CodeSniffer\\": "vendor/squizlabs/php_codesniffer/src/",
         "Ubix\\": "php/Ubix/",
         "Ubix\\Tests\\": "tests/"
-      }
+      },
+      "files": [
+        "php/Ubix/Bootstrap/bootstrap.php"
+      ]
     },
 	"minimum-stability": "dev",
 	"prefer-stable": true,
