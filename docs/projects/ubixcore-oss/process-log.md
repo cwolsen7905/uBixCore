@@ -390,3 +390,13 @@ out (OSS-10). Consumers configure the `@ubixsys` scope in `.npmrc` with a
 read-only deploy token kept in uBixVault — see `js/Ubix/README.md`.
 
 Verification needs a tag; `v0.1.1` after this lands.
+
+## 2026-09-03 — v0.1.1: all three packages from one tag
+
+`v0.1.1` tagged from `dev`. The tag pipeline published, in order:
+`ubixsys/ubixcore` 0.1.1 (Composer, ubixcore project registry),
+`ubixsys/ubixcore-skeleton` 0.1.1 (Composer, skeleton project registry, via the
+subtree split), `@ubixsys/ubixcore` 0.1.1 (npm, ubixcore project registry).
+Verified by listing `Packages::Package` on the GitLab server. One tag now
+releases the PHP framework, the JS library and the skeleton with matching
+version numbers — that is the release model going forward.
