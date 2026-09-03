@@ -17,6 +17,7 @@ use Symfony\Component\Console\Output\OutputInterface as Output;
 use Symfony\Component\Console\Style\SymfonyStyle;
 use Symfony\Component\Yaml\Yaml;
 use Ubix\Console\Command\AbstractCommand as Command;
+use Ubix\Service\ProjectRootService;
 use Ubix\SlimApp\RecordingApp;
 
 /**
@@ -26,26 +27,27 @@ use Ubix\SlimApp\RecordingApp;
  */
 final class GenerateOpenapiCommand extends Command
 {
-    private const APPS_PATH = __DIR__ . '/../../../../../app';
 
     private string $appsPath;
 
     /**
      * Constructor
      *
-     * @param Logger $logger Logger
+     * @param Logger             $logger      Logger
+     * @param ProjectRootService $projectRoot Resolves paths in the host project
      */
     public function __construct(
         private Logger $logger, // @phpstan-ignore property.onlyWritten (Logger is a required dependency of most VSM classes but has not been implemented in this class yet)
+        private ProjectRootService $projectRoot,
     ) {
         parent::__construct($logger);
 
         //
         //  Set the apps path
         //
-        $appsPath = realpath(self::APPS_PATH);
+        $appsPath = realpath($this->projectRoot->getPath('app'));
         if ($appsPath === false) {
-            throw new Exception('The apps folder was not found at `' . self::APPS_PATH . '`');
+            throw new Exception('The apps folder was not found at `' . $this->projectRoot->getPath('app') . '`');
         } else {
             $this->appsPath = $appsPath;
         }

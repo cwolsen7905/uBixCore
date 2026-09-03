@@ -21,6 +21,7 @@ use Ubix\Repository\SchemaMigration\SchemaMigrationReaderInterface as SchemaMigr
 use Ubix\Repository\SchemaMigration\SchemaMigrationSqlRepository;
 use Ubix\Repository\SchemaMigration\SchemaMigrationWriterInterface as SchemaMigrationWriter;
 use Ubix\Service\Migration\MigrationFileScannerService;
+use Ubix\Service\ProjectRootService;
 use Ubix\Service\SlackService;
 use Ubix\Service\Sql\MigrationPdoSqlService;
 use Ubix\Service\Sql\MysqlPdoSqlService;
@@ -36,7 +37,15 @@ return static function (): Container {
     $memcacheServers = getenv('MEMCACHE_SERVERS');
     $memcacheServers = explode(',', is_string($memcacheServers) ? $memcacheServers : '');
 
-    $migrationsPath = dirname(__DIR__, 3) . '/sql/migrations';
+    //
+    //  Project root: the directory holding composer.json, app/, sql/ and vendor/.
+    //  uBixCore itself is a Composer package living in vendor/, so nothing in the
+    //  framework may derive this from its own __DIR__ - the host binds it here
+    //  once. UBIX_PROJECT_ROOT overrides it for tooling that runs from elsewhere.
+    //
+    $projectRoot    = getenv('UBIX_PROJECT_ROOT');
+    $projectRoot    = is_string($projectRoot) && $projectRoot !== '' ? $projectRoot : dirname(__DIR__, 3);
+    $migrationsPath = $projectRoot . '/sql/migrations';
 
     $container = new ContainerBuilder();
 
@@ -54,6 +63,7 @@ return static function (): Container {
         //  bin/ubix, but the services they inject need these bindings.
         //
         MigrationFileScannerService::class  => autowire(MigrationFileScannerService::class)->constructorParameter('migrationsPath', $migrationsPath),
+        ProjectRootService::class           => autowire()->constructorParameter('root', $projectRoot),
         SqlService::class                   => autowire(MysqlPdoSqlService::class),
         SchemaMigrationSqlRepository::class => autowire(SchemaMigrationSqlRepository::class)->constructorParameter('sqlService', get(MigrationPdoSqlService::class)),
         SchemaMigrationReader::class        => get(SchemaMigrationSqlRepository::class),

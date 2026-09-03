@@ -1,6 +1,6 @@
 # uBixCore Open-Source Split — Project
 
-**Status:** Active — slice 1 (plan + process log) 2026-09-02 on `feat/oss-01-plan`. No code moved yet.
+**Status:** Active — OSS-01 (plan) and OSS-02 (`ProjectRootService`) built 2026-09-02. Next OSS-03 (thin entry points).
 
 Turn this repo into **uBixCore**, an open-source framework-plus-tooling monorepo that
 third parties install from Composer / npm (and later PyPI), and move **Sowing.me**
@@ -37,7 +37,7 @@ Status: `Todo` · `Build` · `Done` · `Dropped`.
 | ID | Slice | Status | Notes |
 |---|---|---|---|
 | OSS-01 | Plan + process log (this folder), lane registered | Done | docs only |
-| OSS-02 | `ProjectRoot` service: one resolver for the host project root; replace every `__DIR__ . '/../../..'` walk in `php/Ubix` | Todo | see plan § Coupling inventory |
+| OSS-02 | `ProjectRootService`: one resolver for the host project root; replace every `__DIR__ . '/../../..'` walk in `php/Ubix` | Done | 2026-09-02, `feat/oss-02-project-root`. Root bound once in the host's `Dependencies.php` (`UBIX_PROJECT_ROOT` overrides); 12 call sites in 8 files rewritten; `php/Ubix` has no root-relative `__DIR__` left |
 | OSS-03 | Thin entry points: `bin/ubix` + `public/index.php` call a framework bootstrap; command discovery takes a namespace list from host config | Todo | `bin/ubix` globs `php/Ubix/Console/Command/**` today |
 | OSS-04 | Product code out of `Ubix\`: SowingMe controllers/repositories/services/DTOs → `Kitg\SowingMe\` PSR-4 root under `php/Kitg/SowingMe/` | Todo | biggest diff; coordinate with active M1 lanes |
 | OSS-05 | Export quality tooling from the package: phpcs ruleset reachable via `vendor/…/ruleset.xml`, phpstan extension neon, `Ubix\Tests` base classes moved out of `tests/` into the package | Todo | |

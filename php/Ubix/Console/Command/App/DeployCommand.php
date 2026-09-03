@@ -11,6 +11,7 @@ use Symfony\Component\Console\Output\OutputInterface as Output;
 use Ubix\Console\Command\AbstractCommand as Command;
 use Ubix\Enum\Env;
 use Ubix\Service\ProcessService;
+use Ubix\Service\ProjectRootService;
 use ValueError;
 
 /**
@@ -20,17 +21,17 @@ use ValueError;
  */
 final class DeployCommand extends Command
 {
-    private const APPS_PATH = __DIR__ . '/../../../../../';
-
     /**
      * Constructor.
      *
-     * @param Logger         $logger         Logger instance
-     * @param ProcessService $processService Process service instance
+     * @param Logger             $logger         Logger instance
+     * @param ProcessService     $processService Process service instance
+     * @param ProjectRootService $projectRoot    Resolves paths in the host project
      */
     public function __construct(
         private Logger $logger, // @phpstan-ignore property.onlyWritten (Logger is a required dependency of most VSM classes but has not been implemented in this class yet)
         private ProcessService $processService,
+        private ProjectRootService $projectRoot,
     ) {
         parent::__construct($logger);
     }
@@ -50,7 +51,7 @@ final class DeployCommand extends Command
             return Command::FAILURE;
         }
 
-        $deployCmd = self::APPS_PATH . 'bin/deploy.sh ' . $env->value;
+        $deployCmd = $this->projectRoot->getPath('bin', 'deploy.sh') . ' ' . $env->value;
 
         $output->writeln('Building the project for environment: ' . $env->value);
 
