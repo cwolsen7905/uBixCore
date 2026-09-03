@@ -199,8 +199,9 @@ promote-to-main-destructive:
 # ---------------------------------------------------------------------------
 # publish — on a v* tag: the framework (ubixsys/ubixcore) to this project's
 # Composer registry, then skeleton/ split out and published as
-# ubixsys/ubixcore-skeleton (bin/publish-skeleton.sh; needs GITLAB_SKELETON_TOKEN,
-# skips politely without it). See docs/projects/ubixcore-oss/plan.md §2.
+# ubixsys/ubixcore-skeleton (bin/publish-skeleton.sh; needs GITLAB_SKELETON_TOKEN).
+# Without the token the job FAILS but is allow_failure, so it shows as a warning
+# rather than a green no-op. See docs/projects/ubixcore-oss/plan.md §2.
 # ---------------------------------------------------------------------------
 deploy-composer:
   stage: deploy
@@ -215,6 +216,7 @@ publish-skeleton:
   needs: [deploy-composer]
   variables: { GIT_DEPTH: "0" }
   script: [bash bin/publish-skeleton.sh]
+  allow_failure: true
   only: [tags]
 
 # ---------------------------------------------------------------------------

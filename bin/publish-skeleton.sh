@@ -11,8 +11,9 @@
 #                           (Maintainer; scopes api + write_repository)
 #   GITLAB_SKELETON_PATH    optional, default ubixsys/ubixcore-skeleton
 #
-# Skips (exit 0, with a notice) when the token is not configured so a tag
-# pipeline never goes red on a missing optional publish.
+# Exits 1 when the token is not configured. The CI job is allow_failure, so the
+# pipeline still passes but the job shows as a warning instead of green - a
+# publish that did nothing must never look like one that succeeded.
 set -euo pipefail
 
 TAG="${CI_COMMIT_TAG:-}"
@@ -23,8 +24,9 @@ fi
 
 TOKEN="${GITLAB_SKELETON_TOKEN:-}"
 if [ -z "$TOKEN" ]; then
-    echo "publish-skeleton: GITLAB_SKELETON_TOKEN is not configured — skipping the skeleton publish for ${TAG}."
-    exit 0
+    echo "publish-skeleton: GITLAB_SKELETON_TOKEN is not configured — the skeleton was NOT published for ${TAG}." >&2
+    echo "publish-skeleton: add it as a masked CI/CD variable on this project (token from ubixsys/ubixcore-skeleton, Maintainer, api + write_repository) and retry this job." >&2
+    exit 1
 fi
 
 HOST="${CI_SERVER_HOST:-gitlab.brainchurts.com}"
