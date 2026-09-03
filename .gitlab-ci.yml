@@ -219,6 +219,27 @@ publish-skeleton:
   allow_failure: true
   only: [tags]
 
+# js/Ubix -> @ubixsys/ubixcore in this project's npm registry, version = the tag.
+publish-npm:
+  stage: deploy
+  tags: [shell]
+  needs: [deploy-composer]
+  script:
+    - |
+      set -euo pipefail
+      VERSION="${CI_COMMIT_TAG#v}"
+      REGISTRY="${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/packages/npm/"
+      docker run --rm -v "$PWD/js/Ubix:/pkg" -w /pkg \
+        -e NPM_REGISTRY="$REGISTRY" -e NPM_TOKEN="$CI_JOB_TOKEN" -e VERSION="$VERSION" \
+        node:20 sh -c '
+          set -e
+          printf "@ubixsys:registry=%s\n%s:_authToken=%s\n" "$NPM_REGISTRY" "${NPM_REGISTRY#https:}" "$NPM_TOKEN" > .npmrc
+          npm version --no-git-tag-version --allow-same-version "$VERSION"
+          npm ci --no-audit --no-fund
+          npm publish --registry "$NPM_REGISTRY"
+          rm -f .npmrc'
+  only: [tags]
+
 # ---------------------------------------------------------------------------
 # notify — red pipeline → #ubixcore-alerts
 # ---------------------------------------------------------------------------
