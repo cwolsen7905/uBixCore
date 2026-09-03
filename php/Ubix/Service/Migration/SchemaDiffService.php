@@ -7,6 +7,7 @@ namespace Ubix\Service\Migration;
 use Psr\Log\LoggerInterface as Logger;
 use Ubix\DataTransferObject\Migration\SchemaDiffResult;
 use Ubix\Service\ProcessService;
+use Ubix\Service\ProjectRootService;
 
 /**
  * Compares the live cluster schema for each Ubix-consumed
@@ -61,11 +62,13 @@ final class SchemaDiffService
      * @param Logger                             $logger             PSR-3 logger
      * @param ProcessService                     $processService     Shells out to `mariadb-dump`
      * @param MigrationCredentialResolverService $credentialResolver Picks MySQL connection params; prefers `MYSQL_MIGRATION_*` over `MYSQL_WRITE_*`
+     * @param ProjectRootService                 $projectRoot        Resolves `sql/` under the host project root
      */
     public function __construct(
         private Logger $logger, // @phpstan-ignore property.onlyWritten (Logger is a required dependency of most VSM classes but has not been implemented in this class yet)
         private ProcessService $processService,
         private MigrationCredentialResolverService $credentialResolver,
+        private ProjectRootService $projectRoot,
     ) {
     }
 
@@ -268,6 +271,6 @@ final class SchemaDiffService
      */
     private function referenceDumpPath(string $database): string
     {
-        return dirname(__DIR__, 4) . '/sql/' . $database . '.sql';
+        return $this->projectRoot->getPath('sql', $database . '.sql');
     }
 }

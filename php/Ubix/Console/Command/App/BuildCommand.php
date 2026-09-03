@@ -11,6 +11,7 @@ use Symfony\Component\Console\Output\OutputInterface as Output;
 use Ubix\Console\Command\AbstractCommand as Command;
 use Ubix\Enum\Env;
 use Ubix\Service\ProcessService;
+use Ubix\Service\ProjectRootService;
 use ValueError;
 
 /**
@@ -20,25 +21,17 @@ use ValueError;
  */
 final class BuildCommand extends Command
 {
-    private const BUILD_COMMANDS = [
-        'docker image rm -f registry.lan.vsmedia.net/k8s/baseimages/nginx-php8-fpm-memcache:latest || true',
-        'docker build -f ' . self::APPS_PATH . 'Dockerfile_Sandbox -t project-neptune:sandbox ' . self::APPS_PATH,
-        'docker save project-neptune:sandbox > /tmp/project-neptune_sandbox.tar',
-        'microk8s ctr image import /tmp/project-neptune_sandbox.tar',
-        'microk8s kubectl get namespace webservices-sandbox >/dev/null 2>&1 || microk8s kubectl create namespace webservices-sandbox',
-    ];
-
-    private const APPS_PATH = __DIR__ . '/../../../../../';
-
     /**
      * Constructor.
      *
-     * @param Logger         $logger         Logger instance
-     * @param ProcessService $processService Process service instance
+     * @param Logger             $logger         Logger instance
+     * @param ProcessService     $processService Process service instance
+     * @param ProjectRootService $projectRoot    Resolves paths in the host project
      */
     public function __construct(
         private Logger $logger, // @phpstan-ignore property.onlyWritten (Logger is a required dependency of most VSM classes but has not been implemented in this class yet)
         private ProcessService $processService,
+        private ProjectRootService $projectRoot,
     ) {
         parent::__construct($logger);
     }
@@ -59,7 +52,7 @@ final class BuildCommand extends Command
 
         $output->writeln('Building the project for environment: ' . $env->value);
         // Execute the build commands
-        foreach (self::BUILD_COMMANDS as $command) {
+        foreach ($this->getBuildCommands() as $command) {
             $result = $this->processService->executeAsSubprocess($command);
             if ($result->exitCode !== 0) {
                 $output->writeln('<error>Command failed: ' . $command . '</error>');
@@ -90,5 +83,23 @@ HELP,
             InputArgument::REQUIRED,
             'The environment to build',
         );
+    }
+
+    /**
+     * Get the build commands, in execution order
+     *
+     * @return string[]
+     */
+    private function getBuildCommands(): array
+    {
+        $root = $this->projectRoot->getRoot();
+
+        return [
+            'docker image rm -f registry.lan.vsmedia.net/k8s/baseimages/nginx-php8-fpm-memcache:latest || true',
+            'docker build -f ' . $root . '/Dockerfile_Sandbox -t project-neptune:sandbox ' . $root . '/',
+            'docker save project-neptune:sandbox > /tmp/project-neptune_sandbox.tar',
+            'microk8s ctr image import /tmp/project-neptune_sandbox.tar',
+            'microk8s kubectl get namespace webservices-sandbox >/dev/null 2>&1 || microk8s kubectl create namespace webservices-sandbox',
+        ];
     }
 }

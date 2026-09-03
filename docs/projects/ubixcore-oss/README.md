@@ -1,6 +1,6 @@
 # uBixCore Open-Source Split — Project
 
-**Status:** Active — slice 1 (plan + process log) 2026-09-02 on `feat/oss-01-plan`. No code moved yet.
+**Status:** Active — OSS-01 (plan) and OSS-02 (`ProjectRootService`) built 2026-09-02. Next OSS-03 (thin entry points).
 
 Turn this repo into **uBixCore**, an open-source framework-plus-tooling monorepo that
 third parties install from Composer / npm (and later PyPI), and move **Sowing.me**
@@ -16,6 +16,7 @@ that log is the source for the "Build on uBixCore" section of **ubixsys-web**.
 |---|---|
 | [`plan.md`](plan.md) | Target shape, decisions, coupling inventory, sequenced slices |
 | [`process-log.md`](process-log.md) | Narrative of what we actually did, in order, with the commands — feeds the website docs |
+| [`quickstart-draft.md`](quickstart-draft.md) | The "Get started with uBixCore" page as it should read when done, with a reality-check table mapping each step to a slice |
 
 ## Decisions (2026-09-02, Christopher)
 
@@ -36,7 +37,7 @@ Status: `Todo` · `Build` · `Done` · `Dropped`.
 | ID | Slice | Status | Notes |
 |---|---|---|---|
 | OSS-01 | Plan + process log (this folder), lane registered | Done | docs only |
-| OSS-02 | `ProjectRoot` service: one resolver for the host project root; replace every `__DIR__ . '/../../..'` walk in `php/Ubix` | Todo | see plan § Coupling inventory |
+| OSS-02 | `ProjectRootService`: one resolver for the host project root; replace every `__DIR__ . '/../../..'` walk in `php/Ubix` | Done | 2026-09-02, `feat/oss-02-project-root`. Root bound once in the host's `Dependencies.php` (`UBIX_PROJECT_ROOT` overrides); 12 call sites in 8 files rewritten; `php/Ubix` has no root-relative `__DIR__` left |
 | OSS-03 | Thin entry points: `bin/ubix` + `public/index.php` call a framework bootstrap; command discovery takes a namespace list from host config | Todo | `bin/ubix` globs `php/Ubix/Console/Command/**` today |
 | OSS-04 | Product code out of `Ubix\`: SowingMe controllers/repositories/services/DTOs → `Kitg\SowingMe\` PSR-4 root under `php/Kitg/SowingMe/` | Todo | biggest diff; coordinate with active M1 lanes |
 | OSS-05 | Export quality tooling from the package: phpcs ruleset reachable via `vendor/…/ruleset.xml`, phpstan extension neon, `Ubix\Tests` base classes moved out of `tests/` into the package | Todo | |
@@ -44,5 +45,5 @@ Status: `Todo` · `Build` · `Done` · `Dropped`.
 | OSS-07 | `skeleton/` folder + `ubix app:init` scaffolder; prove with `composer create-project` (path repo) booting a hello app in a scratch dir | Todo | |
 | OSS-08 | `js/Ubix` → `@ubixsys/ubixcore`, `npm publish` job | Todo | `app/SowingMeJs` does not import `js/Ubix` today — clean start |
 | OSS-09 | Publish: public mirror, Packagist hook, npm publish, subtree split for skeleton; tag `v0.1.0` | Todo | |
-| OSS-10 | Sowing.me migrates to its new repo consuming released packages; `app/SowingMe*`, `docs/projects/sowing-me`, `docs/surfaces`, `sql/`, `templates/` leave this repo | Todo | |
+| OSS-10 | Sowing.me migrates to `kitg/kitg` consuming released packages; `app/SowingMe*`, `docs/projects/sowing-me`, `docs/surfaces`, `sql/`, `templates/` leave this repo; **all Sowing.me deploys move to the kitg pipeline**; k8s namespaces/secrets/ingress recorded in `~/git/kubernetes` (source of truth) in the same change — see plan §5 | Todo | recommend new `kitg-{dev,staging,prod}` namespaces |
 | OSS-11 | ubixsys-web "Build on uBixCore" section written from `process-log.md` | Todo | in `~/git/ubixsys-web` |

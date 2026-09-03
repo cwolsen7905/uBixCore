@@ -12,6 +12,7 @@ use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface as Output;
 use Ubix\Console\Command\AbstractCommand as Command;
 use Ubix\Service\ProcessService;
+use Ubix\Service\ProjectRootService;
 
 /**
  * Command to run the application.
@@ -20,17 +21,17 @@ use Ubix\Service\ProcessService;
  */
 final class RunCommand extends Command
 {
-    private string $appPath = __DIR__ . '/../../../../app/';
-
     /**
      * Constructor.
      *
-     * @param Logger         $logger         Logger instance
-     * @param ProcessService $processService Process service instance
+     * @param Logger             $logger         Logger instance
+     * @param ProcessService     $processService Process service instance
+     * @param ProjectRootService $projectRoot    Resolves paths in the host project
      */
     public function __construct(
         private Logger $logger, // @phpstan-ignore property.onlyWritten (Logger is a required dependency of most VSM classes but has not been implemented in this class yet)
         private ProcessService $processService,
+        private ProjectRootService $projectRoot,
     ) {
         // Call the parent constructor with the command name
         // This is necessary to ensure the command is registered correctly
@@ -55,9 +56,9 @@ final class RunCommand extends Command
         putenv('APP_NAME=' . $appName);
 
         // Determine if this is a SvelteKit or PHP application
-        if (file_exists($this->appPath . $appName . '/svelte.config.js')) {
+        if (file_exists($this->projectRoot->getPath('app', $appName) . '/svelte.config.js')) {
             // If SvelteKit configuration file exists, run the SvelteKit application
-            $result = $this->processService->executeAsSubprocess('npm install --prefix ' . escapeshellarg($this->appPath . $appName));
+            $result = $this->processService->executeAsSubprocess('npm install --prefix ' . escapeshellarg($this->projectRoot->getPath('app', $appName)));
             if ($result->exitCode !== 0) {
                 $output->writeln('<error>Failed to install npm dependencies for SvelteKit app: ' . $appName . '</error>');
                 return Command::FAILURE;
@@ -66,7 +67,7 @@ final class RunCommand extends Command
             $host = $input->getOption('host');
             $port = $input->getOption('port');
             assert(is_string($host) && is_string($port));
-            $result = $this->processService->executeAsSubprocess('cd ' . escapeshellarg($this->appPath . $appName) . ' && npm run dev -- --open --host=' . escapeshellarg($host) . ' --port=' . escapeshellarg($port));
+            $result = $this->processService->executeAsSubprocess('cd ' . escapeshellarg($this->projectRoot->getPath('app', $appName)) . ' && npm run dev -- --open --host=' . escapeshellarg($host) . ' --port=' . escapeshellarg($port));
             return Command::SUCCESS;
         }
 

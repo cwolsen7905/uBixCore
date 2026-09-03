@@ -9,6 +9,7 @@ use Symfony\Component\Console\Input\InputInterface as Input;
 use Symfony\Component\Console\Output\OutputInterface as Output;
 use Ubix\Console\Command\AbstractCommand as Command;
 use Ubix\Service\ProcessService;
+use Ubix\Service\ProjectRootService;
 
 /**
  * Command to invoke machine code review
@@ -20,14 +21,16 @@ final class LocCommand extends Command
     /**
      * Constructor
      *
-     * @param Logger         $logger         Logger
-     * @param ProcessService $processService Process service to run CLI tools
+     * @param Logger             $logger         Logger
+     * @param ProcessService     $processService Process service to run CLI tools
+     * @param ProjectRootService $projectRoot    Resolves paths in the host project
      *
      * @return void
      */
     public function __construct(
         private Logger $logger, // @phpstan-ignore property.onlyWritten (Logger is a required dependency of most VSM classes but has not been implemented in this class yet)
         private ProcessService $processService,
+        private ProjectRootService $projectRoot,
     ) {
         parent::__construct($logger);
     }
@@ -54,9 +57,9 @@ HELP,
     {
         $this->displayAsciiTrident($output);
 
-        $dir = realpath(__DIR__ . '/../../../../../') ?: '.';
+        $dir = $this->projectRoot->getRoot();
 
-        $res = $this->processService->executeAsSubprocess('pahp ' . $dir . '/bin/phploc.phar ' . $dir . '/php ' . $dir . '/app');
+        $res = $this->processService->executeAsSubprocess('php ' . $dir . '/bin/phploc.phar ' . $dir . '/php ' . $dir . '/app');
 
         if ($res->exitCode !== 0) {
             if (method_exists($output, 'getErrorOutput')) {

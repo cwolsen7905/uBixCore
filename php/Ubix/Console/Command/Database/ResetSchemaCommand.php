@@ -11,6 +11,7 @@ use Symfony\Component\Console\Output\OutputInterface as Output;
 use Ubix\Console\Command\AbstractCommand as Command;
 use Ubix\Enum\Env;
 use Ubix\Service\ProcessService;
+use Ubix\Service\ProjectRootService;
 use ValueError;
 
 /**
@@ -20,8 +21,6 @@ use ValueError;
  */
 final class ResetSchemaCommand extends Command
 {
-    private const SQL_PATH = __DIR__ . '/../../../../../sql/';
-
     /**
      * Schemas (re)built from sql/<name>.sql per environment. Every environment
      * uses the single `sowingme` baseline; the TEST_MYSQL_WRITE_* connection is
@@ -38,12 +37,14 @@ final class ResetSchemaCommand extends Command
     /**
      * Constructor.
      *
-     * @param Logger         $logger         Logger instance
-     * @param ProcessService $processService Process service instance
+     * @param Logger             $logger         Logger instance
+     * @param ProcessService     $processService Process service instance
+     * @param ProjectRootService $projectRoot    Resolves paths in the host project
      */
     public function __construct(
         private Logger $logger, // @phpstan-ignore property.onlyWritten (Logger is a required dependency of most VSM classes but has not been implemented in this class yet)
         private ProcessService $processService,
+        private ProjectRootService $projectRoot,
     ) {
         parent::__construct($logger);
     }
@@ -87,7 +88,7 @@ final class ResetSchemaCommand extends Command
                 return Command::FAILURE;
             }
 
-            $command = 'mysql --user=' . $mysqlUser . ' --password=' . $mysqlPassword . ' --port=' . $mysqlPort . ' --host=' . $mysqlHost . ' ' . $database . ' < ' . self::SQL_PATH . $database . '.sql';
+            $command = 'mysql --user=' . $mysqlUser . ' --password=' . $mysqlPassword . ' --port=' . $mysqlPort . ' --host=' . $mysqlHost . ' ' . $database . ' < ' . $this->projectRoot->getPath('sql', $database . '.sql');
             $result  = $this->processService->executeAsSubprocess($command);
             if ($result->exitCode !== 0) {
                 $output->writeln('<error>Command failed: ' . $command . '</error>');

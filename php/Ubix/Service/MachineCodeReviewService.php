@@ -63,14 +63,16 @@ final class MachineCodeReviewService
     /**
      * Constructor
      *
-     * @param Logger         $logger         Logger
-     * @param JsonService    $jsonService    JSON service
-     * @param ProcessService $processService Process service
+     * @param Logger             $logger         Logger
+     * @param JsonService        $jsonService    JSON service
+     * @param ProcessService     $processService Process service
+     * @param ProjectRootService $projectRoot    Resolves `vendor/bin/*` and cache paths under the host project root
      */
     public function __construct(
         private Logger $logger, // @phpstan-ignore property.onlyWritten (Logger is a required dependency of most VSM classes but has not been implemented in this class yet)
         private JsonService $jsonService,
         private ProcessService $processService,
+        private ProjectRootService $projectRoot,
     ) {
     }
 
@@ -602,7 +604,7 @@ final class MachineCodeReviewService
         //
         //  Run the command and process the output
         //
-        $command = '"' . realpath(__DIR__ . '/../../../vendor/bin/phpcs') . '" ' . implode(' ', self::PHPCS_COMMAND_ARGUMENTS);
+        $command = '"' . $this->projectRoot->getVendorBinPath('phpcs') . '" ' . implode(' ', self::PHPCS_COMMAND_ARGUMENTS);
         if (count($files) > 0) {
             $command .= ' ' . implode(' ', $files);
         }
@@ -624,7 +626,7 @@ final class MachineCodeReviewService
             //  The command failed to return JSON meaning no results are known
             //
             $machineCodeReview->addViolation(
-                path:      realpath(__DIR__ . '/../../../') ?: '',
+                path:      $this->projectRoot->getRoot(),
                 violation: new MachineCodeReviewFileViolation(
                     text: 'JSON was not found in the output (no data returned)',
                     tool: MachineCodeReviewTool::PHPCS,
@@ -706,7 +708,7 @@ final class MachineCodeReviewService
         //
         foreach ($files as $file) {
             foreach ($rules as $rule) {
-                $command = realpath(__DIR__ . '/../../../vendor/bin/phpcbf') ?: '';
+                $command = $this->projectRoot->getVendorBinPath('phpcbf');
                 if ($file !== '') {
                     $command .= ' ' . $file;
                 }
@@ -740,7 +742,7 @@ final class MachineCodeReviewService
         //
         //  Run the command
         //
-        $command = '"' . realpath(__DIR__ . '/../../../vendor/bin/phpstan') . '" analyze ' . implode(' ', self::PHPSTAN_COMMAND_ARGUMENTS) . ' ' . implode(' ', count($files) > 0 ? $files : self::PHPSTAN_DEFAULT_FILES);
+        $command = '"' . $this->projectRoot->getVendorBinPath('phpstan') . '" analyze ' . implode(' ', self::PHPSTAN_COMMAND_ARGUMENTS) . ' ' . implode(' ', count($files) > 0 ? $files : self::PHPSTAN_DEFAULT_FILES);
         if ($this->phpIsOnWindows()) {
             $command = str_replace(
                 '/',
@@ -760,7 +762,7 @@ final class MachineCodeReviewService
             //  The command failed to return JSON meaning no results are known
             //
             $machineCodeReview->addViolation(
-                path:      realpath(__DIR__ . '/../../../') ?: '',
+                path:      $this->projectRoot->getRoot(),
                 violation: new MachineCodeReviewFileViolation(
                     text: 'JSON was not found in the output (no data returned)',
                     tool: MachineCodeReviewTool::PHPSTAN,
@@ -826,7 +828,7 @@ final class MachineCodeReviewService
     {
         $phpstanCachePath = '.phpstan.cache'; // NOT_IMPLEMENTED: read this direct from phpstan.neon - I don't want it hardcoded (DRY violation)
 
-        $cacheFile = __DIR__ . '/../../../' . $phpstanCachePath . '/resultCache.php';
+        $cacheFile = $this->projectRoot->getPath($phpstanCachePath, 'resultCache.php');
         if (!file_exists($cacheFile)) {
             throw new Exception('PHPStan cache file does not exist at `' . $cacheFile . '`');
         }
@@ -883,7 +885,7 @@ final class MachineCodeReviewService
             );
         }
 
-        $command = '"' . realpath(__DIR__ . '/../../../vendor/bin/phpunit') . '" ' . str_replace('{$JUNIT_OUTPUT_PATH}', $tmpPath, implode(' ', self::PHPUNIT_COMMAND_ARGUMENTS));
+        $command = '"' . $this->projectRoot->getVendorBinPath('phpunit') . '" ' . str_replace('{$JUNIT_OUTPUT_PATH}', $tmpPath, implode(' ', self::PHPUNIT_COMMAND_ARGUMENTS));
 
         if (count($files) > 0) {
             $command .= ' ' . implode(',', $files);
@@ -904,7 +906,7 @@ final class MachineCodeReviewService
             //  The command failed to return valid XML meaning no results are known
             //
             $machineCodeReview->addViolation(
-                path:      realpath(__DIR__ . '/../../../') ?: '',
+                path:      $this->projectRoot->getRoot(),
                 violation: new MachineCodeReviewFileViolation(
                     text: 'Valid XML was not found in the output (no data returned)',
                     tool: MachineCodeReviewTool::PHPUNIT,

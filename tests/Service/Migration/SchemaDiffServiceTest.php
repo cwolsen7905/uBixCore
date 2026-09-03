@@ -9,6 +9,7 @@ use Ubix\DataTransferObject\Migration\SchemaDiffResult;
 use Ubix\Service\Migration\MigrationCredentialResolverService;
 use Ubix\Service\Migration\SchemaDiffService;
 use Ubix\Service\ProcessService;
+use Ubix\Service\ProjectRootService;
 use Ubix\Tests\AbstractUbixConcreteClassOrEnumTestCase as UbixConcreteClassOrEnumTestCase;
 use Ubix\Tests\UbixConcreteClassOrEnumTestCaseInterface as IUbixConcreteClassOrEnumTestCase;
 
@@ -112,6 +113,7 @@ final class SchemaDiffServiceTest extends UbixConcreteClassOrEnumTestCase implem
             $logger,
             new ProcessService($logger),
             new MigrationCredentialResolverService($logger),
+            new ProjectRootService($logger, dirname(__DIR__, 3)),
         );
     }
 }
