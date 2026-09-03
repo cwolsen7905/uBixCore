@@ -146,3 +146,62 @@ session middleware, as before). phpcs 0, phpstan 0.
 **Next:** OSS-04 — move Sowing.me controllers, repositories, services, models and
 payloads out of `Ubix\` into `Kitg\SowingMe\` (in this repo first, so the move
 to `kitg/kitg` later is a directory copy, not a rename).
+
+## 2026-09-03 — OSS-05: the quality gate ships with the framework
+
+**Problem.** A host running `bin/ubix code:review` needs three things that only
+existed as repo-level files: the phpcs rules (581 lines in `phpcs.xml`, only the
+custom sniffs lived in the package), the phpstan settings, and the PHPUnit base
+classes `Ubix\Tests\Abstract*TestCase` (autoloaded from `tests/`, so never
+installed anywhere).
+
+**phpcs.** `php/Ubix/` was already a phpcs *installed path* (that is what makes
+the `Ubix.*` sniff codes work), but its `ruleset.xml` was a one-line stub. It is
+now the whole standard: PSR-12 base, the PER/VSM additions, the Slevomat refs
+and the 29 custom sniffs — 231 sniffs total. Path patterns inside the rules were
+made layout-generic (`php/Ubix/Model/*` → `*/Model/*`, `app/*/src/Routes.php` →
+`*/src/Routes.php`, `tests/**/*.php` → `*/tests/*`) so they cover a host's own
+trees. The two rules whose include-lists named neptune-only files stayed in the
+project `phpcs.xml`. A project file is now the config, the file list, and:
+
+```xml
+<config name="installed_paths" value="vendor/ubixsys/ubixcore/php/Ubix,vendor/slevomat/coding-standard" />
+<rule ref="Ubix" />
+```
+
+(Here, `installed_paths` says `php/Ubix` instead of the vendor path.)
+
+**phpstan.** `php/Ubix/phpstan.neon` carries level max, the ignore-tolerance
+settings and the framework-only excludes, with paths relative to itself so they
+never touch host code; excludes that may not exist in a given install carry the
+`(?)` optional marker. The project `phpstan.neon` includes it and adds `paths:`,
+`tmpDir:` and its own excludes.
+
+**PHPUnit.** `Ubix\Tests\{AbstractTestCase, AbstractUbixConcreteClassOrEnumTestCase,
+UbixConcreteClassOrEnumTestCaseInterface}` moved to `php/Ubix/Tests/` and
+`composer.json` maps `Ubix\Tests\` to both `php/Ubix/Tests/` and `tests/`, so
+the ~190 existing test files did not change. `AbstractTestCase` finds the host
+through `UBIX_PROJECT_ROOT` / the working directory instead of `__DIR__`, with
+`getDependenciesFile()` overridable. The "every concrete class has a test case"
+check became `AbstractPhpunitTestCasesTestCase`, parameterised by code dir,
+code namespace, tests dir and tests namespace; this repo's
+`tests/PhpunitTestCasesTest.php` is 60 lines of configuration on top of it, and a
+host writes the same file for `php/Kitg` + `Kitg\`.
+
+**Gotcha found by the pre-push hook.** `<rule ref="Ubix"/>` auto-includes *every*
+sniff under `Sniffs/`, including three that were never enabled (the old file had
+them commented out as WIP): `WhiteSpace.ContinuationIndent`,
+`Classes.ProtectedInFinalClass`, `ErrorHandling.RequirePreviousException`. A cached
+`phpcs` run hid it; the hook runs `--no-cache`. They are now switched off inside
+the standard with `<severity>0</severity>` until finished. Lesson: after touching
+a ruleset, run phpcs with `--no-cache`.
+
+**Verified.** phpcs 0 on the repo (uncached), 231 sniffs listed, a probe file with a
+long-array violation is flagged (so the standard really loaded); phpstan 0;
+scanner + container-backed tests green.
+
+**Known gap, carried to OSS-04.** Some custom sniffs still hard-code `Ubix\`
+(`ConcreteClassTestCaseSniff` even names a parent class that no longer exists),
+and the standards checker treats a class's namespace prefix as `Ubix\…` when
+deciding which rule family applies. Both need a configurable root namespace
+before a `Kitg\SowingMe\Controller\*` gets controller rules applied.
