@@ -157,29 +157,26 @@ namespaces `live-{dev,staging,prod}` / `ws-{dev,staging,prod}`; the k8s manifest
 sit in the ubixcore repo under `app/<App>/<env>-{deploy,ingress}.yaml` and are
 applied by `bin/deploy.sh`.
 
-**Recommendation — new per-company namespaces `kitg-dev`, `kitg-staging`,
-`kitg-prod`.** Reasons:
-- KITG is a separate legal entity; its registry pull secret (`kitg/kitg`
-  registry path, so a new `regcred` regardless), vault policies and TLS copies
-  should not share a namespace with xentask/brainchurts workloads.
-- The image path changes at cutover anyway (`ubixsys/ubixcore:*` → `kitg/kitg:*`),
-  so the namespace move rides the same maintenance window instead of a second one.
-- Both platforms KITG will run land in one place; a second product is a new
-  Deployment, not a new namespace.
-
-Cost: an ingress + DNS cutover for `sowing.me` / `*.staging` / `*.dev` hosts and
-a Replikate `cert-manager-tls` label on the new namespaces so the wildcard TLS
-secrets copy in. If Christopher prefers to stay in `live-*`/`ws-*`, only the
-image path and pull secret change.
+**Decision (Christopher, 2026-09-04): the tier namespaces do not change.**
+Sowing.me keeps deploying into `ws-<env>` (api, admin-api) and `live-<env>`
+(web); only the deploying project and the image path change. Reasons this is
+simpler than the `kitg-*` namespaces first proposed: the existing `regcred` is
+a personal-token credential that already pulls any registry path; the
+`sowingme-<env>` uBixVault role is already bound to these namespaces; and the
+kitg pipeline applies over the existing Deployment/Ingress names, so the
+cutover *is* the first kitg deploy — no interim hostnames, no side-by-side.
+The one rule afterwards: ubixcore's pipeline must stop applying those
+manifests (its `app/SowingMe*` folders leave with OSS-10) so the two projects
+never fight over the same objects, and new migrations are written in kitg only.
 
 Checklist for the cutover MR set (ubixcore OSS-10 + kitg + kubernetes repos):
-1. `kubernetes/namespaces/kitg-{dev,staging,prod}.yml` (+ `NAMESPACES.md` rows,
-   `cert-manager-tls` label) and `APPLICATIONS.md` row `kitg/kitg → sowing-me-*`.
-2. Registry pull secret + ubixvault CI tokens/policies for `kitg` (recorded in
-   `kubernetes/SECRETS.md` by name, values in vault).
+1. `kubernetes/docs/reference/applications.md` row `kitg/kitg → sowing-me-*`
+   in `ws-*`/`live-*` (MR kube-stuff/kubernetes!3).
+2. ubixvault CI tokens/policies for `kitg` (`secret/kitg/*`: composer, test-db,
+   discord) — values in vault, names in `kubernetes/docs/reference/secrets.md`.
 3. `kitg/kitg`: skeleton `Dockerfile*`, `.gitlab-ci.yml`, `bin/deploy.sh`,
    `app/<App>/<env>-*.yaml` with the new namespace + image path.
-4. Ingress/cert: `kubernetes/letsencrypt/certificate-sowingme.yml` namespace update.
+4. Ingress/cert: unchanged (same namespaces, same hosts).
 5. Cut over dev first, then staging, then prod; retire the ubixcore-driven
    Deployments and the `-node` image variants from `ubixsys/ubixcore`.
 
@@ -190,6 +187,6 @@ Checklist for the cutover MR set (ubixcore OSS-10 + kitg + kubernetes repos):
   `ubix init` from a globally installed CLI. Default: both, `create-project` first.
 - Versioning: start at `v0.1.0` and stay 0.x until Sowing.me runs on a released
   tag; CalVer (neptune) was considered and rejected for a library.
-- Namespaces at cutover: new `kitg-*` (recommended, §5) vs stay in `live-*`/`ws-*`.
+- ~~Namespaces at cutover~~ resolved: stay in `live-*`/`ws-*` (§5).
 - Where `docs/standards` live for a host: copied by `ubix init` (host owns them)
   vs referenced from `vendor/` (framework owns them). Default: copied.

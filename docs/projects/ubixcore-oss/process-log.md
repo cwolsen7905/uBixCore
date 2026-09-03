@@ -431,3 +431,33 @@ namespace segment; it now reads the segment after `Repository`).
 https://github.com/cwolsen7905/ubixcore-skeleton. The skeleton is public while
 its dependency still resolves from the private GitLab registry, which is fine as
 a preview; Packagist for the framework itself waits on OSS-10.
+
+## 2026-09-04 — SowingMeApi in kitg, and a namespace decision reversed
+
+**The move.** SowingMeApi's closure — 66 classes, 54 tests, the app folder,
+templates, `sowingme.sql`, four migrations — copied into kitg under
+`Kitg\SowingMe\` (controllers as `Controller\Api`). Two extra classes joined
+because the reverse-dependency check caught the framework depending on product
+code: `SessionAuthenticationMiddleware` (needs `UserId`/`UserService`) and
+`TierPrecedenceService`. `Email` and `Password` DataTypes stayed: they are
+generic. After OSS-04a the kitg gate is green on the moved code with no edits
+beyond one missing `use` (a class that had shared a namespace with `JsonService`)
+and phpcbf import ordering. ubixcore's copies stay until kitg serves traffic.
+
+**Pipeline.** kitg's `.gitlab-ci.yml` is ubixcore's minus JS and publish jobs.
+The runtime image needs uBixCore from the private `ubixsys` group Composer
+registry, so the build passes `auth.json` as a BuildKit secret (a deploy token
+from `secret/kitg/composer`, else the job token) and the Dockerfile mounts it
+for the `composer install` step only. Consequence for the lock: a lock generated
+against a `vcs` source pins a git URL and cannot be installed inside Docker, so
+kitg's `composer.json` points at the group registry and its lock must be
+regenerated with a read token — the step that needs Christopher.
+
+**Namespaces.** I had proposed `kitg-{dev,staging,prod}` and built the
+manifests and doc rows. Christopher: "why are we changing them ... that
+shouldn't change." He is right about the cost/benefit: `regcred` is already a
+personal-token credential that pulls any path, the Vault role is already bound
+to `ws-*`/`live-*`, and applying over the existing Deployment/Ingress names
+makes the first kitg deploy the cutover with no interim hostnames. Reverted;
+the plan §5 now records the decision and the one rule it creates (ubixcore
+stops applying those manifests once kitg owns them).
