@@ -16,6 +16,7 @@ that log is the source for the "Build on uBixCore" section of **ubixsys-web**.
 |---|---|
 | [`plan.md`](plan.md) | Target shape, decisions, coupling inventory, sequenced slices |
 | [`process-log.md`](process-log.md) | Narrative of what we actually did, in order, with the commands — feeds the website docs |
+| [`quickstart-draft.md`](quickstart-draft.md) | The "Get started with uBixCore" page as it should read when done, with a reality-check table mapping each step to a slice |
 
 ## Decisions (2026-09-02, Christopher)
 
