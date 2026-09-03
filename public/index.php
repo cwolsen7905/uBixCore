@@ -2,105 +2,18 @@
 
 declare(strict_types=1);
 
-use DI\Bridge\Slim\Bridge;
-use DI\Container;
-use Dotenv\Dotenv;
-use Slim\App;
-use Ubix\Enum\Exception\ExceptionCode;
-
-//
-//  Set the timezone
-//
-date_default_timezone_set('America/New_York');
-
-//
-//  Load Composer packages
-//
-require_once '../vendor/autoload.php';
-
-//
-//  Initialize Dotenv to read our .env file
-//
-(Dotenv::createUnsafeImmutable(__DIR__ . '/../'))->load();
-
-//
-//  Resolve database credentials from uBix Vault when configured (a no-op
-//  unless VAULT_ADDR is set — local dev keeps using the git-ignored .env).
-//  Guarded so a missing bootstrap never fatals the app; Vault is opt-in.
-//
-$vaultBootstrap = __DIR__ . '/../php/Ubix/Bootstrap/vault.php';
-if (is_file($vaultBootstrap)) {
-    $vaultBootstrapper = require $vaultBootstrap;
-    if (is_callable($vaultBootstrapper)) {
-        $vaultBootstrapper();
-    }
-}
-
-//
-//  Temporary error output for sandbox testing
-//
-if (getenv('IS_SANDBOX') === 'true' || getenv('IS_DEV') === 'true') {
-    ini_set('display_errors', 1);
-    ini_set('display_startup_errors', 1);
-
-    error_reporting(E_ALL);
-
-    register_shutdown_function(function (): void {
-        $error = error_get_last();
-        if ($error !== null) {
-            echo '<pre>Fatal error in ', $error['file'], ' on line ', $error['line'], ':', PHP_EOL, $error['message'], '</pre>';
-        }
-    });
-}
-
-//
-//  Determine which app is active and define its folder
-//
-$appName = getenv('APP_NAME');
-if ($appName === false || !is_string($appName) || trim($appName) === '') {
-    throw new Exception('No app name found', ExceptionCode::APP_NAME_MISSING->value);
-}
-
-$appFolder = __DIR__ . '/../app/' . $appName;
-
-//
-//  Create a Slim app with a PHP-DI container
-//
 /**
- * @var callable():?Container $buildContainer
+ * Web entry point for this uBixCore host project
+ *
+ * Thin by design: `Ubix\Bootstrap\http()` builds the Slim app for the app named
+ * by `APP_NAME` from `app/<APP_NAME>/src/{Dependencies,Middleware,Routes}.php`.
  */
-$buildContainer = require $appFolder . '/src/Dependencies.php';
-assert(is_callable($buildContainer));
 
-$container = $buildContainer();
-assert($container === null || $container instanceof Container);
+use function Ubix\Bootstrap\environment;
+use function Ubix\Bootstrap\http;
 
-/**
- * @var App<Container> $slimApp
- */
-$slimApp = Bridge::create($container);
+require_once __DIR__ . '/../vendor/autoload.php';
 
-//
-//  Apply middleware and routes
-//
-/**
- * @var callable(App<Container>):void $applyMiddleware
- */
-$applyMiddleware = require $appFolder . '/src/Middleware.php';
-assert(is_callable($applyMiddleware));
-$applyMiddleware($slimApp);
+$projectRoot = environment(dirname(__DIR__));
 
-
-/**
- * @var callable(App<Container>):void $applyRoutes
- */
-$applyRoutes = require $appFolder . '/src/Routes.php';
-assert(is_callable($applyRoutes));
-$applyRoutes($slimApp);
-
-
-
-//
-//  Run the Slim application
-//
-$slimApp->run();
+http($projectRoot, (string) getenv('APP_NAME'))->run();

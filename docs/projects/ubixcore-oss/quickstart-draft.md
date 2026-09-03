@@ -1,6 +1,6 @@
 # Get started with uBixCore — quickstart (target UX, draft)
 
-**Status:** Draft v1, 2026-09-02. This is the page ubixsys-web will publish. It is
+**Status:** Draft v1, 2026-09-02; reality check updated 2026-09-03 after OSS-02/03. This is the page ubixsys-web will publish. It is
 written as the finished experience; the "Reality check" table at the bottom maps
 each step to the OSS-xx slice that delivers it. Update both as slices land.
 
@@ -157,11 +157,11 @@ configs, CI) are yours; the changelog says when an upgrade wants a change there.
 |---|---|---|
 | 1 `create-project` skeleton | No — the repo *is* the product monorepo | OSS-07, OSS-09 |
 | 2 git shape | Partly — `composer.lock` is gitignored, Dockerfile runs `composer update` | OSS-06 |
-| 3 `app:init` + own namespace | No — apps are hand-made; controllers live in `Ubix\` | OSS-03, OSS-04, OSS-07 |
-| 4 `app:run` | Yes (`RunCommand`), but it finds `app/` by walking up from its own file | OSS-02 |
+| 3 `app:init` + own namespace | Partly — host command namespaces are discovered (OSS-03); no scaffolder yet; controllers still live in `Ubix\` | OSS-04, OSS-07 |
+| 4 `app:run` | Yes — resolves `app/` through `ProjectRootService` (OSS-02) | — |
 | 5 `AbstractController` in `Ubix\` | Yes | — |
-| 6 `code:review` gate + pre-push hook | Yes, but it locates `vendor/bin/*` relative to the framework source | OSS-02, OSS-05 |
-| 7 migrations | Yes (`migrate:*`), `sql/` path hard-coded | OSS-02 |
+| 6 `code:review` gate + pre-push hook | Yes — `vendor/bin/*` via `ProjectRootService` (OSS-02); ruleset/test bases still not exported | OSS-05 |
+| 7 migrations | Yes — `sql/` via `ProjectRootService` (OSS-02) | — |
 | 8 Docker + CI templates | Yes for this repo; need to become skeleton templates | OSS-07 |
 | 9 `@ubixsys/ubixcore` on npm | No — `js/Ubix` is named `vsm` | OSS-08 |
 | 10 upgrade via Composer | No until published | OSS-09 |
