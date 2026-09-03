@@ -62,10 +62,10 @@ and, later, an `ubix upgrade` diff — the Laravel skeleton model.
 - uBixCore's own CI publishes on tag: Packagist webhook for PHP, `npm publish`
   for JS, subtree split of `skeleton/` to its own package.
 
-**Prerequisite this forces:** `composer.lock` is gitignored today and the
-Dockerfiles run `composer update`. An image can therefore change with no commit
-behind it. Once the framework is a dependency, the lock is the only record of
-which uBixCore built the image (OSS-06).
+**Prerequisite (done in OSS-06):** `composer.lock` was gitignored and the
+Dockerfiles ran `composer update`, so an image could change with no commit
+behind it. The lock is now committed and images run `composer install`; once the
+framework is a dependency, the lock is the record of which uBixCore built the image.
 
 ### Source of the package: GitLab first, GitHub as a mirror
 

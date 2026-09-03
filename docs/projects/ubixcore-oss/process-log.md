@@ -205,3 +205,38 @@ scanner + container-backed tests green.
 and the standards checker treats a class's namespace prefix as `Ubix\…` when
 deciding which rule family applies. Both need a configurable root namespace
 before a `Kitg\SowingMe\Controller\*` gets controller rules applied.
+
+## 2026-09-03 — OSS-06: a package needs a license, a lock, and a light footprint
+
+**License.** `composer.json` said `"uBix License"`, which no registry accepts.
+Now `BSD-3-Clause` with a root `LICENSE` copied from ubixvault so the whole uBix
+family reads the same.
+
+**Heavy SDKs.** `aws/aws-sdk-php`, `filestack/filestack-php` and
+`m4tthumphrey/php-gitlab-api` were unconditional requires; each backs one optional
+service (`S3BlobService`, `FilestackBlobService`; the GitLab client is not used by
+any framework code today). They moved to `require-dev` (so this repo still
+analyses and tests them) plus `suggest`, so a host only installs what it uses.
+
+**Lock file.** `composer.lock` was gitignored and every Dockerfile ran
+`composer update`, so an image could change with no commit behind it. The lock is
+now committed. The versions in it are the ones a build would have pulled today
+anyway (the last image was built with `composer update`), which is also why
+this commit carries some transitive bumps (guzzle, php-di 7.0.11 → 7.1.1,
+symfony patch releases): they were already in production, just unrecorded.
+`php-di/php-di` had an exact pin; loosened to `^7.0.11`.
+
+**Images.** Runtime Dockerfiles copy `composer.lock` and run
+`composer install --no-dev --prefer-dist`, so live pods stop shipping phpunit,
+phpcs and phpstan. `Dockerfile_Test` runs a full `composer install` on top for
+the lint-and-test stage. Composer will refuse to build if the lock is out of
+date with `composer.json`, which is the guarantee we wanted.
+
+**Verified locally.** `composer validate` clean, `composer install --no-dev
+--dry-run` removes exactly the 47 dev packages, phpstan 0, phpcs 0 (uncached),
+phpunit unchanged (29 DB-connection errors from this sandbox, none new). The
+image change is verified by the pipeline on merge.
+
+**Also spotted.** `.gitlab-ci.yml` already has a `deploy-composer` job that
+publishes every tag to the project's GitLab Composer registry (neptune-inherited).
+That is step 2 of the "source of the package" plan, already wired.

@@ -2,8 +2,8 @@
 # image the same pipeline just built (`--build-arg RUNTIME_IMAGE=...`) and
 # layers the test infrastructure on top, so live pods never ship tests/ or
 # tool configs. Ported from project-neptune's Dockerfile_Test (2026-08-27);
-# the dev runtime image already carries dev Composer deps (phpunit/phpcs/
-# phpstan) because `Dockerfile` runs a plain `composer update`.
+# the runtime image is installed --no-dev, so this layer adds the dev Composer
+# deps (phpunit/phpcs/phpstan) from the same committed composer.lock.
 ARG RUNTIME_IMAGE
 FROM ${RUNTIME_IMAGE}
 
@@ -21,3 +21,4 @@ COPY --chown=www phpcs.xml    /web/
 COPY --chown=www phpstan.neon /web/
 COPY --chown=www phpunit.xml  /web/
 COPY --chown=www rector.php   /web/
+RUN composer install --working-dir=/web/ --no-interaction --prefer-dist --no-progress

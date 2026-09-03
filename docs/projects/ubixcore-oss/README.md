@@ -1,6 +1,6 @@
 # uBixCore Open-Source Split — Project
 
-**Status:** Active — OSS-01/02 landed 2026-09-02, OSS-03 landed, OSS-05 (export quality tooling) built 2026-09-03. OSS-04 (product code out of `Ubix\`) deferred until the M1 lanes land; next OSS-06 (composer hygiene).
+**Status:** Active — OSS-01/02 landed 2026-09-02, OSS-03 landed, OSS-05 and OSS-06 built 2026-09-03. OSS-04 (product code out of `Ubix\`) deferred until the M1 lanes land; next OSS-07 (skeleton proof).
 
 Turn this repo into **uBixCore**, an open-source framework-plus-tooling monorepo that
 third parties install from Composer / npm (and later PyPI), and move **Sowing.me**
@@ -41,7 +41,7 @@ Status: `Todo` · `Build` · `Done` · `Dropped`.
 | OSS-03 | Thin entry points: `bin/ubix` + `public/index.php` call a framework bootstrap; command discovery takes a namespace list from host config | Done | 2026-09-03, `feat/oss-03-entry-points`. `Ubix\Bootstrap\{environment,console,http,discoverClasses}()` via Composer `files` autoload; commands found through Composer's PSR-4 map, so a host adds `'Acme\\Console\\Command'` to one array |
 | OSS-04 | Product code out of `Ubix\`: SowingMe controllers/repositories/services/DTOs → `Kitg\SowingMe\` PSR-4 root under `php/Kitg/SowingMe/` | Todo | biggest diff; coordinate with active M1 lanes |
 | OSS-05 | Export quality tooling from the package: phpcs ruleset reachable via `vendor/…/ruleset.xml`, phpstan extension neon, `Ubix\Tests` base classes moved out of `tests/` into the package | Done | 2026-09-03, `feat/oss-05-export-tooling`. `php/Ubix/ruleset.xml` is now the full `Ubix` standard (231 sniffs); project `phpcs.xml` is `<rule ref="Ubix"/>` + tuning. `php/Ubix/phpstan.neon` baseline included from the project file. `php/Ubix/Tests/` ships the base classes + a parameterised every-class-has-a-test scanner |
-| OSS-06 | `composer.json` hygiene: `license` → `BSD-3-Clause`, heavy SDKs (Filestack, GitLab API, AWS) → `suggest`/optional, `composer.lock` **committed**, Dockerfiles `composer install` not `update` | Todo | lock is gitignored today |
+| OSS-06 | `composer.json` hygiene: `license` → `BSD-3-Clause`, heavy SDKs (Filestack, GitLab API, AWS) → `suggest`/optional, `composer.lock` **committed**, Dockerfiles `composer install` not `update` | Done | 2026-09-03, `feat/oss-06-composer-hygiene`. LICENSE (BSD-3, matches ubixvault/replikate); SDKs in require-dev + suggest; lock committed (60 prod / 47 dev packages); runtime images `composer install --no-dev`, `Dockerfile_Test` adds dev deps; php-di pin loosened to `^7.0.11` |
 | OSS-07 | `skeleton/` folder + `ubix app:init` scaffolder; prove with `composer create-project` (path repo) booting a hello app in a scratch dir | Todo | |
 | OSS-08 | `js/Ubix` → `@ubixsys/ubixcore`, `npm publish` job | Todo | `app/SowingMeJs` does not import `js/Ubix` today — clean start |
 | OSS-09 | Publish: public mirror, Packagist hook, npm publish, subtree split for skeleton; tag `v0.1.0` | Todo | |
