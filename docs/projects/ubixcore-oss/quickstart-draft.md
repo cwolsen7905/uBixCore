@@ -157,6 +157,47 @@ git add composer.lock && git commit -m "chore: ubixcore 0.4.0"
 One-line diff, one MR. Files the skeleton copied into your repo (entry points,
 configs, CI) are yours; the changelog says when an upgrade wants a change there.
 
+## Installation scenario: self-hosted GitLab + k3s + uBixVault
+
+The quickstart above is the developer's first ten minutes. This is the
+operator's first afternoon: taking a `create-project` skeleton to a pipeline
+that builds, tests, deploys and promotes on the stack uBixCore was built for.
+Everything here is what `docs/ci-setup.md` in the skeleton lists, told as a
+sequence. Substitute your own hosts where they appear; the shape is the same.
+
+**Assumed stack.** GitLab (self-hosted, with its container and package
+registries), a shell runner with Docker buildx and kubeconfigs for the target
+clusters, k3s namespaces per tier (`ws-<env>` for APIs, `live-<env>` for web),
+uBixVault per tier (`vault.dev…`, `vault.prod…`) with Kubernetes auth.
+
+1. **Create the project from the skeleton** and push it to GitLab. The pipeline
+   file is included and every job targets the `shell` runner tag.
+2. **Give the build read access to uBixCore.** The runtime image installs
+   `ubixsys/ubixcore` from the private group registry. Create a deploy token
+   with `read_package_registry` on the framework's group; you will store it in
+   Vault in step 4. Add your project to the job-token allowlist on the
+   framework project and on the base-image project, so the fallback path and
+   the base-image pull work with the job token alone.
+3. **Create the CI variables**, all masked and not protected:
+   `GITLAB_PROMOTE_TOKEN` (a Maintainer project access token with `api` +
+   `write_repository`, used by the promote jobs) and, after step 4,
+   `UBIXVAULT_CI_TOKEN_DEV` / `UBIXVAULT_CI_TOKEN_PROD`.
+4. **Seed uBixVault** with `bin/vault-ci-setup.sh <env> <project>`, admin token
+   in the environment, once per Vault. It creates the read-only policy, writes
+   `secret/<project>/{test-db,composer,discord}`, and prints the CI token for
+   step 3. The pods' database credentials live separately at
+   `secret/<app>/<env>/db`, read at startup through `VAULT_ADDR` +
+   `VAULT_K8S_ROLE`; bind that role to your namespace and ServiceAccount.
+5. **Prepare the namespaces:** `regcred` for the registry, the wildcard TLS
+   label, and the non-secret runtime config as `env` on each Deployment
+   (`MEMCACHE_SERVERS`, database host/port/name, `LOGGER_PATH`, Latte paths,
+   log level). The image ships no `.env`; that is deliberate.
+6. **Push to `dev`** and read the first failure, if any, against the list at
+   the end of `docs/ci-setup.md`. Each one maps to a step above.
+
+What this looked like in practice, with every wrong turn, is in
+[`process-log.md`](process-log.md) under 2026-09-03.
+
 ---
 
 ## Reality check (2026-09-02)
