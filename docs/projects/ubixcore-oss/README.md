@@ -27,6 +27,7 @@ that log is the source for the "Build on uBixCore" section of **ubixsys-web**.
 | Python package | `ubixcore` (PyPI) | no `py/` tree exists yet; guidelines only |
 | Skeleton | `skeleton/` **inside this repo**, published as `ubixsys/ubixcore-skeleton` via subtree split | one CI, framework and skeleton move together |
 | Repo roles | **this repo stays uBixCore**; Sowing.me moves to a new private repo | Sowing.me repo is created by Christopher |
+| Host namespace | `Kitg\SowingMe\` (vendor = Kingdom Impact Technology Group, the legal owner of Sowing.me; product second so later KITG products don't collide); composer `kitg/sowingme`, npm scope `@kitg` | StudlyCaps `Kitg`, matching `Ubix` |
 
 ## Work matrix
 
@@ -37,7 +38,7 @@ Status: `Todo` · `Build` · `Done` · `Dropped`.
 | OSS-01 | Plan + process log (this folder), lane registered | Done | docs only |
 | OSS-02 | `ProjectRoot` service: one resolver for the host project root; replace every `__DIR__ . '/../../..'` walk in `php/Ubix` | Todo | see plan § Coupling inventory |
 | OSS-03 | Thin entry points: `bin/ubix` + `public/index.php` call a framework bootstrap; command discovery takes a namespace list from host config | Todo | `bin/ubix` globs `php/Ubix/Console/Command/**` today |
-| OSS-04 | Product code out of `Ubix\`: SowingMe controllers/repositories/services/DTOs → `SowingMe\` PSR-4 root under `php/SowingMe/` | Todo | biggest diff; coordinate with active M1 lanes |
+| OSS-04 | Product code out of `Ubix\`: SowingMe controllers/repositories/services/DTOs → `Kitg\SowingMe\` PSR-4 root under `php/Kitg/SowingMe/` | Todo | biggest diff; coordinate with active M1 lanes |
 | OSS-05 | Export quality tooling from the package: phpcs ruleset reachable via `vendor/…/ruleset.xml`, phpstan extension neon, `Ubix\Tests` base classes moved out of `tests/` into the package | Todo | |
 | OSS-06 | `composer.json` hygiene: `license` → `BSD-3-Clause`, heavy SDKs (Filestack, GitLab API, AWS) → `suggest`/optional, `composer.lock` **committed**, Dockerfiles `composer install` not `update` | Todo | lock is gitignored today |
 | OSS-07 | `skeleton/` folder + `ubix app:init` scaffolder; prove with `composer create-project` (path repo) booting a hello app in a scratch dir | Todo | |

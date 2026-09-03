@@ -27,11 +27,11 @@ ubixcore/                       (public)
   composer.json  LICENSE (BSD-3-Clause)  .gitlab-ci.yml (test + publish)
 
 sowingme/                       (private host)
-  composer.json                 requires ubixsys/ubixcore ^0.x
+  composer.json                 name kitg/sowingme; requires ubixsys/ubixcore ^0.x
   composer.lock                 COMMITTED — pins the framework the image is built from
   public/index.php  bin/ubix    thin, copied from skeleton, owned by the host
-  app/SowingMeApi/src/          Routes.php, Dependencies.php  (namespace SowingMe\Api)
-  php/SowingMe/                 controllers, repositories, services, DTOs
+  app/SowingMeApi/src/          Routes.php, Dependencies.php  (namespace Kitg\SowingMe\Api)
+  php/Kitg/SowingMe/            controllers, repositories, services, DTOs (PSR-4 root Kitg\SowingMe\)
   app/SowingMeJs/               imports @ubixsys/ubixcore
   sql/ templates/ docs/         product-owned
   vendor/ node_modules/ .env*   NOT tracked
