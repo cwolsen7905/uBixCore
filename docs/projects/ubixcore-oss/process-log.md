@@ -400,3 +400,25 @@ subtree split), `@ubixsys/ubixcore` 0.1.1 (npm, ubixcore project registry).
 Verified by listing `Packages::Package` on the GitLab server. One tag now
 releases the PHP framework, the JS library and the skeleton with matching
 version numbers — that is the release model going forward.
+## 2026-09-04 — OSS-04a: the house rules stop caring what the vendor is called
+
+**Why now.** kitg is bootstrapped and the next thing to move is SowingMeApi with
+its DataTypes, Models, Payloads and DTOs. The standards checker every test runs
+(`testFollowingUbixStandards`) chose its rule family with
+`str_starts_with($class, 'Ubix\\Model\\')` and friends — 39 places — and used the
+same test to exempt DataTypes/DTOs/Models/Payloads from the logger-first
+constructor rule. A `Kitg\SowingMe\DataType\Int\PostId` would have got no
+DataType rules and been told it needs a `Logger`.
+
+**Change.** One helper, `isInFamily($fqcn, $family)`: walk the segments after the
+vendor root, the first one that is a known family (`Controller`, `Model`,
+`DataType`, `Service`, …) decides, and compound families (`Service\Sql`,
+`Console\Command`) match from there. So `Ubix\Controller\X`,
+`Kitg\Controller\X` and `Kitg\SowingMe\Controller\Api\X` are all controllers,
+while `Ubix\Enum\Exception\ExceptionCode` stays an enum because `Enum` comes
+first. The repository `query()` rule now checks the Options DTO by suffix.
+The sniffs needed nothing: `DemandCustomDataTypes` and `ModelPropertiesType`
+already reflect on `AbstractDataType` / `AbstractModel`.
+
+**Proof.** `tests/Tests/FamilyDetectionTest.php` with framework, host and
+host-with-product names; the full suite is unchanged for every existing class.
