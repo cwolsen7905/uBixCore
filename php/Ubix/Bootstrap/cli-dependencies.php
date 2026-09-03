@@ -31,20 +31,25 @@ use Ubix\SimpleCache\MemcachedLegacySimpleCache;
 use function DI\autowire;
 use function DI\get;
 
+/**
+ * Default PHP-DI container for `bin/ubix`. Ships with the framework; a host that
+ * needs more bindings (its own repositories/services for its own commands) passes
+ * its own file to `Ubix\Bootstrap\console()` instead.
+ */
+
 return static function (): Container {
-    $appName = 'NeptuneCli';
+    $appName = 'UbixCli';
 
     $memcacheServers = getenv('MEMCACHE_SERVERS');
     $memcacheServers = explode(',', is_string($memcacheServers) ? $memcacheServers : '');
 
     //
-    //  Project root: the directory holding composer.json, app/, sql/ and vendor/.
-    //  uBixCore itself is a Composer package living in vendor/, so nothing in the
-    //  framework may derive this from its own __DIR__ - the host binds it here
-    //  once. UBIX_PROJECT_ROOT overrides it for tooling that runs from elsewhere.
+    //  Project root: UBIX_PROJECT_ROOT (exported by Ubix\Bootstrap\environment())
+    //  or the working directory. This file ships with the framework, so it must
+    //  not derive the root from its own __DIR__.
     //
     $projectRoot    = getenv('UBIX_PROJECT_ROOT');
-    $projectRoot    = is_string($projectRoot) && $projectRoot !== '' ? $projectRoot : dirname(__DIR__, 3);
+    $projectRoot    = is_string($projectRoot) && $projectRoot !== '' ? $projectRoot : (getcwd() ?: '.');
     $migrationsPath = $projectRoot . '/sql/migrations';
 
     $container = new ContainerBuilder();

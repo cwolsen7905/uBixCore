@@ -96,7 +96,7 @@ function environment(string $projectRoot): string
  * skipped; `cron:*` commands are only loaded when a `cron:` argument is present
  * (except `cron:list`).
  *
- * @param string   $dependenciesFile  Path to the host's CLI `Dependencies.php` (returns a container-building closure)
+ * @param ?string  $dependenciesFile  Path to a CLI `Dependencies.php` returning a container-building closure; null uses the framework default (`cli-dependencies.php`)
  * @param string[] $commandNamespaces Namespaces to scan for commands, e.g. `['Ubix\Console\Command', 'Acme\Console\Command']`
  * @param string[] $argv              The process arguments (`$_SERVER['argv']`)
  *
@@ -104,9 +104,9 @@ function environment(string $projectRoot): string
  *
  * @throws Exception When a discovered class is missing or is not a command
  */
-function console(string $dependenciesFile, array $commandNamespaces, array $argv): Application
+function console(?string $dependenciesFile, array $commandNamespaces, array $argv): Application
 {
-    $buildContainer = require $dependenciesFile;
+    $buildContainer = require $dependenciesFile ?? __DIR__ . '/cli-dependencies.php';
     assert(is_callable($buildContainer));
     $container = $buildContainer();
     assert($container instanceof Container);

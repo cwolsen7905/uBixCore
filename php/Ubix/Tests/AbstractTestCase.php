@@ -15,9 +15,9 @@ use Ubix\Service\Sql\SqlServiceInterface as SqlService;
  *
  * Ships with uBixCore (`vendor/ubixsys/ubixcore`), so it locates the host project
  * through `UBIX_PROJECT_ROOT` (exported by `Ubix\Bootstrap\environment()`) or the
- * working directory - never through its own `__DIR__`. A host whose CLI container
- * definitions live somewhere other than `app/UbixCli/src/Dependencies.php`
- * overrides `getDependenciesFile()`.
+ * working directory - never through its own `__DIR__`. The CLI container comes from
+ * `app/UbixCli/src/Dependencies.php` when the host has one, else the framework
+ * default; override `getDependenciesFile()` for anything else.
  */
 abstract class AbstractTestCase extends TestCase
 {
@@ -49,7 +49,9 @@ abstract class AbstractTestCase extends TestCase
      */
     protected function getDependenciesFile(): string
     {
-        return $this->getProjectRoot() . '/app/UbixCli/src/Dependencies.php';
+        $hostFile = $this->getProjectRoot() . '/app/UbixCli/src/Dependencies.php';
+
+        return file_exists($hostFile) ? $hostFile : __DIR__ . '/../Bootstrap/cli-dependencies.php';
     }
 
     /**
