@@ -1,6 +1,14 @@
 {
-	"name": "vsm",
-	"version": "0.0.1",
+	"name": "@ubixsys/ubixcore",
+	"version": "0.1.0",
+	"description": "uBixCore Svelte 5 component library - the JS half of the uBixCore framework",
+	"license": "BSD-3-Clause",
+	"repository": {
+		"type": "git",
+		"url": "git@gitlab.brainchurts.com:ubixsys/ubixcore.git",
+		"directory": "js/Ubix"
+	},
+	"homepage": "https://ubixsys.com",
 	"scripts": {
 		"dev": "vite dev",
 		"build": "vite build && npm run prepack",
@@ -39,6 +47,9 @@
 		"vite": "^7.0.4"
 	},
 	"keywords": [
-		"svelte"
+		"svelte",
+		"sveltekit",
+		"ubixcore",
+		"ubixsys"
 	]
 }

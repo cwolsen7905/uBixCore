@@ -373,3 +373,20 @@ documentation promotes **uBixVault** as the secrets mechanism. The framework
 already has the hook (`Ubix\Bootstrap\vault.php`: `VAULT_ADDR` on, `VAULT_TOKEN`
 or `VAULT_K8S_ROLE`, `VAULT_DB_KV_PATH`); the skeleton README, `.env.example`
 and the quickstart now lead with it and frame `.env` as local fallback only.
+## 2026-09-03 — OSS-08: the JS package, plumbing before contents
+
+`js/Ubix` was a `svelte-package` shell named `vsm` 0.0.1 that exported nothing
+(the neptune broadcasting stubs were deleted in M0-01, and `app/SowingMeJs`
+never imported it). It is now `@ubixsys/ubixcore` 0.1.0 with proper metadata
+and a README, and a `publish-npm` job on `v*` tags that runs `npm version
+<tag>`, `npm ci`, `npm run prepack` (via `prepublishOnly`/`prepack`) and
+`npm publish` into this project's GitLab npm registry, authenticated with the
+job token. Version numbers track the framework tag, so the PHP and JS halves of
+a release always match.
+
+Publishing an empty library on purpose: it proves the path while there is
+nothing to lose. The first real components arrive when Sowing.me's UI is split
+out (OSS-10). Consumers configure the `@ubixsys` scope in `.npmrc` with a
+read-only deploy token kept in uBixVault — see `js/Ubix/README.md`.
+
+Verification needs a tag; `v0.1.1` after this lands.

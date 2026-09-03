@@ -1,58 +1,45 @@
-# Svelte library
+# @ubixsys/ubixcore
 
-Everything you need to build a Svelte library, powered by [`sv`](https://npmjs.com/package/sv).
+The Svelte 5 component library of [uBixCore](https://gitlab.brainchurts.com/ubixsys/ubixcore),
+published from `js/Ubix/` on every `v*` tag of the framework, with the same
+version number as the PHP package.
 
-Read more about creating a library [in the docs](https://svelte.dev/docs/kit/packaging).
+**Status:** placeholder. `src/lib/index.js` exports nothing yet; the first
+shared components land when Sowing.me's UI is split out of its app. The package
+exists now so the publish path (GitLab npm registry, later npmjs.com) is proven
+before there is anything to lose.
 
-## Creating a project
+## Install
 
-If you're seeing this, you've probably already done this step. Congrats!
+The package lives in the GitLab npm registry of the `ubixsys/ubixcore` project.
+Tell npm where the `@ubixsys` scope resolves, once per project (`.npmrc`):
 
-```sh
-# create a new project in the current directory
-npx sv create
-
-# create a new project in my-app
-npx sv create my-app
+```
+@ubixsys:registry=https://gitlab.brainchurts.com/api/v4/projects/<ubixcore project id>/packages/npm/
+//gitlab.brainchurts.com/api/v4/projects/<ubixcore project id>/packages/npm/:_authToken=${GITLAB_NPM_TOKEN}
 ```
 
-## Developing
+`GITLAB_NPM_TOKEN` is a read-only deploy token (`read_package_registry`).
+Keep it in uBixVault and read it into the environment in CI, never in the
+repo. Then:
 
-Once you've created a project and installed dependencies with `npm install` (or `pnpm install` or `yarn`), start a development server:
-
-```sh
-npm run dev
-
-# or start the server and open the app in a new browser tab
-npm run dev -- --open
+```bash
+npm install @ubixsys/ubixcore
 ```
 
-Everything inside `src/lib` is part of your library, everything inside `src/routes` can be used as a showcase or preview app.
-
-## Building
-
-To build your library:
-
-```sh
-npm pack
+```svelte
+<script>
+  import { /* components */ } from '@ubixsys/ubixcore';
+</script>
 ```
 
-To create a production version of your showcase app:
+## Develop
 
-```sh
-npm run build
+```bash
+npm install
+npm run dev        # showcase app (src/routes)
+npm run prepack    # svelte-package -> dist/ + publint
 ```
 
-You can preview the production build with `npm run preview`.
-
-> To deploy your app, you may need to install an [adapter](https://svelte.dev/docs/kit/adapters) for your target environment.
-
-## Publishing
-
-Go into the `package.json` and give your package the desired name through the `"name"` option. Also consider adding a `"license"` field and point it to a `LICENSE` file which you can create from a template (one popular option is the [MIT license](https://opensource.org/license/mit/)).
-
-To publish your library to [npm](https://www.npmjs.com):
-
-```sh
-npm publish
-```
+Components go in `src/lib/` and are re-exported from `src/lib/index.js`;
+`src/routes/` is a showcase only and is not published.
