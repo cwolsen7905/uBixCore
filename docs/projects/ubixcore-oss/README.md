@@ -45,5 +45,5 @@ Status: `Todo` · `Build` · `Done` · `Dropped`.
 | OSS-07 | `skeleton/` folder + `ubix app:init` scaffolder; prove with `composer create-project` (path repo) booting a hello app in a scratch dir | Todo | |
 | OSS-08 | `js/Ubix` → `@ubixsys/ubixcore`, `npm publish` job | Todo | `app/SowingMeJs` does not import `js/Ubix` today — clean start |
 | OSS-09 | Publish: public mirror, Packagist hook, npm publish, subtree split for skeleton; tag `v0.1.0` | Todo | |
-| OSS-10 | Sowing.me migrates to its new repo consuming released packages; `app/SowingMe*`, `docs/projects/sowing-me`, `docs/surfaces`, `sql/`, `templates/` leave this repo | Todo | |
+| OSS-10 | Sowing.me migrates to `kitg/kitg` consuming released packages; `app/SowingMe*`, `docs/projects/sowing-me`, `docs/surfaces`, `sql/`, `templates/` leave this repo; **all Sowing.me deploys move to the kitg pipeline**; k8s namespaces/secrets/ingress recorded in `~/git/kubernetes` (source of truth) in the same change — see plan §5 | Todo | recommend new `kitg-{dev,staging,prod}` namespaces |
 | OSS-11 | ubixsys-web "Build on uBixCore" section written from `process-log.md` | Todo | in `~/git/ubixsys-web` |
