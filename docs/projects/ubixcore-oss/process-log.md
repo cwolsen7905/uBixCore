@@ -478,3 +478,24 @@ shipped in the image (nginx 404 on the first deploy).
 manifests, so its pipeline cannot redeploy over kitg's. The PHP sources stay in
 ubixcore until AdminApi/Web move too (they share the `Ubix\` product classes),
 then all of `app/SowingMe*` and the product code leave in one cut.
+
+## 2026-09-03 — ubixcore is (almost) just the framework
+
+After SowingMeApi proved out on dev, the rest followed in one kitg MR:
+AdminApi and Web (their closures were entirely framework; Web needed one
+controller, now `Kitg\SowingMe\Controller\Web`), both SvelteKit apps with the
+node image build and lint jobs restored in kitg's pipeline, and the non-secret
+env block on every dev Deployment. ubixcore then lost 100 paths: every product
+class and test, `app/SowingMe*`, the Sowing.me templates, `Dockerfile_Node_*`,
+`docs/projects/sowing-me`, `docs/surfaces`, the product migrations. The gate
+stayed green: 247 framework tests remain.
+
+What did **not** leave, and why: the framework still names the Sowing.me
+database in `UbixDatabase`, `ResetSchemaCommand` and the migration tests, and
+its CI rebuilds `sql/sowingme.sql` as the test fixture. That is a genericity
+gap (the host should supply the database list), tracked as OSS-12.
+
+**Lesson worth the website:** a baked `.env` hides every piece of config an
+image depends on. The first kitg pod logged to `/dev/SowingMeApi.log`, lost
+sessions and failed DB calls until the non-secret settings became Deployment
+env; secrets were fine because uBixVault already supplied them.

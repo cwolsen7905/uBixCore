@@ -37,8 +37,7 @@ stages:
 # build
 # ---------------------------------------------------------------------------
 # Runtime image (multi-arch, `:<ref>` mutable tag + `:<ref>-<sha>` immutable),
-# a `-test` image layered on it (amd64 only — it never deploys), and the node
-# image for app/SowingMeJs.
+# and a `-test` image layered on it (amd64 only — it never deploys).
 .build:
   extends: .registry_login
   stage: build
@@ -58,17 +57,12 @@ stages:
       RUNTIME_REF="${CI_REGISTRY_IMAGE}:${CI_COMMIT_REF_SLUG}"
       RUNTIME_SHA_REF="${CI_REGISTRY_IMAGE}:${CI_COMMIT_REF_SLUG}-${CI_COMMIT_SHA}"
       TEST_REF="${CI_REGISTRY_IMAGE}:${CI_COMMIT_SHA}-test"
-      NODE_REF="${CI_REGISTRY_IMAGE}:${CI_COMMIT_REF_SLUG}-node"
-      NODE_SHA_REF="${CI_REGISTRY_IMAGE}:${CI_COMMIT_SHA}-node"
-      REF_CAP="$(printf '%s' "$CI_COMMIT_REF_SLUG" | cut -c1 | tr '[:lower:]' '[:upper:]')$(printf '%s' "$CI_COMMIT_REF_SLUG" | cut -c2-)"
 
       docker buildx build --provenance=false --sbom=false --platform linux/amd64,linux/arm64 --push \
         -t "$RUNTIME_REF" -t "$RUNTIME_SHA_REF" -f "$RUNTIME_DOCKERFILE" .
       docker buildx build --provenance=false --sbom=false --platform linux/amd64 --push \
         --build-arg RUNTIME_IMAGE="$RUNTIME_SHA_REF" \
         -t "$TEST_REF" -f Dockerfile_Test .
-      docker buildx build --provenance=false --sbom=false --platform linux/amd64,linux/arm64 --push \
-        -t "$NODE_REF" -t "$NODE_SHA_REF" -f "Dockerfile_Node_${REF_CAP}" .
 
 build-dev:
   extends: .build
@@ -124,24 +118,8 @@ build-main:
           && php bin/ubix migrate:up --target=test --yes -n \\
           && vendor/bin/phpunit"
 
-# eslint + prettier + svelte-check for the SvelteKit app, in the node image the
-# build stage pushed (its `npm install` includes devDeps).
-.js_lint:
-  extends: .registry_login
-  stage: lint-and-test
-  tags: [shell]
-  timeout: 20 minutes
-  script:
-    - |
-      # The per-commit tag forces a registry pull: buildx (docker-container
-      # driver) pushes without loading locally, so the mutable -node tag on the
-      # runner can be stale (bit us on pipeline 4691: linted pre-fix code).
-      docker run --rm --workdir /app "${CI_REGISTRY_IMAGE}:${CI_COMMIT_SHA}-node" \
-        sh -c "set -e && npm run lint && npm run check"
-
 static-checks-dev: { extends: .static_checks, only: [dev] }
 phpunit-dev:       { extends: .phpunit,       only: [dev] }
-js-lint-dev:       { extends: .js_lint,       only: [dev] }
 static-checks-staging: { extends: .static_checks, only: [staging] }
 phpunit-staging:       { extends: .phpunit,       only: [staging] }
 
