@@ -84,7 +84,7 @@ final class MigrationFileScannerService
 
         $files = [];
         foreach ($entries as $entry) {
-            if ($entry === '.' || $entry === '..') {
+            if (str_starts_with($entry, '.')) { // `.`, `..`, and placeholders such as the skeleton's `.gitkeep` or editor droppings
                 continue;
             }
             $fullPath = rtrim($this->migrationsPath, '/') . '/' . $entry;
