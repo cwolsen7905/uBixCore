@@ -25,7 +25,7 @@ class ModelGetterSetterSniff implements Sniff
             $namespace = $phpcsFile->getTokensAsString($nsPtr + 2, $semi - $nsPtr - 2);
         }
 
-        if (strpos($namespace, 'Ubix\\Model') !== 0) {
+        if (preg_match('/(^|\\\\)Model(\\\\|$)/', $namespace) !== 1) { // Any vendor's Model namespace, not only Ubix
             return;  // only apply in your model classes
         }
 

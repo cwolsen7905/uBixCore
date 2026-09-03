@@ -505,6 +505,18 @@
     -->
 
     <!--
+        Rules a project scopes to specific files with <include-pattern> (re-enable
+        them in the project phpcs.xml with <severity>5</severity>); off by default
+        because auto-inclusion would otherwise run them everywhere.
+    -->
+    <rule ref="Ubix.ProjectNeptune.DemandCustomDataTypes">
+        <severity>0</severity>
+    </rule>
+    <rule ref="Ubix.ProjectNeptune.ModelPropertiesType">
+        <severity>0</severity>
+    </rule>
+
+    <!--
         Referencing a whole standard auto-includes every sniff under Sniffs/.
         These are work-in-progress or superseded and were never enabled in the
         original project rule set - keep them off until they are finished.

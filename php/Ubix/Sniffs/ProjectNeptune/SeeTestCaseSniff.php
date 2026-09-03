@@ -71,7 +71,7 @@ class SeeTestCaseSniff implements Sniff
         $namePtr    = $phpcsFile->findNext(\T_STRING, $stackPtr);
         $className  = $tokens[$namePtr]['content'];
         $parts      = explode('\\', ltrim($namespace, '\\'));
-        if (isset($parts[0]) && $parts[0] === 'Ubix') {
+        if (isset($parts[0]) && $parts[0] !== '') { // "<Vendor>\\X" -> "<Vendor>\\Tests\\X" (any vendor root, not only Ubix)
             array_splice($parts, 1, 0, 'Tests');
         }
         $testNamespace = '\\' . implode('\\', $parts);
