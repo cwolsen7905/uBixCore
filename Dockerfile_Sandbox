@@ -1,0 +1,37 @@
+FROM gitlab.brainchurts.com:5050/k8s/baseimages/nginx-php-fpm-memcache:latest
+
+USER root
+
+RUN apk --no-cache add composer php-pdo php-pdo_mysql php-simplexml php83-pecl-memcached
+
+RUN mkdir -p /web && \
+    chown -R www:www /web && \
+    chmod -R 755 /web
+
+#Handel DevOps configuration
+COPY config/devops/sb-nginx.conf /etc/nginx/nginx.conf
+COPY config/devops/sb-php-fpm.ini /etc/php83/conf.d/yyy_fpm.ini
+
+USER www
+
+
+#Make sym links to shared folders
+RUN ln -s /mnt/project-neptune/public /web/public
+RUN ln -s /mnt/project-neptune/php /web/php
+RUN ln -s /mnt/project-neptune/templates /web/templates
+RUN ln -s /mnt/project-neptune/app /web/app
+RUN ln -s /mnt/project-neptune/bin /web/bin
+RUN ln -s /mnt/project-neptune/tests /web/tests
+
+#temporary fix for dotenv
+COPY --chown=www .env /web/.env
+
+
+RUN mkdir -p /web/var/cache/latte
+RUN chmod -R 777 /web/var
+
+EXPOSE 8080
+
+# Let supervisord start nginx & php-fpm
+CMD ["/usr/bin/supervisord", "-c", "/etc/supervisor/conf.d/supervisord.conf"]
+
