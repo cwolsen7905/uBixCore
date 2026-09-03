@@ -461,3 +461,20 @@ to `ws-*`/`live-*`, and applying over the existing Deployment/Ingress names
 makes the first kitg deploy the cutover with no interim hostnames. Reverted;
 the plan §5 now records the decision and the one rule it creates (ubixcore
 stops applying those manifests once kitg owns them).
+
+## 2026-09-03 — SowingMeApi deploys from kitg (dev)
+
+The first kitg `dev` pipeline built the image from the private registry
+(job-token allowlists on ubixcore and k8s/baseimages), ran phpcs/phpstan, ran
+phpunit against the shared test DB with credentials from uBixVault
+(`secret/kitg/test-db`, policy `kitg-ci-ro` — raw HCL, not a JSON wrapper), and
+`deploy-dev` replaced the `ws-dev/sowing-me-api` Deployment's image with
+`kitg/kitg:dev`. Four small gaps surfaced on the way and each got a kitg fix plus
+a skeleton/framework fix: `rector.php` missing, `.env` assumed by the test base,
+`.gitkeep` rejected by the migration scanner, and `config/devops/nginx.conf` not
+shipped in the image (nginx 404 on the first deploy).
+
+**Handoff rule, now in force:** ubixcore no longer carries SowingMeApi's k8s
+manifests, so its pipeline cannot redeploy over kitg's. The PHP sources stay in
+ubixcore until AdminApi/Web move too (they share the `Ubix\` product classes),
+then all of `app/SowingMe*` and the product code leave in one cut.
