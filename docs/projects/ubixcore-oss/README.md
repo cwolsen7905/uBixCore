@@ -27,7 +27,7 @@ that log is the source for the "Build on uBixCore" section of **ubixsys-web**.
 | Python package | `ubixcore` (PyPI) | no `py/` tree exists yet; guidelines only |
 | Skeleton | `skeleton/` **inside this repo**, published as `ubixsys/ubixcore-skeleton` via subtree split | one CI, framework and skeleton move together |
 | Repo roles | **this repo stays uBixCore**; Sowing.me moves to a new private repo | Sowing.me repo is created by Christopher |
-| Host namespace | `Kitg\SowingMe\` (vendor = Kingdom Impact Technology Group, the legal owner of Sowing.me; product second so later KITG products don't collide); composer `kitg/sowingme`, npm scope `@kitg` | StudlyCaps `Kitg`, matching `Ubix` |
+| Host repo + namespace | The new private repo is **KITG's company monorepo** `kitg/kitg` (Kingdom Impact Technology Group owns Sowing.me and will add a second platform later). Composer `kitg/kitg`, PSR-4 root `Kitg\` from `php/Kitg/`; products are the second segment: `Kitg\SowingMe\`, `Kitg\<OtherPlatform>\`, shared KITG code under `Kitg\Shared\`; apps side by side in `app/` selected by `APP_NAME` as today; npm scope `@kitg` | StudlyCaps `Kitg`, matching `Ubix` |
 
 ## Work matrix
 

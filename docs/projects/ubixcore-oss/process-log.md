@@ -23,7 +23,7 @@ committed `composer.lock` is what pins it.
 
 **Decisions taken** (recorded in [`README.md`](README.md)): BSD-3-Clause (BSD-2 was picked first, then switched to match `ubixvault` and `replikate`);
 `ubixsys/ubixcore` + `@ubixsys/ubixcore`; skeleton lives in this repo; this repo
-stays uBixCore and Sowing.me moves to a new private repo. Host namespace `Kitg\SowingMe\` (KITG = Kingdom Impact Technology Group, Sowing.me's owning company; vendor first, product second).
+stays uBixCore and Sowing.me moves to a new private repo. The new private repo is KITG's company monorepo `kitg/kitg` (Kingdom Impact Technology Group owns Sowing.me and a second platform to come), PSR-4 root `Kitg\` with products as the second segment (`Kitg\SowingMe\`).
 
 **Housekeeping.** Registered the `oss-split` lane in `AGENTS-COORD.md` and opened
 a worktree so the three active M1 lanes are untouched:
