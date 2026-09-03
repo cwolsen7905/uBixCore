@@ -36,3 +36,12 @@ cp .env_dev ../ubixcore-worktrees/oss-split/.env    # pre-push hook needs it
 
 **Next:** OSS-02, a `ProjectRoot` service so nothing in `php/Ubix` computes the
 host root from its own file location.
+
+## 2026-09-02 — Step 0b: the host repo exists
+
+Christopher created `kitg/kitg` on GitLab (default branch `dev`) and cloned it
+to `~/git/kitg`. Named after the company, not the product, because it will hold
+Sowing.me and a second platform. Seeded with a README that states the shape
+(`Kitg\` root, products as the second segment, uBixCore from `vendor/`, never
+committed) — MR kitg/kitg!1. Nothing else goes in until OSS-07 proves the
+skeleton boots a host from `vendor/`.
