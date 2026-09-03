@@ -79,7 +79,9 @@ abstract class AbstractTestCase extends TestCase
                 putenv('APP_NAME=NeptuneCli');
             }
 
-            Dotenv::createUnsafeImmutable($this->getProjectRoot())->load();
+            if (file_exists($this->getProjectRoot() . '/.env')) { // .env is a local-development convenience; CI and containers get their environment from uBixVault / the pod spec
+                Dotenv::createUnsafeImmutable($this->getProjectRoot())->load();
+            }
 
             // Map The Databases
             putenv('MYSQL_READ_HOST=' . getenv('TEST_MYSQL_WRITE_HOST'));
