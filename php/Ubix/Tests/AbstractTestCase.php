@@ -11,7 +11,13 @@ use RuntimeException;
 use Ubix\Service\Sql\SqlServiceInterface as SqlService;
 
 /**
- * Abstract class for a PHPUnit test case whith added Container singleton functionality
+ * Abstract class for a PHPUnit test case with added Container singleton functionality
+ *
+ * Ships with uBixCore (`vendor/ubixsys/ubixcore`), so it locates the host project
+ * through `UBIX_PROJECT_ROOT` (exported by `Ubix\Bootstrap\environment()`) or the
+ * working directory - never through its own `__DIR__`. A host whose CLI container
+ * definitions live somewhere other than `app/UbixCli/src/Dependencies.php`
+ * overrides `getDependenciesFile()`.
  */
 abstract class AbstractTestCase extends TestCase
 {
@@ -23,6 +29,28 @@ abstract class AbstractTestCase extends TestCase
     private static ?SqlService $sqlService = null;
 
     private static ?Container $container = null;
+
+    /**
+     * Get the host project root (`UBIX_PROJECT_ROOT`, else the working directory)
+     *
+     * @return string
+     */
+    protected function getProjectRoot(): string
+    {
+        $root = getenv('UBIX_PROJECT_ROOT');
+
+        return is_string($root) && $root !== '' ? $root : (getcwd() ?: '.');
+    }
+
+    /**
+     * Get the file that returns the CLI container-building closure
+     *
+     * @return string
+     */
+    protected function getDependenciesFile(): string
+    {
+        return $this->getProjectRoot() . '/app/UbixCli/src/Dependencies.php';
+    }
 
     /**
      * Get the SQL service
@@ -51,7 +79,7 @@ abstract class AbstractTestCase extends TestCase
                 putenv('APP_NAME=NeptuneCli');
             }
 
-            (Dotenv::createUnsafeImmutable(__DIR__ . '/../'))->load();
+            Dotenv::createUnsafeImmutable($this->getProjectRoot())->load();
 
             // Map The Databases
             putenv('MYSQL_READ_HOST=' . getenv('TEST_MYSQL_WRITE_HOST'));
@@ -67,7 +95,7 @@ abstract class AbstractTestCase extends TestCase
             /**
              * @var callable(): Container $containerBuilder
              */
-            $containerBuilder = require __DIR__ . '/../app/UbixCli/src/Dependencies.php';
+            $containerBuilder = require $this->getDependenciesFile();
             $container        = $containerBuilder();
             assert($container instanceof Container);
             self::$container = $container;

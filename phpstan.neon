@@ -1,9 +1,8 @@
 includes:
   - vendor/phpstan/phpstan/conf/bleedingEdge.neon
+  - php/Ubix/phpstan.neon   # the framework baseline (level max, framework excludes); a host includes it from vendor/
 
 parameters:
-  level: max
-
   paths:
     - app
     - bin
@@ -11,26 +10,8 @@ parameters:
     - public
     - tests
 
-  # Some @phpstan-ignore identifiers (e.g. property.onlyWritten on framework
-  # Logger deps) match under PHP 8.4 but not 8.5 — the CI image and local dev
-  # can differ, so an unmatched ignore must not fail the gate.
-  reportUnmatchedIgnoredErrors: false
-
   tmpDir: .phpstan.cache
-
-  treatPhpDocTypesAsCertain: false # TODO: experiment with removing this line
 
   excludePaths:
     analyse:
-      - /*/Ubix/Sniffs/**/*.php # We are not subjecting custom phpcs sniffs to a full machine code review
-      - /*/Ubix/External/GoogleAuthenticator.php # This is temporary until we can spin it off into an open source project
-      #
-      #
-      # Andrew's OpenAPI Experiment (START)
-      - /*/Ubix/Console/Command/App/GenerateOpenapiCommand.php
-      - /*/Ubix/SlimApp/RecordingApp.php
-      # Andrew's OpenAPI Experiment (END)
-      #
-      #
-      - /*/Ubix/Console/Cron/*.php
-      - /*/app/*Js/**/*.php
+      - app/*Js/**/*.php

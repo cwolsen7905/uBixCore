@@ -1,0 +1,25 @@
+# uBixCore phpstan baseline - include from a project's phpstan.neon:
+#
+#   includes:
+#     - vendor/phpstan/phpstan/conf/bleedingEdge.neon
+#     - vendor/ubixsys/ubixcore/php/Ubix/phpstan.neon
+#
+# Paths here are relative to this file, so the excludes only ever cover
+# framework files. The project supplies its own `paths:` and `tmpDir:`.
+parameters:
+  level: max
+
+  # Some @phpstan-ignore identifiers (e.g. property.onlyWritten on framework
+  # Logger deps) match under PHP 8.4 but not 8.5 - the CI image and local dev
+  # can differ, so an unmatched ignore must not fail the gate.
+  reportUnmatchedIgnoredErrors: false
+
+  treatPhpDocTypesAsCertain: false
+
+  excludePaths:
+    analyse:
+      - Sniffs/**/*.php                               # custom phpcs sniffs are not subject to a full machine code review
+      - External/GoogleAuthenticator.php (?)          # temporary until it is spun into its own package
+      - Console/Command/App/GenerateOpenapiCommand.php (?) # OpenAPI experiment
+      - SlimApp/RecordingApp.php (?)                  # OpenAPI experiment
+      - Console/Cron/*.php (?)

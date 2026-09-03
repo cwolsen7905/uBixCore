@@ -1,6 +1,6 @@
 # uBixCore Open-Source Split — Project
 
-**Status:** Active — OSS-01/02 landed 2026-09-02, OSS-03 (thin entry points) built 2026-09-03. Next OSS-04 (product code out of `Ubix\`).
+**Status:** Active — OSS-01/02 landed 2026-09-02, OSS-03 landed, OSS-05 (export quality tooling) built 2026-09-03. OSS-04 (product code out of `Ubix\`) deferred until the M1 lanes land; next OSS-06 (composer hygiene).
 
 Turn this repo into **uBixCore**, an open-source framework-plus-tooling monorepo that
 third parties install from Composer / npm (and later PyPI), and move **Sowing.me**
@@ -40,7 +40,7 @@ Status: `Todo` · `Build` · `Done` · `Dropped`.
 | OSS-02 | `ProjectRootService`: one resolver for the host project root; replace every `__DIR__ . '/../../..'` walk in `php/Ubix` | Done | 2026-09-02, `feat/oss-02-project-root`. Root bound once in the host's `Dependencies.php` (`UBIX_PROJECT_ROOT` overrides); 12 call sites in 8 files rewritten; `php/Ubix` has no root-relative `__DIR__` left |
 | OSS-03 | Thin entry points: `bin/ubix` + `public/index.php` call a framework bootstrap; command discovery takes a namespace list from host config | Done | 2026-09-03, `feat/oss-03-entry-points`. `Ubix\Bootstrap\{environment,console,http,discoverClasses}()` via Composer `files` autoload; commands found through Composer's PSR-4 map, so a host adds `'Acme\\Console\\Command'` to one array |
 | OSS-04 | Product code out of `Ubix\`: SowingMe controllers/repositories/services/DTOs → `Kitg\SowingMe\` PSR-4 root under `php/Kitg/SowingMe/` | Todo | biggest diff; coordinate with active M1 lanes |
-| OSS-05 | Export quality tooling from the package: phpcs ruleset reachable via `vendor/…/ruleset.xml`, phpstan extension neon, `Ubix\Tests` base classes moved out of `tests/` into the package | Todo | |
+| OSS-05 | Export quality tooling from the package: phpcs ruleset reachable via `vendor/…/ruleset.xml`, phpstan extension neon, `Ubix\Tests` base classes moved out of `tests/` into the package | Done | 2026-09-03, `feat/oss-05-export-tooling`. `php/Ubix/ruleset.xml` is now the full `Ubix` standard (231 sniffs); project `phpcs.xml` is `<rule ref="Ubix"/>` + tuning. `php/Ubix/phpstan.neon` baseline included from the project file. `php/Ubix/Tests/` ships the base classes + a parameterised every-class-has-a-test scanner |
 | OSS-06 | `composer.json` hygiene: `license` → `BSD-3-Clause`, heavy SDKs (Filestack, GitLab API, AWS) → `suggest`/optional, `composer.lock` **committed**, Dockerfiles `composer install` not `update` | Todo | lock is gitignored today |
 | OSS-07 | `skeleton/` folder + `ubix app:init` scaffolder; prove with `composer create-project` (path repo) booting a hello app in a scratch dir | Todo | |
 | OSS-08 | `js/Ubix` → `@ubixsys/ubixcore`, `npm publish` job | Todo | `app/SowingMeJs` does not import `js/Ubix` today — clean start |

@@ -160,7 +160,7 @@ configs, CI) are yours; the changelog says when an upgrade wants a change there.
 | 3 `app:init` + own namespace | Partly — host command namespaces are discovered (OSS-03); no scaffolder yet; controllers still live in `Ubix\` | OSS-04, OSS-07 |
 | 4 `app:run` | Yes — resolves `app/` through `ProjectRootService` (OSS-02) | — |
 | 5 `AbstractController` in `Ubix\` | Yes | — |
-| 6 `code:review` gate + pre-push hook | Yes — `vendor/bin/*` via `ProjectRootService` (OSS-02); ruleset/test bases still not exported | OSS-05 |
+| 6 `code:review` gate + pre-push hook | Yes — `vendor/bin/*` via `ProjectRootService` (OSS-02); `Ubix` phpcs standard, phpstan baseline and PHPUnit base classes ship in the package (OSS-05) | — |
 | 7 migrations | Yes — `sql/` via `ProjectRootService` (OSS-02) | — |
 | 8 Docker + CI templates | Yes for this repo; need to become skeleton templates | OSS-07 |
 | 9 `@ubixsys/ubixcore` on npm | No — `js/Ubix` is named `vsm` | OSS-08 |
