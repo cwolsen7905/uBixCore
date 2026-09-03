@@ -87,10 +87,12 @@
 
     <!-- Project-specific include lists (neptune-inherited; revisit when the rules are re-scoped) -->
     <rule ref="Ubix.ProjectNeptune.DemandCustomDataTypes">
+        <severity>5</severity>
         <include-pattern>php/Ubix/Service/AffiliateService.php</include-pattern>
         <include-pattern>php/Ubix/Service/AttributionService.php</include-pattern>
     </rule>
     <rule ref="Ubix.ProjectNeptune.ModelPropertiesType">
+        <severity>5</severity>
         <include-pattern>php/Ubix/Model/Affiliate.php</include-pattern>
         <include-pattern>php/Ubix/Model/AffiliateCode.php</include-pattern>
         <include-pattern>php/Ubix/Model/AffiliateCommissionPlan.php</include-pattern>

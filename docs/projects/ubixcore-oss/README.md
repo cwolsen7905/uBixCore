@@ -1,6 +1,6 @@
 # uBixCore Open-Source Split — Project
 
-**Status:** Active — OSS-01/02 landed 2026-09-02, OSS-03 landed, OSS-05 and OSS-06 built 2026-09-03. OSS-04 (product code out of `Ubix\`) deferred until the M1 lanes land; next OSS-07 (skeleton proof).
+**Status:** Active — OSS-01/02 landed 2026-09-02, OSS-03 landed, OSS-05/06 landed, OSS-07 (skeleton proof) built 2026-09-03. OSS-04 deferred until the M1 lanes land; next OSS-08 (npm package) / OSS-09 (publish + skeleton subtree split).
 
 Turn this repo into **uBixCore**, an open-source framework-plus-tooling monorepo that
 third parties install from Composer / npm (and later PyPI), and move **Sowing.me**
@@ -42,7 +42,7 @@ Status: `Todo` · `Build` · `Done` · `Dropped`.
 | OSS-04 | Product code out of `Ubix\`: SowingMe controllers/repositories/services/DTOs → `Kitg\SowingMe\` PSR-4 root under `php/Kitg/SowingMe/` | Todo | biggest diff; coordinate with active M1 lanes |
 | OSS-05 | Export quality tooling from the package: phpcs ruleset reachable via `vendor/…/ruleset.xml`, phpstan extension neon, `Ubix\Tests` base classes moved out of `tests/` into the package | Done | 2026-09-03, `feat/oss-05-export-tooling`. `php/Ubix/ruleset.xml` is now the full `Ubix` standard (231 sniffs); project `phpcs.xml` is `<rule ref="Ubix"/>` + tuning. `php/Ubix/phpstan.neon` baseline included from the project file. `php/Ubix/Tests/` ships the base classes + a parameterised every-class-has-a-test scanner |
 | OSS-06 | `composer.json` hygiene: `license` → `BSD-3-Clause`, heavy SDKs (Filestack, GitLab API, AWS) → `suggest`/optional, `composer.lock` **committed**, Dockerfiles `composer install` not `update` | Done | 2026-09-03, `feat/oss-06-composer-hygiene`. LICENSE (BSD-3, matches ubixvault/replikate); SDKs in require-dev + suggest; lock committed (60 prod / 47 dev packages); runtime images `composer install --no-dev`, `Dockerfile_Test` adds dev deps; php-di pin loosened to `^7.0.11` |
-| OSS-07 | `skeleton/` folder + `ubix app:init` scaffolder; prove with `composer create-project` (path repo) booting a hello app in a scratch dir | Todo | |
+| OSS-07 | `skeleton/` folder + `ubix app:init` scaffolder; prove with `composer create-project` (path repo) booting a hello app in a scratch dir | Done | 2026-09-03, `feat/oss-07-skeleton`. `skeleton/` is a complete `create-project` template (HelloApi app, `App\` namespace, gate configs on `vendor/`, Dockerfile). Proven: create-project → `/health` JSON, CLI 15 commands, phpcs 0 / phpstan 0 / phpunit green in the generated project. Four sniffs made vendor-generic on the way. `app:init` scaffolder deferred (copying `app/HelloApi` is the manual form) |
 | OSS-08 | `js/Ubix` → `@ubixsys/ubixcore`, `npm publish` job | Todo | `app/SowingMeJs` does not import `js/Ubix` today — clean start |
 | OSS-09 | Publish: public mirror, Packagist hook, npm publish, subtree split for skeleton; tag `v0.1.0` | Todo | |
 | OSS-10 | Sowing.me migrates to `kitg/kitg` consuming released packages; `app/SowingMe*`, `docs/projects/sowing-me`, `docs/surfaces`, `sql/`, `templates/` leave this repo; **all Sowing.me deploys move to the kitg pipeline**; k8s namespaces/secrets/ingress recorded in `~/git/kubernetes` (source of truth) in the same change — see plan §5 | Todo | recommend new `kitg-{dev,staging,prod}` namespaces |

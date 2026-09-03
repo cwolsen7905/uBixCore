@@ -240,3 +240,63 @@ image change is verified by the pipeline on merge.
 **Also spotted.** `.gitlab-ci.yml` already has a `deploy-composer` job that
 publishes every tag to the project's GitLab Composer registry (neptune-inherited).
 That is step 2 of the "source of the package" plan, already wired.
+
+## 2026-09-03 — OSS-07: a stranger's first ten minutes, for real
+
+**What was built.** `skeleton/`: a `create-project` template with the thin
+`bin/ubix` / `public/index.php` from OSS-03, a `HelloApi` app (`Dependencies`,
+`Middleware`, `Routes`), a `HealthController` under the placeholder namespace
+`App\`, its test plus the every-class-has-a-test scanner configured for
+`php/App`, `phpcs.xml` / `phpstan.neon` / `phpunit.xml` pointing at the rules in
+`vendor/ubixsys/ubixcore`, a runtime `Dockerfile`, `.env.example`, and a README
+that is the quickstart.
+
+**The proof, as run** (scratch dir, framework from this checkout via a path
+repository):
+
+```bash
+composer create-project --no-install --stability=dev \
+  --repository='{"type":"path","url":"<ubixcore>/skeleton"}' ubixsys/ubixcore-skeleton acme
+cd acme
+composer config --unset repositories.0          # the GitLab vcs entry, not needed locally
+composer config repositories.ubixcore path <ubixcore>
+composer require "ubixsys/ubixcore:*@dev"       # symlinks vendor/ubixsys/ubixcore -> checkout
+cp .env.example .env
+php bin/ubix list                               # 15 commands
+APP_NAME=HelloApi php -S 127.0.0.1:8090 -t public &
+curl 127.0.0.1:8090/health                      # {"status":"ok","app":"HelloApi"}
+curl 127.0.0.1:8090/nope                        # 404 via the JSON error handler
+vendor/bin/phpcs && vendor/bin/phpstan analyse && vendor/bin/phpunit
+```
+
+**What the first run caught** (16 phpcs errors, 1 phpstan) — all in the
+framework's assumptions, none in the boot path:
+
+- Two sniffs mapped test classes by editing the literal string `Ubix\`
+  (`SeeTestCase`, `UbixConcreteClassOrEnumTestCase`), so an `App\Controller\X`
+  was told its test lives at `\App\Controller\XTest`. Both now insert/remove the
+  `Tests` segment after *any* vendor root. `ThrowSlimException` and
+  `ModelGetterSetter` matched `Ubix\Controller` / `Ubix\Model` literally; they now
+  match a `Controller`, `Middleware` or `Model` segment in any namespace.
+- `DemandCustomDataTypes` and `ModelPropertiesType` were scoped in the old
+  project file to a handful of neptune files that no longer exist, i.e. off.
+  Auto-inclusion turned them on for the whole host. They are now `severity 0`
+  in the standard and re-enabled with `severity 5` + include lists in this
+  repo's `phpcs.xml` (still a no-op here, but explicit).
+- The rest were my skeleton files not following house layout (alias
+  `AbstractController as Controller`, a blank line between a file docblock and
+  `return`, no arrow functions, `Level::fromName()` wants a literal).
+
+**Still assuming `Ubix\`.** `AbstractUbixConcreteClassOrEnumTestCase` picks
+which rule family to apply (controller, repository, service…) by
+`str_starts_with($className, 'Ubix\\Controller\\')` etc., so a host's controller
+only gets the general checks. Fix alongside OSS-04, when the first non-`Ubix\`
+product code exists to test against.
+
+**Not built.** `ubix app:init` scaffolder — copying `app/HelloApi` and renaming
+is the manual form and is documented; the scaffolder is nicer, not blocking.
+
+**Next.** OSS-09: publish. The `deploy-composer` CI job already pushes tags to
+the GitLab registry; add the `skeleton/` subtree split so
+`ubixsys/ubixcore-skeleton` resolves without a path repository. Then the kitg
+repo can be created from it for real.

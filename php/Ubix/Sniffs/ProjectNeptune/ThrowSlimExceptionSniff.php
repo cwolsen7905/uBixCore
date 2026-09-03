@@ -100,10 +100,7 @@ class ThrowSlimExceptionSniff implements Sniff
 
         // 5) If we're in Ubix\Controller\* or Ubix\Middleware\*, skip.
         if (
-            $this->currentNamespace === 'Ubix\\Controller'
-            || stripos($this->currentNamespace, 'Ubix\\Controller\\') === 0
-            || $this->currentNamespace === 'Ubix\\Middleware'
-            || stripos($this->currentNamespace, 'Ubix\\Middleware\\') === 0
+            preg_match('/(^|\\\\)(Controller|Middleware)(\\\\|$)/i', $this->currentNamespace) === 1 // Any vendor's Controller / Middleware namespace, not only Ubix
         ) {
             return;
         }

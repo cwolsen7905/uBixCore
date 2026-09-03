@@ -155,9 +155,9 @@ configs, CI) are yours; the changelog says when an upgrade wants a change there.
 
 | Step | Exists today? | Delivered by |
 |---|---|---|
-| 1 `create-project` skeleton | No — the repo *is* the product monorepo | OSS-07, OSS-09 |
+| 1 `create-project` skeleton | Yes from a path/vcs repository (`skeleton/`, OSS-07); not yet published as its own package | OSS-09 |
 | 2 git shape | Yes — lock committed, images `composer install` from it (OSS-06) | — |
-| 3 `app:init` + own namespace | Partly — host command namespaces are discovered (OSS-03); no scaffolder yet; controllers still live in `Ubix\` | OSS-04, OSS-07 |
+| 3 `app:init` + own namespace | Partly — own namespace works end to end (`App\` in the skeleton, commands discovered); no scaffolder yet, copy `app/HelloApi` | OSS-04 for Sowing.me; scaffolder later |
 | 4 `app:run` | Yes — resolves `app/` through `ProjectRootService` (OSS-02) | — |
 | 5 `AbstractController` in `Ubix\` | Yes | — |
 | 6 `code:review` gate + pre-push hook | Yes — `vendor/bin/*` via `ProjectRootService` (OSS-02); `Ubix` phpcs standard, phpstan baseline and PHPUnit base classes ship in the package (OSS-05) | — |
