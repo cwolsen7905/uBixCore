@@ -229,7 +229,10 @@ publish-npm:
       set -euo pipefail
       VERSION="${CI_COMMIT_TAG#v}"
       REGISTRY="${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/packages/npm/"
-      docker run --rm -v "$PWD/js/Ubix:/pkg" -w /pkg \
+      # Run as the runner's own uid (never root): a root-owned node_modules in
+      # the bind-mounted workspace broke every later checkout on this runner
+      # (pipeline after v0.1.1: "failed to remove js/Ubix/...: Permission denied").
+      docker run --rm -v "$PWD/js/Ubix:/pkg" -w /pkg --user "$(id -u):$(id -g)" -e HOME=/tmp \
         -e NPM_REGISTRY="$REGISTRY" -e NPM_TOKEN="$CI_JOB_TOKEN" -e VERSION="$VERSION" \
         node:20 sh -c '
           set -e
@@ -237,7 +240,7 @@ publish-npm:
           npm version --no-git-tag-version --allow-same-version "$VERSION"
           npm ci --no-audit --no-fund
           npm publish --registry "$NPM_REGISTRY"
-          rm -f .npmrc'
+          rm -rf .npmrc node_modules dist .svelte-kit'
   only: [tags]
 
 # ---------------------------------------------------------------------------
