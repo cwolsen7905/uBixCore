@@ -422,3 +422,12 @@ already reflect on `AbstractDataType` / `AbstractModel`.
 
 **Proof.** `tests/Tests/FamilyDetectionTest.php` with framework, host and
 host-with-product names; the full suite is unchanged for every existing class.
+Then the real test: SowingMeApi's 66 classes copied into kitg under
+`Kitg\\SowingMe\\` ran the same standards suite — 67 tests green after one more
+positional assumption fell (the repository rule read the type from the third
+namespace segment; it now reads the segment after `Repository`).
+
+**Aside.** `ubixsys/ubixcore-skeleton` now push-mirrors to
+https://github.com/cwolsen7905/ubixcore-skeleton. The skeleton is public while
+its dependency still resolves from the private GitLab registry, which is fine as
+a preview; Packagist for the framework itself waits on OSS-10.

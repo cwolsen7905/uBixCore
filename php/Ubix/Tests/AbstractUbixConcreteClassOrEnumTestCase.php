@@ -1111,19 +1111,20 @@ abstract class AbstractUbixConcreteClassOrEnumTestCase extends TestCase
         $class = $this->getReflectionClass($className);
 
         //
-        //  Ensure the type of repository is included as the third subnamespace
+        //  Ensure the type of repository is the subnamespace right after `Repository`
+        //  (`Ubix\Repository\User\…`, `Kitg\SowingMe\Repository\User\…`)
         //
         $subnamespaces    = explode('\\', $class->getNamespaceName());
-        $typeSubnamespace = count($subnamespaces) >= 3 ? $subnamespaces[2] : null;
+        $repositoryIndex  = array_search('Repository', $subnamespaces, true);
+        $typeSubnamespace = $repositoryIndex !== false ? ($subnamespaces[$repositoryIndex + 1] ?? null) : null;
 
-        $this->assertGreaterThanOrEqual(
-            3,
-            count($subnamespaces),
-            'All repository classes/interfaces must have at least three subnamespaces but `' . $class->getName() . '` has ' . count($subnamespaces),
+        $this->assertNotNull(
+            $typeSubnamespace,
+            'All repository classes/interfaces must have a type subnamespace after `Repository` but `' . $class->getName() . '` does not',
         );
 
         $this->assertTrue(
-            str_starts_with($class->getShortName(), $typeSubnamespace ?? ''),
+            str_starts_with($class->getShortName(), $typeSubnamespace),
             'All repository class/interface short names must be prefixed with their type but `' . $class->getShortName() . '` of `' . $class->getName() . '` doesn\'t begin with ' . $typeSubnamespace,
         );
 
