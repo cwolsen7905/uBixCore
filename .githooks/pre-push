@@ -1,0 +1,35 @@
+#!/usr/bin/env bash
+#
+# uBix Core pre-push hook — the local gate for every branch push; see docs/standards/branching-and-git-workflow.md).
+#
+# One-time install per clone (covers all worktrees of the repo):
+#     git config core.hooksPath .githooks
+#
+# No bypass: never `git push --no-verify`. Fix the gate, then push.
+set -euo pipefail
+
+remote_name="${1:-origin}"
+gate=0; gated_refs=""
+while read -r _local_ref local_oid remote_ref _remote_oid; do
+    [[ "$remote_ref" == refs/heads/* ]] || continue        # tags are not re-gated
+    [[ "$local_oid" =~ ^0+$ ]] && continue                # branch deletion
+    gate=1; gated_refs="${gated_refs} ${remote_ref}"
+done
+[ "$gate" -eq 1 ] || exit 0
+
+repo_root="$(git rev-parse --show-toplevel)"
+if [ ! -f "$repo_root/.env" ]; then
+    echo "✗ pre-push: no .env in $repo_root — bin/ubix needs one (cp .env.example .env)."
+    exit 1
+fi
+
+# Fast gate: phpcs + phpstan. phpunit needs the unit-test DB and is run by CI
+# before deploy, so a PHP-test regression can reach an MR but never a deploy.
+echo "▶ pre-push: '${remote_name}' updates${gated_refs} — running 'ubix code:review --phpunit=off' (fast gate: phpcs + phpstan; CI runs phpunit)…"
+if php "${repo_root}/bin/ubix" code:review -n --phpunit=off; then
+    echo "✓ code:review green — allowing push."
+    exit 0
+fi
+echo ""
+echo "✗ code:review FAILED — push blocked. Fix the violations above and push again (never --no-verify)."
+exit 1
