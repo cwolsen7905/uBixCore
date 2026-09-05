@@ -1,0 +1,105 @@
+<?xml version="1.0" ?>
+<ruleset name="uBixCore">
+
+    <!-- Tell phpcs where to find the custom sniffs -->
+    <config name="installed_paths" value="php/Ubix,vendor/slevomat/coding-standard" />
+
+
+    <!-- Sniff all the folders with PHP code -->
+    <file>bin</file>
+    <file>php</file>
+    <file>public</file>
+    <file>tests</file>
+
+
+    <!-- Exclusions -->
+    <exclude-pattern>php/Ubix/External/GoogleAuthenticator.php</exclude-pattern> <!-- This is temporary until we can spin it off into an open source project -->
+    <exclude-pattern>php/Ubix/Sniffs/**/*.php</exclude-pattern> <!-- We are not subjecting custom phpcs sniffs to a full machine code review -->
+
+    <!--
+        //////////////////////////////////////
+        //                                  //
+        //  ANDREW'S OPEN FRAMEWORK TODO'S  //
+        //                                  //
+        //////////////////////////////////////
+        // TODO: make phpcs check all Dependencies.php files for any missing definitions
+        // TODO: why are the keys in Dependencies.php not flagging for being non-alphabetical?
+        // TODO: make phpcs confirm all exceptions thrown (excluding Slim exceptions? maybe others?) include an exception code from \Ubix\Enum\Exception\ExceptionCode
+        // TODO: should I extend the `Ubix.Standards.ConcreteClassTestCase` rule to look for a @coversDefaultClass tag and if found ensure that is the class being passed into $this->testClassFollowingUbixStandards()?
+        // TODO: make phpcs enforce `(optional)` and `(default: x)` at the end of parameter descriptions when applicable - also simply any variable names in default, e.g. `(default: self::ICON_DEFAULT)` would transform to `(default: ':robot_face:')`
+        // TODO: make phpcs ban `SELECT *`?
+        // TODO: make phpcs flag `array<type>` in PHPDOC and prefer `type[]` instead
+        // TODO: make phpcs format @var comments, specifically the multi-line definitions of associative arrays (hanging commas should also be enforced)
+        // TODO: should I make a custom phpcs sniff that forks Squiz.Commenting.FunctionComment.IncorrectTypeHint so I don't need all the ignore comments? https://github.com/squizlabs/PHP_CodeSniffer/blob/c6c65ca0dc8608ba87631523b97b2f8d5351a854/src/Standards/Squiz/Sniffs/Commenting/FunctionCommentSniff.php#L493
+        // TODO: should I enforce all TemplateRenderer dependencies to be called $templateRenderer on controllers? (should all dependencies be self-named? except simple cache legacy stuff?)
+        // TODO: investigate using match instead of switch... and flag these scenarios with phpcs if possible?
+        // TODO: make phpcs enforce hanging commas with match cases
+        // TODO: make phpcs enforce arrow alignment with match cases
+        // TODO: go through the whole framework and implement php enums where applicable... and flag these scenarios with phpcs if possible?
+        // TODO: go through all the DateTime::modify() calls some are using seconds instead of days, e.g. `modify('+86400 seconds')` can be refactored to `modify('+1 days')`
+        // TODO: audit the codebase's @var comments and make sure we are flagging optional keys as such (this means a question mark after the key name) especially for API's where returned results are out of our control and \Ubix\Repository\ProspectApplication\ProspectApplicationSqlRepository
+        // TODO: can I validate *BOTH* @see tags for SQL repository option DTO's?
+        // TODO: should I force PHP_EOL instead of "\r\n" or "\n"? if not in all circumstances then maybe in some circumstances?
+        // TODO: ban Enum::from() and force Enum::tryFrom() instead with phpcs? consider consequences before coding
+        // TODO: ban `array{int, mixed}`, `array{string, mixed}` and `array{int|string, mixed}` as type hints for both @param and @return tags with phpcs
+        // TODO: enforce str_contains over strpos?
+        // TODO: analyze the effort to allow single line @var comments, e.g. /** @var int $number */
+        // TODO: make is_null auto fixable with phpcs
+        // TODO: ban echo and print in Symfony Commands
+        // TODO: change Ubix.Standards.DisallowAssertEquals.Found to allow assertEquals so long as the first two parameters are both objects
+        // TODO: check to ensure all models, DTOs, data types and enums use unique short names
+        // TODO: it's a bug that we allow for two `@coversDefaultClass` tags in the classes in tests/
+        // TODO: should the description of individual properties in model constructors be forced into the PHPDoc descriptions of getters and setters? probably yes
+        // TODO: check all @see, @covers and @coversDefaultClass values to ensure the class they are referencing exists in the monorepo
+        // TODO: consider making the PSR request parameter of public methods in controllers optional (the PSR response parameter would remain required)
+    -->
+
+    <!-- Andrew's OpenAPI Experiment (START) -->
+    <exclude-pattern>php/Ubix/Console/Command/App/GenerateOpenapiCommand.php</exclude-pattern>
+    <exclude-pattern>php/Ubix/SlimApp/RecordingApp.php</exclude-pattern>
+    <!-- Andrew's OpenAPI Experiment (END) -->
+
+    <exclude-pattern>php/Ubix/Console/Cron/*.php</exclude-pattern> <!-- // TODO: this is temporary until Chris/Aric finalize their classes -->
+
+    <!-- Bootstrap the Composer autoload file -->
+    <arg name="bootstrap" value="vendor/autoload.php" />
+
+    <!-- Run in parallel – 4 files at once, because the sandboxes have 4 cores according to `nproc` -->
+    <arg name="parallel" value="4" />
+
+    <!-- Cache previous run -->
+    <arg name="cache" value=".phpcs.cache" />
+
+    <!-- Rule to interpret phpstan command as php since it lacks an extension -->
+    <arg name="filter" value="php/Ubix/Filters/ExtensionlessPhpScriptsFilter.php" />
+
+    <!-- Review all .php files -->
+    <arg name="extensions" value="php" />
+
+    <!--
+        The coding standard itself lives in the framework: php/Ubix/ruleset.xml
+        (the "Ubix" standard, registered through installed_paths above). A host
+        project points installed_paths at vendor/ubixsys/ubixcore/php/Ubix and
+        uses this same line. Only project-specific tuning goes below it.
+    -->
+    <rule ref="Ubix" />
+
+    <!-- Project-specific include lists -->
+    <rule ref="Ubix.Standards.DemandCustomDataTypes">
+        <severity>5</severity>
+        <include-pattern>php/Ubix/Service/AffiliateService.php</include-pattern>
+        <include-pattern>php/Ubix/Service/AttributionService.php</include-pattern>
+    </rule>
+    <rule ref="Ubix.Standards.ModelPropertiesType">
+        <severity>5</severity>
+        <include-pattern>php/Ubix/Model/Affiliate.php</include-pattern>
+        <include-pattern>php/Ubix/Model/AffiliateCode.php</include-pattern>
+        <include-pattern>php/Ubix/Model/AffiliateCommissionPlan.php</include-pattern>
+        <include-pattern>php/Ubix/Model/AttributionLog.php</include-pattern>
+        <include-pattern>php/Ubix/Model/Deal.php</include-pattern>
+        <include-pattern>php/Ubix/Model/Transaction.php</include-pattern>
+    </rule>
+
+    <exclude-pattern>*/node_modules/*</exclude-pattern>
+    <exclude-pattern>*/.svelte-kit/*</exclude-pattern>
+</ruleset>
