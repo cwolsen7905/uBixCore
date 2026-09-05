@@ -1,0 +1,16 @@
+includes:
+  - vendor/phpstan/phpstan/conf/bleedingEdge.neon
+  - php/Ubix/phpstan.neon   # the framework baseline (level max, framework excludes); a host includes it from vendor/
+
+parameters:
+  paths:
+    - bin
+    - php
+    - public
+    - tests
+
+  tmpDir: .phpstan.cache
+
+  excludePaths:
+    analyse:
+      - app/*Js/**/*.php

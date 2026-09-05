@@ -1,0 +1,169 @@
+# uBixCore pipeline — a framework, not a service.
+#
+#   test          build the throwaway test image (Dockerfile_Test, amd64)
+#   lint-and-test phpcs · phpstan (level max) · phpunit, inside that image
+#   publish       on a v* tag: ubixsys/ubixcore (Composer), ubixsys/ubixcore-skeleton
+#                 (Composer, subtree split), @ubixsys/ubixcore (npm)
+#   notify        red pipeline → Discord
+#
+# There is no runtime image, deploy or promote here: uBixCore is installed by
+# host projects from the package registries. The root Dockerfile* and
+# bin/{deploy,promote}.sh are the templates those hosts inherit through
+# skeleton/; ubixcore itself never runs them.
+#
+# Notifications go to Discord via bin/lib/notify.sh, which reads the webhooks
+# from uBixVault with the read-only CI tokens UBIXVAULT_CI_TOKEN_DEV /
+# UBIXVAULT_CI_TOKEN_PROD (masked GitLab variables). The phpunit job reads its
+# MariaDB credentials from secret/ubixcore/test-db the same way.
+
+default:
+  retry:
+    max: 2
+    when:
+      - runner_system_failure
+      - stuck_or_timeout_failure
+      - api_failure
+      - scheduler_failure
+      - unknown_failure
+
+stages:
+  - test
+  - lint-and-test
+  - publish
+  - notify
+
+.registry_login:
+  before_script:
+    - docker login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD" $CI_REGISTRY
+
+# Every branch and tag gets the gate; the publish jobs run only on tags.
+.on_any_ref:
+  rules:
+    - if: $CI_COMMIT_TAG
+    - if: $CI_COMMIT_BRANCH
+
+# ---------------------------------------------------------------------------
+# test image
+# ---------------------------------------------------------------------------
+build-test-image:
+  extends: [.registry_login, .on_any_ref]
+  stage: test
+  tags: [shell]
+  retry:
+    max: 2
+    when:
+      - script_failure
+      - runner_system_failure
+      - stuck_or_timeout_failure
+      - api_failure
+      - scheduler_failure
+      - unknown_failure
+  script:
+    - |
+      set -euo pipefail
+      docker buildx build --provenance=false --sbom=false --platform linux/amd64 --push \
+        -t "${CI_REGISTRY_IMAGE}:${CI_COMMIT_SHA}-test" -f Dockerfile_Test .
+
+# ---------------------------------------------------------------------------
+# lint-and-test
+# ---------------------------------------------------------------------------
+static-checks:
+  extends: [.registry_login, .on_any_ref]
+  stage: lint-and-test
+  tags: [shell]
+  timeout: 15 minutes
+  script:
+    - |
+      docker run --rm --workdir /web \
+        "$CI_REGISTRY_IMAGE:$CI_COMMIT_SHA-test" \
+        sh -c "set -e && vendor/bin/phpcs --no-cache && vendor/bin/phpstan analyse --no-progress --memory-limit=2G bin php public tests"
+
+# PHPUnit against the unit-test MariaDB (`ubixcore-test-db` container on the
+# runner host). `database:resetSchema test` rebuilds every sql/<name>.sql —
+# for the framework that is sql/ubixcore_test.sql, its own fixture schema.
+phpunit:
+  extends: [.registry_login, .on_any_ref]
+  stage: lint-and-test
+  tags: [shell]
+  timeout: 30 minutes
+  script:
+    - |
+      set -u; SCRIPT_DIR="$CI_PROJECT_DIR"; . bin/lib/notify.sh
+      export TEST_MYSQL_WRITE_HOST="$(vault_kv test-db host)" TEST_MYSQL_WRITE_PORT="$(vault_kv test-db port)"
+      export TEST_MYSQL_WRITE_USERNAME="$(vault_kv test-db username)" TEST_MYSQL_WRITE_PASSWORD="$(vault_kv test-db password)"
+      export TEST_MYSQL_WRITE_DATABASE="$(vault_kv test-db database)"
+      [ -n "$TEST_MYSQL_WRITE_HOST" ] || { echo "no test-db credentials from vault (secret/ubixcore/test-db)"; exit 1; }
+      docker run --rm --workdir /web \
+        -e TEST_MYSQL_WRITE_HOST -e TEST_MYSQL_WRITE_PORT -e TEST_MYSQL_WRITE_DATABASE \
+        -e TEST_MYSQL_WRITE_USERNAME -e TEST_MYSQL_WRITE_PASSWORD \
+        "$CI_REGISTRY_IMAGE:$CI_COMMIT_SHA-test" \
+        sh -c "set -e && php bin/ubix database:resetSchema test -n \\
+          && mysql -h \$TEST_MYSQL_WRITE_HOST -P \$TEST_MYSQL_WRITE_PORT -u \$TEST_MYSQL_WRITE_USERNAME -p\$TEST_MYSQL_WRITE_PASSWORD -e 'CREATE DATABASE IF NOT EXISTS SYSTEMS' \\
+          && php bin/ubix migrate:up --target=test --yes -n \\
+          && vendor/bin/phpunit"
+
+# ---------------------------------------------------------------------------
+# publish — on a v* tag
+# ---------------------------------------------------------------------------
+# The framework to this project's Composer registry; then skeleton/ split out
+# and published as ubixsys/ubixcore-skeleton (bin/publish-skeleton.sh, needs
+# GITLAB_SKELETON_TOKEN — fails visibly but allow_failure without it); then
+# js/Ubix to this project's npm registry, version = the tag.
+publish-composer:
+  stage: publish
+  tags: [shell]
+  script:
+    - '/usr/bin/curl --fail --header "Job-Token: $CI_JOB_TOKEN" --data tag=$CI_COMMIT_TAG "${CI_API_V4_URL}/projects/$CI_PROJECT_ID/packages/composer"'
+  only: [tags]
+
+publish-skeleton:
+  stage: publish
+  tags: [shell]
+  needs: [publish-composer]
+  variables: { GIT_DEPTH: "0" }
+  script: [bash bin/publish-skeleton.sh]
+  allow_failure: true
+  only: [tags]
+
+publish-npm:
+  stage: publish
+  tags: [shell]
+  needs: [publish-composer]
+  script:
+    - |
+      set -euo pipefail
+      VERSION="${CI_COMMIT_TAG#v}"
+      REGISTRY="${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/packages/npm/"
+      # Run as the runner's own uid (never root): a root-owned node_modules in
+      # the bind-mounted workspace broke every later checkout on this runner.
+      docker run --rm -v "$PWD/js/Ubix:/pkg" -w /pkg --user "$(id -u):$(id -g)" -e HOME=/tmp \
+        -e NPM_REGISTRY="$REGISTRY" -e NPM_TOKEN="$CI_JOB_TOKEN" -e VERSION="$VERSION" \
+        node:20 sh -c '
+          set -e
+          printf "@ubixsys:registry=%s\n%s:_authToken=%s\n" "$NPM_REGISTRY" "${NPM_REGISTRY#https:}" "$NPM_TOKEN" > .npmrc
+          npm version --no-git-tag-version --allow-same-version "$VERSION"
+          npm ci --no-audit --no-fund
+          npm publish --registry "$NPM_REGISTRY"
+          rm -rf .npmrc node_modules dist .svelte-kit'
+  only: [tags]
+
+# ---------------------------------------------------------------------------
+# notify — red pipeline → #ubixcore-alerts
+# ---------------------------------------------------------------------------
+notify-failure:
+  extends: .on_any_ref
+  stage: notify
+  tags: [shell]
+  timeout: 5 minutes
+  when: on_failure
+  script:
+    - |
+      set -u
+      SCRIPT_DIR="$CI_PROJECT_DIR"; . bin/lib/notify.sh
+      WHO="${GITLAB_USER_NAME:-${GITLAB_USER_LOGIN:-unknown}}"
+      TEXT="Ref: ${CI_COMMIT_REF_NAME} — pushed by ${WHO}
+      Commit: [${CI_COMMIT_TITLE:-$CI_COMMIT_SHORT_SHA}](${CI_PROJECT_URL}/-/commit/${CI_COMMIT_SHA}) (${CI_COMMIT_SHORT_SHA})
+      Author: ${CI_COMMIT_AUTHOR:-unknown}
+      Pipeline: ${CI_PIPELINE_URL}"
+      discord alerts 15158332 "🔴 Pipeline FAILED" "$TEXT"
+      exit 0

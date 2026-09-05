@@ -1,0 +1,28 @@
+{
+	"/": [
+		"src/routes/+page.server.js",
+		"src/routes/+layout.server.js",
+		"src/routes/+layout.server.js"
+	],
+	"/affiliates": [
+		"src/routes/+layout.server.js"
+	],
+	"/affiliates/banners": [
+		"src/routes/+layout.server.js"
+	],
+	"/broadcasting/fanclubs": [
+		"src/routes/+layout.server.js"
+	],
+	"/broadcasting/models": [
+		"src/routes/+layout.server.js"
+	],
+	"/explore": [
+		"src/routes/+layout.server.js"
+	],
+	"/login": [
+		"src/routes/+layout.server.js"
+	],
+	"/settings": [
+		"src/routes/+layout.server.js"
+	]
+}

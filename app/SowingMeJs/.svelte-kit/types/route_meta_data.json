@@ -1,0 +1,44 @@
+{
+	"/": [
+		"src/routes/+page.server.js",
+		"src/routes/+layout.server.js",
+		"src/routes/+layout.server.js"
+	],
+	"/affiliates": [
+		"src/routes/+layout.server.js"
+	],
+	"/affiliates/banners": [
+		"src/routes/+layout.server.js"
+	],
+	"/confirm-email": [
+		"src/routes/+layout.server.js"
+	],
+	"/creator/dashboard": [
+		"src/routes/+layout.server.js"
+	],
+	"/creator/library": [
+		"src/routes/+layout.server.js"
+	],
+	"/creator/onboarding": [
+		"src/routes/+layout.server.js"
+	],
+	"/c/[slug]": [
+		"src/routes/c/[slug]/+page.server.js",
+		"src/routes/+layout.server.js"
+	],
+	"/explore": [
+		"src/routes/+layout.server.js"
+	],
+	"/forgot-password": [
+		"src/routes/+layout.server.js"
+	],
+	"/login": [
+		"src/routes/+layout.server.js"
+	],
+	"/reset-password": [
+		"src/routes/+layout.server.js"
+	],
+	"/settings": [
+		"src/routes/+layout.server.js"
+	]
+}

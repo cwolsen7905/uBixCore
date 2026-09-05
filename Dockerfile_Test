@@ -1,0 +1,24 @@
+# The framework's only image: a throwaway test image for the `lint-and-test`
+# stage (amd64, never deployed). uBixCore is a Composer package, not a service,
+# so there is no runtime image here; host projects build their own from the
+# skeleton's Dockerfile.
+FROM gitlab.brainchurts.com:5050/k8s/baseimages/nginx-php85-fpm-memcache:dev
+
+USER root
+# git: composer; pcntl/posix: phpunit time limits + posix_kill teardown;
+# mariadb-client: `bin/ubix database:resetSchema` shells out to `mysql`.
+RUN apk add --no-cache git php85-pcntl php85-posix mariadb-client && \
+    # the unit-test MariaDB has no TLS; Alpine's mariadb client insists on it by default
+    printf '[client]\nskip-ssl\n' > /etc/my.cnf.d/99-skip-ssl.cnf && \
+    mkdir -p /web && chown -R www:www /web
+
+USER www
+WORKDIR /web
+COPY --chown=www composer.json composer.lock phpcs.xml phpstan.neon phpunit.xml rector.php /web/
+COPY --chown=www bin/       /web/bin/
+COPY --chown=www php/       /web/php/
+COPY --chown=www public/    /web/public/
+COPY --chown=www sql/       /web/sql/
+COPY --chown=www templates/ /web/templates/
+COPY --chown=www tests/     /web/tests/
+RUN composer install --no-interaction --prefer-dist --no-progress
