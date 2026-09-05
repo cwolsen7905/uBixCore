@@ -1,6 +1,6 @@
 # @ubixsys/ubixcore
 
-The Svelte 5 component library of [uBixCore](https://github.com/cwolsen7905/ubixcore),
+The Svelte 5 component library of [uBixCore](https://github.com/ubixsys/ubixcore),
 published from `js/Ubix/` on every `v*` tag of the framework, with the same
 version number as the PHP package.
 

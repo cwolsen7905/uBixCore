@@ -428,7 +428,7 @@ positional assumption fell (the repository rule read the type from the third
 namespace segment; it now reads the segment after `Repository`).
 
 **Aside.** `ubixsys/ubixcore-skeleton` now push-mirrors to
-https://github.com/cwolsen7905/ubixcore-skeleton. The skeleton is public while
+https://github.com/ubixsys/ubixcore-skeleton. The skeleton is public while
 its dependency still resolves from the private GitLab registry, which is fine as
 a preview; Packagist for the framework itself waits on OSS-10.
 
