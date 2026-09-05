@@ -125,6 +125,10 @@ publish-skeleton:
   allow_failure: true
   only: [tags]
 
+# npm: to npmjs.com when uBixVault secret/ubixcore/npmjs holds an automation
+# token (key `token`, read with UBIXVAULT_CI_TOKEN_PROD); otherwise to this
+# project's GitLab npm registry with the job token. Composer packages reach
+# Packagist through its GitHub hook on the public mirror — nothing to do here.
 publish-npm:
   stage: publish
   tags: [shell]
@@ -133,17 +137,23 @@ publish-npm:
     - |
       set -euo pipefail
       VERSION="${CI_COMMIT_TAG#v}"
-      REGISTRY="${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/packages/npm/"
+      SCRIPT_DIR="$CI_PROJECT_DIR"; . bin/lib/notify.sh
+      NPMJS_TOKEN="$(CI_COMMIT_REF_NAME=main vault_kv npmjs token)"
+      if [ -n "$NPMJS_TOKEN" ]; then
+        REGISTRY="https://registry.npmjs.org/"; NPM_AUTH="$NPMJS_TOKEN"; echo "publishing to npmjs.com"
+      else
+        REGISTRY="${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/packages/npm/"; NPM_AUTH="$CI_JOB_TOKEN"; echo "no npmjs token in vault — publishing to the GitLab registry"
+      fi
       # Run as the runner's own uid (never root): a root-owned node_modules in
       # the bind-mounted workspace broke every later checkout on this runner.
       docker run --rm -v "$PWD/js/Ubix:/pkg" -w /pkg --user "$(id -u):$(id -g)" -e HOME=/tmp \
-        -e NPM_REGISTRY="$REGISTRY" -e NPM_TOKEN="$CI_JOB_TOKEN" -e VERSION="$VERSION" \
+        -e NPM_REGISTRY="$REGISTRY" -e NPM_TOKEN="$NPM_AUTH" -e VERSION="$VERSION" \
         node:20 sh -c '
           set -e
           printf "@ubixsys:registry=%s\n%s:_authToken=%s\n" "$NPM_REGISTRY" "${NPM_REGISTRY#https:}" "$NPM_TOKEN" > .npmrc
           npm version --no-git-tag-version --allow-same-version "$VERSION"
           npm ci --no-audit --no-fund
-          npm publish --registry "$NPM_REGISTRY"
+          npm publish --registry "$NPM_REGISTRY" --access public
           rm -rf .npmrc node_modules dist .svelte-kit'
   only: [tags]
 
