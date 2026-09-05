@@ -8,7 +8,7 @@ holds its secrets.
 | Package | Registry | What |
 |---|---|---|
 | `ubixsys/ubixcore` | Composer | The framework (`Ubix\` namespace): CLI, HTTP building blocks, typed-contract bases, migrations, the `Ubix` coding standard, PHPStan baseline, PHPUnit base classes |
-| `ubixsys/ubixcore-skeleton` | Composer | The `create-project` template — [repo](https://github.com/cwolsen7905/ubixcore-skeleton) |
+| `ubixsys/ubixcore-skeleton` | Composer | The `create-project` template — [repo](https://github.com/ubixsys/ubixcore-skeleton) |
 | `@ubixsys/ubixcore` | npm | The Svelte 5 component library |
 
 One `v*` tag publishes all three with the same version. License: BSD-3-Clause.
