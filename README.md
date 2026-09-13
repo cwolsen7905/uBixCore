@@ -1,6 +1,6 @@
 # uBixCore
 
-A PHP 8.4+ / Svelte 5 application framework that ships with its tooling. Install it,
+A PHP 8.5+ / React 19 application framework that ships with its tooling. Install it,
 don't fork it: the framework arrives through Composer and npm, your project keeps its
 own namespace and git history, and [uBixVault](https://github.com/cwolsen7905/ubixvault)
 holds its secrets.
@@ -9,7 +9,7 @@ holds its secrets.
 |---|---|---|
 | `ubixsys/ubixcore` | Composer | The framework (`Ubix\` namespace): CLI, HTTP building blocks, typed-contract bases, migrations, the `Ubix` coding standard, PHPStan baseline, PHPUnit base classes |
 | `ubixsys/ubixcore-skeleton` | Composer | The `create-project` template — [repo](https://github.com/ubixsys/ubixcore-skeleton) |
-| `@ubixsys/ubixcore` | npm | The Svelte 5 component library |
+| `@ubixsys/ubixcore` | npm | The React 19 + TypeScript component library |
 
 One `v*` tag publishes all three with the same version. License: BSD-3-Clause.
 
@@ -30,7 +30,7 @@ installation scenario, is on [ubixsys.com](https://ubixsys.com/ubixcore).
 
 ## Working on the framework
 
-Requirements: PHP 8.4+, Composer 2, Node 20+ (for `js/Ubix`), a MariaDB reachable for
+Requirements: PHP 8.5+, Composer 2, Node 22+ (for `ts/Ubix`), a MariaDB reachable for
 the SQL-layer tests (CI uses `sql/ubixcore_test.sql` rebuilt by `database:resetSchema test`).
 
 ```bash
@@ -43,7 +43,7 @@ vendor/bin/phpstan                    # level max, bleeding edge
 vendor/bin/phpcs                      # the Ubix standard
 bin/ubix code:review                  # all three as one gate
 
-cd js/Ubix && npm install && npm run prepack   # the Svelte library (svelte-package + publint)
+cd ts/Ubix && npm install && npm run build     # the React library (tsup -> dist/)
 ```
 
 Layout:

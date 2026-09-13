@@ -2,7 +2,7 @@
 
 **Version:** 1.5
 **Date:** 2026-08-05
-**PHP Version:** 8.3+
+**PHP Version:** 8.5+
 **Framework:** Slim 4 + PHP-DI 7
 
 ---
@@ -22,7 +22,7 @@
 
 ## Executive Summary
 
-uBix Core is a modern PHP 8.3+ monorepo implementing a multi-application platform with a clean, layered architecture. The codebase follows SOLID principles, uses strong typing throughout, and implements multiple design patterns including Repository, Service Layer, DTO, and Value Object patterns.
+uBix Core is a modern PHP 8.5+ monorepo implementing a multi-application platform with a clean, layered architecture. The codebase follows SOLID principles, uses strong typing throughout, and implements multiple design patterns including Repository, Service Layer, DTO, and Value Object patterns.
 
 ### Core Principles
 

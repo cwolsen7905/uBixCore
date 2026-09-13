@@ -9,9 +9,20 @@
 parameters:
   level: max
 
+  # Pin the analysis target instead of letting PHPStan infer it from the
+  # composer constraint. The floor is ^8.5, the base image is php85 and local
+  # dev is 8.5.x, so inference happened to be right only by accident -- while
+  # the constraint said ^8.3 it was analysing 8.5 code as 8.3.
+  phpVersion: 80500
+
   # Some @phpstan-ignore identifiers (e.g. property.onlyWritten on framework
-  # Logger deps) match under PHP 8.4 but not 8.5 - the CI image and local dev
-  # can differ, so an unmatched ignore must not fail the gate.
+  # Logger deps) matched under PHP 8.4 but not 8.5, and CI and local dev could
+  # differ, so an unmatched ignore must not fail the gate.
+  #
+  # With phpVersion pinned above that divergence is gone, so this could likely
+  # be flipped back to true -- deliberately left alone here, because doing it in
+  # the same pass as a floor bump would confuse a real regression with a config
+  # change. Worth its own MR.
   reportUnmatchedIgnoredErrors: false
 
   treatPhpDocTypesAsCertain: false
