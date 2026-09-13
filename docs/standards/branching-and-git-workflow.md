@@ -1,10 +1,74 @@
 # Branching and Git Workflow
 
-> **Status:** v0.12 — initial decisions resolved 2026-05-18; concurrent agent-session model added 2026-07-08 (see [Concurrent Agent Sessions](#concurrent-agent-sessions)); worktree bootstrap shipped as `ubix code:worktree`; `dev` is MR-only since 2026-07-30, with the machine gate's first pre-merge leg (`cspell-knip-mr`) added 2026-08-24 (see [One land path](#one-land-path-mr-only-dev-2026-07-30)); the path beyond `dev` is [Promotion to Production](#promotion-to-production-dev--staging--main--prod); remaining enforcement candidates tracked in [Future Automation](#future-automation-next-iteration).
+> **Status:** v0.13 — initial decisions resolved 2026-05-18; concurrent agent-session model added 2026-07-08 (see [Concurrent Agent Sessions](#concurrent-agent-sessions)); worktree bootstrap shipped as `ubix code:worktree`; `dev` is MR-only since 2026-07-30, with the machine gate's first pre-merge leg (`cspell-knip-mr`) added 2026-08-24 (see [One land path](#one-land-path-mr-only-dev-2026-07-30)); the path beyond `dev` is [Promotion to Production](#promotion-to-production-dev--staging--main--prod); remaining enforcement candidates tracked in [Future Automation](#future-automation-next-iteration). **v0.13 (2026-09-12): this document now describes two repository profiles** — see [Repository Profiles](#repository-profiles). uBixCore itself moved to the framework profile (trunk + tags) when it stopped deploying anything; hosts built from the skeleton keep the product profile unchanged.
 
-This document defines how branches are created, kept in sync, and merged in uBix Core. It applies to all work that lands on `dev` — whether done by a human or by an AI agent session.
+This document defines how branches are created, kept in sync, and merged in uBix Core and in the
+projects built on it — whether the work is done by a human or by an AI agent session.
+
+## Repository Profiles
+
+**Read this section first: it decides which of the rest applies to you.**
+
+A branch-per-environment ladder is a *deployment* pattern. It earns its keep only when a branch **is**
+an environment — when pushing to it puts code somewhere. Repositories that ship as **packages** have
+no environments to model, and for them the ladder is ceremony: branches that gate nothing, deploy
+nothing, and drift silently out of date.
+
+| | **Product profile** | **Framework profile** |
+|---|---|---|
+| Example | a host repo from the skeleton (Sowing.me / KITG) | **uBixCore itself** |
+| Ships as | a deployed image | Composer + npm packages, and the skeleton |
+| Long-lived branches | `dev` → `staging` → `main` | **`main` only** |
+| A release is | a promotion to `main` | **a `v*` tag** |
+| Older versions | the running deployment | consumers pin `^0.3`; backport from a tag only if needed |
+| Gate runs on | `dev`/`staging`/`main` pipelines | **every branch and tag** (`.on_any_ref`) |
+| Promotion jobs | yes (`bin/promote.sh`) | none |
+
+### Product profile
+
+Everything below applies as written: the three-level topology, the sync flow, and
+[Promotion to Production](#promotion-to-production-dev--staging--main--prod). The skeleton ships this
+configuration, so a new host gets it by default and should keep it.
+
+### Framework profile
+
+Trunk-based. One long-lived branch, `main`:
+
+```
+main                             # trunk; MR-only, protected
+ │
+ ├─ feat/<slice>                 # short-lived, one owner
+ ├─ fix/<slice>
+ └─ docs/<slice>
+```
+
+- **Releases are tags, not branches.** A `v*` tag publishes the packages. Consumers resolve `^0.3`
+  from the registry and never look at your branches, so a branch per version buys nothing.
+- **Maintenance branches are cut on demand, from a tag** — `0.2.x` only when a consumer pinned there
+  needs a backport. They are created when that happens, never kept standing "just in case".
+- **The gate runs on every ref**, so an MR is genuinely validated before it lands. This is the part
+  product repos most often get wrong: `only: [dev]` on every job means an MR runs *nothing*, and
+  "MR-only" then describes a review ritual rather than a check.
+- **No promotion, no environments, no `staging`.** `bin/promote.sh` and `bin/deploy.sh` live in this
+  repo as *templates hosts inherit through the skeleton* — they are not run here.
+
+Sections that do not apply to this profile: [Sync Flow](#sync-flow) (there is no project-branch
+level), [Cadence](#cadence), and [Promotion to Production](#promotion-to-production-dev--staging--main--prod).
+[The Core Rule](#the-core-rule), [Concurrent Agent Sessions](#concurrent-agent-sessions) and the
+[pre-push hook](#the-pre-push-hook-the-hard-gate) apply to both.
+
+> **Convention below:** `<trunk>` means **`dev`** in the product profile and **`main`** in the
+> framework profile. Sections that name `dev` literally are product-profile sections.
+
+> **Why uBixCore moved (2026-09-12).** It carried `dev`/`staging`/`main` from when it deployed
+> Sowing.me. OSS-10 moved that out; its own `.gitlab-ci.yml` header now reads *"There is no runtime
+> image, deploy or promote here."* At the point of the change **no job referenced `dev`, `staging` or
+> `main`** — the gate was already `.on_any_ref` and publish already `only: [tags]` — and `staging`
+> and `main` were the same commit, eight behind `dev`. The ladder was inert, so it went.
 
 ## Branch Topology
+
+*Product profile. For the framework profile see [above](#framework-profile).*
 
 Three levels:
 
@@ -150,7 +214,7 @@ A git branch is only a ref; the working tree is a single mutable directory. If t
 ```bash
 # Preferred: one command bundles fetch + correct path + correctly-named branch,
 # and refuses to run if the lane isn't claimed in AGENTS-COORD.md.
-php bin/ubix code:worktree <lane> <slice>   # → ../ubixcore-worktrees/<lane> on feature-<lane>-<slice> off origin/dev
+php bin/ubix code:worktree <lane> <slice>   # → ../ubixcore-worktrees/<lane> on feature-<lane>-<slice> off origin/<trunk>
 
 # ... the agent works entirely inside ../ubixcore-worktrees/<lane> ...
 
@@ -158,7 +222,7 @@ php bin/ubix code:worktree <lane> <slice>   # → ../ubixcore-worktrees/<lane> o
 git worktree remove ../ubixcore-worktrees/<lane>
 ```
 
-The command is the recommended path; the equivalent raw form is `git fetch origin && git worktree add ../ubixcore-worktrees/<lane> -b <prefix>/<slice> origin/dev`.
+The command is the recommended path; the equivalent raw form is `git fetch origin && git worktree add ../ubixcore-worktrees/<lane> -b <prefix>/<slice> origin/<trunk>`.
 
 Conventions:
 
@@ -166,7 +230,7 @@ Conventions:
 |---|---|
 | Location | `../ubixcore-worktrees/<lane>` — a dedicated sibling parent dir keeps every agent checkout out of the primary tree and grouped under one folder |
 | `<lane>` | the coordination lane name (see [The coordination contract](#the-logical-problem-no-ambient-coordination)), e.g. `cf-tipping`, `reg` |
-| Branch | created with the worktree (`-b <prefix>/<slice> origin/dev`), owned solely by that session |
+| Branch | created with the worktree (`-b <prefix>/<slice> origin/<trunk>`), owned solely by that session |
 | Lifecycle | `worktree add` at session start → `worktree remove` once the slice is on `dev`; `git worktree prune` clears stale entries |
 
 Because all worktrees share one `.git`, the branch topology, the [Core Rule](#the-core-rule), the [Sync Flow](#sync-flow), and the PR gates below are all unchanged — a worktree is physical isolation, not a separate repo.
@@ -198,7 +262,7 @@ The common case: two agents own two different project branches. The topology and
 1. Work on a `feature-*` / `<initials>/*` branch in your worktree; group related slices (one MR per logical unit, per the bundling guidance).
 2. Push the branch and open the MR in one step with git push options — this is the sandbox automation, no tooling needed:
    ```bash
-   git push -o merge_request.create -o merge_request.target=dev origin <branch>
+   git push -o merge_request.create -o merge_request.target=<trunk> origin <branch>
    ```
 3. The MR pipeline runs **`cspell-knip-mr`** (the pre-merge leg of the machine gate — cspell over `docs/`, `README.md`, `CHANGELOG.md` and every `*Js` workspace, plus knip; see [`code-review.md` §1](code-review.md#1-the-mechanical-gate)) and **`claude-review-mr`**: Claude reviews the full MR diff and posts each finding as an **unresolved discussion thread**; with the project setting *"all threads must be resolved before merge"*, the MR cannot merge until every finding is **fixed-and-resolved** or **resolved with a written dismissal reason**. Claude never approves — a human does; rejection is simply blocking threads. Findings are catches, not violations (SB-37) — fixing them fast is what the board scores.
 4. A human approves; merge (GitLab merge commit ≙ the old `--no-ff` landing).
@@ -291,6 +355,8 @@ The heavier gate. The project branch represents weeks/months of work, and once i
 
 ## Promotion to Production (`dev` → `staging` → `main` → prod)
 
+*Product profile only — framework repos have no environments to promote into.*
+
 Everything above ends at `dev`. This section is what happens after: two more branches, **two deliberate human clicks**, and — today — no mechanical correctness gate in front of prod.
 
 ```
@@ -346,7 +412,7 @@ The version marker is the CHANGELOG heading: the release cut moves the accumulat
 One mechanical note: the cut is the **one** operation that legitimately deletes lines from `CHANGELOG.md`, so the pre-push deletion guard has to be acknowledged for that push:
 
 ```bash
-UBIX_CHANGELOG_DELETIONS_OK=1 git push -o merge_request.create -o merge_request.target=dev origin <branch>
+UBIX_CHANGELOG_DELETIONS_OK=1 git push -o merge_request.create -o merge_request.target=<trunk> origin <branch>
 ```
 
 That acknowledgment is scoped to the CHANGELOG guard only — it is not a `code:review` bypass, and there is still no such thing.
@@ -360,7 +426,7 @@ This document codifies the workflow as norms. The next iteration of this standar
 | Rule | Possible CLI surface |
 |---|---|
 | Branch naming convention | `ubix branch:start <slice>` — creates `<initials>/<project-slug>-<slice>` off the current project branch; rejects names that don't match the pattern. |
-| ~~One worktree per concurrent session~~ | **Shipped (v0.5)** as `ubix code:worktree <lane> <slice>` — creates `../ubixcore-worktrees/<lane>` off `origin/dev` with the correctly-named branch, verifies the lane is claimed in `AGENTS-COORD.md`, and prunes stale worktrees. |
+| ~~One worktree per concurrent session~~ | **Shipped (v0.5)** as `ubix code:worktree <lane> <slice>` — creates `../ubixcore-worktrees/<lane>` off `origin/<trunk>` with the correctly-named branch, verifies the lane is claimed in `AGENTS-COORD.md`, and prunes stale worktrees. |
 | Unbypassable `code:review` gate on `dev` | The committed `.githooks/pre-push` gate (shipped in v0.4) is client-side and `--no-verify`-bypassable. When unsupervised agents run, promote it to **server-side branch protection** on `dev` requiring the `code:review` status check — enforced by the forge, not by a local hook. |
 | Pre-PR sync mandatory | `ubix branch:check` (or a pre-push hook) — refuses to push if the branch is behind the project branch or `dev`. |
 | Weekly + file-overlap + framework-alarm sync triggers | `ubix branch:sync-status` — for each active project branch, reports whether it's overdue (weekly floor breached), whether `dev` touched `php/Ubix/*` or `js/Ubix/*` since last sync, and whether `dev` touched any file this project also touches. |
