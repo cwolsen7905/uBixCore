@@ -44,12 +44,12 @@ The suffix on a directory name under `app/` is load-bearing — it tells the bui
 
 | Suffix   | Runtime  | Purpose                                  | Example               |
 | -------- | -------- | ---------------------------------------- | --------------------- |
-| `*Api`   | PHP 8.3+ | REST API (JSON in/out via Payloads)      | `FanClubApi`          |
-| `*Web`   | PHP 8.3+ | Server-rendered web app via Latte        | (future)              |
-| `*Js`    | Node 20+ | SvelteKit frontend                       | `ProductJs`           |
+| `*Api`   | PHP 8.5+ | REST API (JSON in/out via Payloads)      | `FanClubApi`          |
+| `*Web`   | PHP 8.5+ | Server-rendered web app via Latte        | (future)              |
+| `*Js`    | Node 22+ | SvelteKit frontend                       | `ProductJs`           |
 | `*Py`    | Python 3.12 | FastAPI/gunicorn service (onnx AI, ...) | `RoomSfwCheckerPy`    |
 | `*Go`    | Go 1.25+ | NATS-subscriber / WebSocket services     | `RealtimeFanoutGo`    |
-| CLI tool | PHP 8.3+ | Symfony Console commands (exact name)    | `UbixCli`          |
+| CLI tool | PHP 8.5+ | Symfony Console commands (exact name)    | `UbixCli`          |
 
 Adding a new app means creating a new `app/<Name>{Api,Js,Web}/` directory and wiring the deploy pipeline to it. The suffix convention means the pipeline doesn't need per-app switches: everything ending in `Js` builds with `npm run build` and deploys as a Node container; everything ending in `Api` or `Web` shares `public/index.php`. If the new app is an **externally-reachable API**, its prod ingress must also publish the four `trident` domains — see [External API ingress hosts](#external-api-ingress-hosts-the-trident-domains).
 
