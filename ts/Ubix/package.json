@@ -1,0 +1,56 @@
+{
+	"name": "@ubixsys/ubixcore",
+	"version": "0.1.5",
+	"description": "uBixCore React component library - the TypeScript half of the uBixCore framework",
+	"license": "BSD-3-Clause",
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/ubixsys/ubixcore.git",
+		"directory": "ts/Ubix"
+	},
+	"homepage": "https://ubixsys.com",
+	"type": "module",
+	"sideEffects": [
+		"**/*.css"
+	],
+	"files": [
+		"dist",
+		"!dist/**/*.test.*",
+		"!dist/**/*.spec.*"
+	],
+	"exports": {
+		".": {
+			"types": "./dist/index.d.ts",
+			"import": "./dist/index.js"
+		},
+		"./media": {
+			"types": "./dist/media/index.d.ts",
+			"import": "./dist/media/index.js"
+		},
+		"./package.json": "./package.json"
+	},
+	"scripts": {
+		"build": "tsup",
+		"dev": "tsup --watch",
+		"check": "tsc --noEmit",
+		"prepack": "npm run build"
+	},
+	"peerDependencies": {
+		"react": "^19.2.7",
+		"react-dom": "^19.2.7"
+	},
+	"devDependencies": {
+		"@types/react": "^19.2.0",
+		"@types/react-dom": "^19.2.0",
+		"react": "^19.2.7",
+		"react-dom": "^19.2.7",
+		"tsup": "^8.5.0",
+		"typescript": "^5.9.3"
+	},
+	"keywords": [
+		"react",
+		"typescript",
+		"ubixcore",
+		"ubixsys"
+	]
+}
