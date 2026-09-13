@@ -13,7 +13,7 @@ Full rules — branch topology (**`main` is the trunk and is MR-only**; this rep
 
 ## Project Overview
 
-uBixCore is a PHP 8.4+ / Svelte 5 application framework that ships with its tooling, published as Composer and npm packages plus a `create-project` skeleton. This repo holds the framework only; products built on it live in their own host repos. It descends from "uBixCore" (the maintained upstream for tooling ports).
+uBixCore is a PHP 8.5+ / React 19 application framework that ships with its tooling, published as Composer and npm packages plus a `create-project` skeleton. This repo holds the framework only; products built on it live in their own host repos. It descends from "uBixCore" (the maintained upstream for tooling ports).
 
 ## Build & Test Commands
 
@@ -39,7 +39,7 @@ vendor/bin/phpcs
 vendor/bin/rector
 ```
 
-### JavaScript (from js/Ubix/ — the `@ubixsys/ubixcore` Svelte library)
+### JavaScript (from ts/Ubix/ — the `@ubixsys/ubixcore` React library)
 
 ```bash
 npm run dev      # Development server
@@ -69,7 +69,7 @@ This repo is the **framework only** — the `ubixsys/ubixcore` Composer package,
   - `ruleset.xml` + `Sniffs/` - the `Ubix` phpcs standard; `phpstan.neon` - the level-max baseline hosts include
 
 - **skeleton/** - The `create-project` template published as `ubixsys/ubixcore-skeleton` by the tag pipeline (thin entry points, HelloApi, pipeline, `docs/ci-setup.md`)
-- **js/Ubix/** - Svelte 5 component library (`@ubixsys/ubixcore`)
+- **ts/Ubix/** - React 19 + TypeScript component library (`@ubixsys/ubixcore`)
 - **tests/** - Framework unit tests mirroring php/Ubix/
 - **sql/** - `ubixcore_test.sql`, the framework's own CI fixture schema, and the init migration for the tracker
 - **templates/default/** - Latte defaults (error page)
@@ -85,9 +85,9 @@ This repo is the **framework only** — the `ubixsys/ubixcore` Composer package,
 
 ## Technology Stack
 
-**PHP 8.5 (base image `k8s/baseimages/nginx-php85-fpm-memcache`; code must stay 8.4-compatible until the 8.4 image is retired)**: Slim 4.5, PHP-DI 7, Latte 3, Monolog 3, Symfony 7.3 components (Validation, Serialization, Cache, Console, Mailer), Guzzle 7.8, AWS SDK v3
+**PHP 8.5+ (base image `k8s/baseimages/nginx-php85-fpm-memcache`; the 8.4 image is retired and `composer.json` now declares `^8.5`, so 8.5-only syntax is fair game)**: Slim 4.5, PHP-DI 7, Latte 3, Monolog 3, Symfony 7.3 components (Validation, Serialization, Cache, Console, Mailer), Guzzle 7.8, AWS SDK v3
 
-**JavaScript**: Svelte 5, SvelteKit 2, Vite 7, Tailwind CSS, TypeScript 5.3
+**JavaScript**: React 19, React Router 8 (framework mode), Vite 7, Tailwind CSS, TypeScript 5.9
 
 **Infrastructure**: Docker, Kubernetes, GitLab CI/CD, Nginx + PHP-FPM, MariaDB
 

@@ -87,7 +87,7 @@ set doesn't accidentally apply to non-migration CLI work.
 
 ### 2.2 Tools on the runner host
 
-- `php` 8.3+ (Ubix's runtime)
+- `php` 8.5+ (Ubix's runtime)
 - `mariadb` and `mariadb-dump` CLI clients (`mariadb-client` package
   in the existing image)
 - Network reachability to the target cluster on its MySQL port

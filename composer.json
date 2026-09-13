@@ -22,7 +22,7 @@
 	"minimum-stability": "dev",
 	"prefer-stable": true,
 	"require": {
-		"php": "^8.3",
+		"php": "^8.5",
 		"akrabat/proxy-detection-middleware": "^1.0",
 		"latte/latte": "^3.0",
 		"monolog/monolog": "^3.6",
