@@ -66,7 +66,7 @@ on uBixCore live in their own host repos generated from the skeleton.
 
 ## Releasing
 
-Tag `dev`: `git tag -a v0.2.0 && git push origin v0.2.0`. The tag pipeline publishes the
+Tag `main`: `git tag -a v0.3.1 && git push origin v0.3.1`. The tag pipeline publishes the
 framework and the npm package from this project's registries and subtree-splits
 `skeleton/` into `ubixsys/ubixcore-skeleton`. Hosts upgrade with
 `composer update ubixsys/ubixcore` and commit the lock.
@@ -74,7 +74,7 @@ framework and the npm package from this project's registries and subtree-splits
 ## Coordination
 
 Several agent sessions may work this repo at once. Register a lane in `AGENTS-COORD.md`
-(copied from the template) before branching; `dev` is MR-only. Full rules in
+(copied from the template) before branching; `main` is the trunk and is MR-only. Full rules in
 `docs/standards/branching-and-git-workflow.md`.
 
 <!-- pipeline smoke 2026-09-04: first run of the framework-only pipeline on the reset history -->
