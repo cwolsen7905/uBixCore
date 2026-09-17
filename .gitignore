@@ -28,3 +28,17 @@ config/devops/*-secret.yaml
 
 # Live multi-agent coordination state — per-sandbox, seed from AGENTS-COORD.template.md
 AGENTS-COORD.md
+
+# JS build artifacts. These were never ignored, so app/SowingMe{Js,AdminJs}
+# ended up tracking 6,147 files / 157.9 MB of node_modules and .svelte-kit
+# output -- and no source at all, since OSS-10 moved that to the host repo.
+node_modules
+**/node_modules
+.svelte-kit
+**/.svelte-kit
+.react-router
+**/.react-router
+dist
+ts/*/dist
+build
+**/build
