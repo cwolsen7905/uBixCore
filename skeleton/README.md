@@ -20,6 +20,7 @@ composer.json / composer.lock   requires ubixsys/ubixcore - commit the lock, it 
 bin/ubix                        CLI entry point (yours; lists the command namespaces to scan)
 public/index.php                web entry point (yours; serves app/<APP_NAME>)
 app/HelloApi/src/               Dependencies.php (PHP-DI), Middleware.php, Routes.php - one folder per deployable app
+app/HelloJs/                    React Router v8 frontend template (React 19 + TypeScript) - see its own README
 php/App/                        your code, PSR-4 root App\  (rename: composer.json autoload + the namespace)
 tests/                          App\Tests\ - every concrete class needs a test case (tests/PhpunitTestCasesTest.php enforces it)
 templates/default/              Latte templates
@@ -71,7 +72,8 @@ uBixVault secrets — all listed, in order, in [`docs/ci-setup.md`](docs/ci-setu
 - **A CLI command:** `php/App/Console/Command/<Name>Command.php` extending
   `Ubix\Console\Command\AbstractCommand`; `bin/ubix` already scans
   `App\Console\Command`.
-- **A second app:** copy `app/HelloApi` and deploy it with its own `APP_NAME`.
+- **A second PHP app:** copy `app/HelloApi` and deploy it with its own `APP_NAME`.
+- **A frontend:** copy `app/HelloJs`, change every identity field its README lists, and add it to `JS_APPS` in `.gitlab-ci.yml`. Delete `app/HelloJs` if this project has no frontend.
 - **Upgrading uBixCore:** `composer update ubixsys/ubixcore`, commit the lock.
 
 ## Developing against a local uBixCore checkout

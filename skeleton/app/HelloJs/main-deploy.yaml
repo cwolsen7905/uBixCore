@@ -1,0 +1,48 @@
+# HelloJs — main
+#
+# EVERY identity field below is per-app and per-environment. Copying this file
+# for a second JS app and changing only some of them is the mistake this
+# template exists to prevent: two Deployments that share a name, selector or
+# Ingress host will overwrite each other, and `bin/deploy.sh` applies app
+# directories alphabetically, so the loser is silent.
+#
+# Change ALL of: metadata.name, the selector/template labels, the image tag
+# suffix, and the Ingress host in `main-ingress.yaml`.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: hello-js
+  namespace: app-prod
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: hello-js
+  template:
+    metadata:
+      labels:
+        app: hello-js
+    spec:
+      containers:
+        - name: hello-js
+          # Built by the repo-root Dockerfile_Node with
+          #   --build-arg APP_DIR=app/HelloJs
+          # and tagged per app, never per branch alone.
+          image: registry.example.com/group/project:main-node-hellojs
+          imagePullPolicy: Always
+          env:
+            - name: ENV
+              value: 'MAIN'
+            - name: PORT
+              value: '3000'
+          ports:
+            - containerPort: 3000
+              name: http
+          readinessProbe:
+            httpGet: { path: /, port: 3000 }
+            initialDelaySeconds: 5
+          resources:
+            requests: { cpu: 50m, memory: 128Mi }
+            limits: { cpu: 500m, memory: 512Mi }
+      imagePullSecrets:
+        - name: regcred

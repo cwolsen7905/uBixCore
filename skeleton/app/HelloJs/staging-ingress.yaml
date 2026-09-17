@@ -1,0 +1,20 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: hello-js
+  namespace: app-staging
+spec:
+  ingressClassName: nginx
+  tls:
+    - hosts: [hello.staging.example.com]
+      secretName: tls-wildcard-example
+  rules:
+    - host: hello.staging.example.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: hello-js
+                port: { number: 80 }

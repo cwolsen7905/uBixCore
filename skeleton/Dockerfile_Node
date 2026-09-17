@@ -1,0 +1,66 @@
+# Node image for the frontend apps. ONE file, built once per app with
+# --build-arg APP_DIR, replacing the three byte-identical Dockerfile_Node_*
+# that each hardcoded `COPY app/SowingMeJs/`.
+#
+# A hardcoded app path in a shared Dockerfile is a bug generator. In the project
+# this template was extracted from, three byte-identical Dockerfile_Node_* files
+# all copied the same app, so a second frontend pulled the first one's image for
+# months while looking correctly configured -- its Deployment differed only by an
+# APP_NAME the Vite build never reads. Requiring APP_DIR with no default makes
+# that failure loud instead of silent.
+#
+# Node 22: React Router v8 requires >= 22.22.0.
+ARG NODE_IMAGE=node:22
+
+# --- build ------------------------------------------------------------------
+FROM ${NODE_IMAGE} AS build
+
+WORKDIR /app
+
+# Which app to build, e.g. app/SowingMeAdminJs. No default -- a missing APP_DIR
+# must fail loudly rather than silently bake the wrong app, which is the failure
+# mode this file exists to remove.
+ARG APP_DIR
+RUN test -n "$APP_DIR" || (echo "APP_DIR build-arg is required" >&2; exit 1)
+
+# npm ci, not npm install: package-lock.json is committed and is what the
+# lint/test stages resolved against.
+COPY ${APP_DIR}/package.json ${APP_DIR}/package-lock.json ./
+RUN npm ci --no-audit --no-fund
+
+COPY ${APP_DIR}/ ./
+RUN npm run build
+
+# NOTE: the build stage deliberately ENDS here, with devDependencies intact.
+# CI publishes this stage as the `-ci` image and runs eslint / tsc / vitest in
+# it. Pruning here instead would strip exactly the tools the gate needs -- which
+# it did, and the MR pipeline caught it twice (F16).
+
+# --- prune ------------------------------------------------------------------
+FROM build AS prune
+
+# Drop devDependencies from the tree that ships. react-router-serve and its
+# runtime deps are regular dependencies, so the server still starts.
+RUN npm prune --omit=dev
+
+# --- runtime ----------------------------------------------------------------
+FROM ${NODE_IMAGE} AS runtime
+
+WORKDIR /app
+ENV NODE_ENV=production
+ENV PORT=3000
+ENV HOST=0.0.0.0
+
+# Only what a production server needs: the built output, pruned node_modules,
+# the static assets and the manifest that `npm run start` reads. Notably NOT the
+# source tree, which the single-stage version shipped along with every
+# devDependency (finding F4).
+COPY --from=prune /app/package.json ./package.json
+COPY --from=prune /app/node_modules ./node_modules
+COPY --from=prune /app/build ./build
+COPY --from=prune /app/public ./public
+
+EXPOSE 3000
+
+# Each app defines `start` itself; both are react-router-serve now.
+CMD ["npm", "run", "start"]

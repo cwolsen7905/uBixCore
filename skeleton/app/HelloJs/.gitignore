@@ -1,0 +1,14 @@
+node_modules
+
+# Generated
+.react-router
+build
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Env
+.env
+.env.*
+!.env.example
