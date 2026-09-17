@@ -179,7 +179,14 @@ abstract class AbstractPayload implements RequestPayload, ResponsePayload
      */
     private function getProperty(string $name): array
     {
-        $scalarNames = ['int', 'float', 'string', 'bool'];
+        // Types assigned straight from the decoded request body, with no
+        // DataType or enum in between. `array` is here because a payload field
+        // is sometimes genuinely a list -- a set of benefit lines, a set of ids
+        // -- and without it a property typed `?array` reaches the class branch
+        // below and dies with "Class does not exist for <name>(array)". The
+        // element-level contract stays the payload's own job; this only says
+        // the container type is one PHP already understands.
+        $scalarNames = ['int', 'float', 'string', 'bool', 'array'];
 
         $rc = new ReflectionClass(get_class($this));
 
