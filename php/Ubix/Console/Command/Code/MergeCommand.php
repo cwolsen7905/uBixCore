@@ -86,13 +86,19 @@ HELP,
         $currentBranch = $this->gitService->getCurrentBranch();
         $output->writeln(PHP_EOL . 'Creating Merge Request for: ' . $currentBranch);
 
+        // The default comes from the remote, not a constant: a host's trunk is
+        // `dev`, uBixCore's is `main`, and hardcoding either makes the prompt
+        // wrong in the other. `dev` remains the fallback for a clone with no
+        // `origin/HEAD`.
+        $defaultBranch = $this->gitService->getDefaultBranch();
+
         while (true) {
-            $output->writeln(PHP_EOL . 'Where branched to merge into? [dev] : ');
+            $output->writeln(PHP_EOL . 'Where branched to merge into? [' . $defaultBranch . '] : ');
 
             $targetBranch = fgets(STDIN) ?: '';
             $targetBranch = trim($targetBranch);
             if ($targetBranch === '') {
-                $targetBranch = 'dev';
+                $targetBranch = $defaultBranch;
             }
             if (!in_array($targetBranch, $this->gitService->getBranches(), true)) {
                 $output->writeln('<error>Cannot merge into a non-existent branch.</error>');
