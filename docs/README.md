@@ -10,7 +10,7 @@ All documentation lives under `docs/` organised by intent. Pick the subfolder th
 
 Read these to understand how the platform is built. Stable; rarely change.
 
-- [`complete-js-guide.md`](architecture/complete-js-guide.md) — full SvelteKit / Svelte 5 / Vite / shared-library guide (routes, runes, load functions, hooks, server helpers, SSE endpoints, testing, deployment)
+- [`complete-js-guide.md`](architecture/complete-js-guide.md) — React 19 / React Router v8 / TypeScript / Vite guide (route modules, loaders, state, styling, the server boundary, testing, deployment)
 - [`complete-php-guide.md`](architecture/complete-php-guide.md) — full PHP / Slim 4 / PHP-DI / DataType / Payload / repository guide
 - [`complete-py-guide.md`](architecture/complete-py-guide.md) — full Python `*Py` guide (the `py/Ubix` shared framework + `@ubixsys/ubixcore` namespace, FastAPI factory, app structure, packaging, Redis seam)
 - [`models-and-datatypes.md`](architecture/models-and-datatypes.md) — DataType + Model pattern reference

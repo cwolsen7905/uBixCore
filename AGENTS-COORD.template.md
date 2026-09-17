@@ -83,7 +83,7 @@ the §6 log first.
 - `README.md` (root)
 - `CLAUDE.md`
 - this file (`AGENTS-COORD.md`)
-- **Framework trees** `php/Ubix/*` and `js/Ubix/*` (a change here can affect sibling apps).
+- **Framework trees** `php/Ubix/*` and `ts/Ubix/*` (a change here can affect sibling apps).
 - **Per-app registration files** every feature appends to: `app/<App>/src/Routes.php`,
   `app/<App>/src/Dependencies.php`. On a merge conflict here the resolution is
   almost always **keep both sides** (two features each added their own route / DI binding).

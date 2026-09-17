@@ -2,7 +2,7 @@
 
 **Version:** 1.3
 **Date:** 2026-08-21
-**Status:** Active. First worked example: [`docs/projects/performer-app-redesign/`](../projects/performer-app-redesign/README.md).
+**Status:** Active. The first worked example lived in `docs/projects/performer-app-redesign/`, which left with the product apps in OSS-10; the current worked example is Sowing.me's `docs/projects/sowing-me/design-system.md` in the KITG host repo.
 
 Design for uBix Core front-ends is authored in **Claude Design** (a design-system project on claude.ai/design) and consumed by **Claude Code** working in this monorepo. The two tools are operated by different people, see different files, and are each happy to generate the other's work if nobody stops them. This document is the boundary.
 
@@ -41,7 +41,7 @@ Authoring net-new screens is the exception, and only on explicit request.
 | Component visual contract — variants, states, prop names in `.d.ts` | Claude Design | implement it; propose changes upstream |
 | Iconography, brand assets | Claude Design | import; re-encode/optimize; never redraw |
 | Preview cards, guideline pages, `prompt.md` usage docs | Claude Design | read as the spec |
-| Framework implementation (Svelte components, runes state) | Claude Code | — Claude Design never authors it |
+| Framework implementation (React components, hooks, state) | Claude Code | — Claude Design never authors it |
 | Data fetching, routing, auth, realtime transport | Claude Code | — |
 | Tests, build config, CI, lint/gate config | Claude Code | — |
 | Functional specs (what the screens must do) | Engineering/product | Claude Design checks its extraction against them and **reports gaps**; it neither invents screens from them nor treats them as overriding an existing design (§2) |
@@ -69,8 +69,8 @@ Authoring net-new screens is the exception, and only on explicit request.
    **A regular-type project is still readable, and this distinction has been misread before.** Project *listing* returns only design-system-type projects, so a regular project is invisible there — but fetching its structure and file contents by **direct project ID** works normally, which is how the PA redesign shipped. What a regular project loses is discoverability and its standing as a canonical source of truth, **not access**. So: design in a regular project freely; promote anything meant for reuse into a design-system-type project, because that is the only kind a future import can find on its own.
 2. **Read before write.** Enumerate the project structure first; fetch file contents only for what's being imported this slice.
 3. **Order.** Tokens → primitives → composites → screens. Tokens first is not stylistic: everything downstream references them.
-4. **Placement.** Genuinely shared primitives go in `js/Ubix/src/lib/` and are exported from its `index.js` (the reuse-at-seams rule); app-specific components go in that app's `src/lib/`.
-5. **Port, don't copy.** Tokens and raster/vector assets land near-verbatim. Everything else is re-authored per `docs/architecture/complete-js-guide.md` — Svelte 5 runes, our naming, our test conventions.
+4. **Placement.** Genuinely shared primitives go in `ts/Ubix/src/` and are exported from its `index.ts` — and only if they pass the boundary test in `CLAUDE.md`; product-shaped primitives belong in the host (the reuse-at-seams rule); app-specific components go in that app's `src/lib/`.
+5. **Port, don't copy.** Tokens and raster/vector assets land near-verbatim. Everything else is re-authored per `docs/architecture/complete-js-guide.md` — React components and hooks, our naming, our test conventions.
 6. **Record the sync.** The importing MR states which design-system project and which components/tokens it covers, so the next import knows the baseline.
 
 ## 7. Shared vocabularies
@@ -120,5 +120,5 @@ A project brief may **narrow** this contract but never loosen it; where a brief 
 |---|---|---|
 | 1.0 | 2026-07-31 | Initial standard. Extracted from the Performer App redesign handoff, which was the first Claude Design → Claude Code project. |
 | 1.1 | 2026-08-01 | Added §2 *Direction of authority — extract before you author*, after a brief framed as "build from the spec" produced a fresh page that dropped components an existing canonical design already had. Reconciled the ownership table's *Functional specs* row and the "must not invent" rule with §2 — both previously read as spec-over-design. |
-| 1.2 | 2026-08-21 | Corrected §8, which asserted the Tailwind `@theme` convention "applies to every uBix Core design system" — the organisation-wide `Flirt4Free Design System` does not use it, so the standard's only design-system-type instance contradicted it. §8 now governs systems we author, and requires an explicit **mapping table in the importing MR** where an existing system diverges — §7's rule applied to a whole namespace. Clarified §6.1: a regular-type project is invisible to *listing* but readable by **direct project ID**; what it loses is discoverability and canonical standing, not access. Both found while preparing the Internal Admin 2.0 hand-over — see [`docs/audits/2026-08-design-system-review.md`](../audits/2026-08-design-system-review.md). |
+| 1.2 | 2026-08-21 | Corrected §8, which asserted the Tailwind `@theme` convention "applies to every uBix Core design system" — the organisation-wide `Flirt4Free Design System` does not use it, so the standard's only design-system-type instance contradicted it. §8 now governs systems we author, and requires an explicit **mapping table in the importing MR** where an existing system diverges — §7's rule applied to a whole namespace. Clarified §6.1: a regular-type project is invisible to *listing* but readable by **direct project ID**; what it loses is discoverability and canonical standing, not access. Both found while preparing the Internal Admin 2.0 hand-over — see `docs/audits/2026-08-design-system-review.md`. |
 | 1.3 | 2026-08-21 | §10 gained the **token-name mapping table** as a recorded per-project obligation. v1.2 made that table mandatory in §8 but left §10 — the canonical list of what a consuming project's docs must record — unchanged, so a project working §10 as a checklist had no prompt to record it, and it is not covered by any existing entry: explicitly not a deviation (the diverging system is compliant), and not part of the brief. Caught by the local AI review against the v1.2 diff before it shipped. |

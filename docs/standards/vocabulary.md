@@ -12,7 +12,7 @@
 **Audience:** VS Media Development Department
 **Last Updated:** 2026-08-21
 
-This document is the single authority for **what a domain concept is called** as it crosses uBix Core's language boundaries — PHP, JS/Svelte, CSS, SQL, and the legacy wire protocols. It exists so that one concept has one name, and so that name's spelling in each layer is *derivable* rather than *negotiated per file*.
+This document is the single authority for **what a domain concept is called** as it crosses uBix Core's language boundaries — PHP, TypeScript/React, CSS, SQL, and the legacy wire protocols. It exists so that one concept has one name, and so that name's spelling in each layer is *derivable* rather than *negotiated per file*.
 
 It answers two different questions, and the split matters:
 
@@ -30,7 +30,7 @@ Naming conventions alone cannot solve the first question; a glossary alone canno
 - a PHP class, DataType, DTO, or service name (`php/Ubix/**`, `app/*Api/**`)
 - a database column or table (`sql/**`)
 - a wire field on a legacy protocol (chat-manager socket, PEP, Performer Endpoint)
-- a JS/Svelte identifier, prop, or `@typedef` union member (`app/*Js/**`, `js/Ubix/**`)
+- a TypeScript/React identifier, prop, or exported type (`app/*Js/**` in a host, `ts/Ubix/**` here)
 - a CSS custom property / Tailwind `@theme` token, or a `data-*` state attribute
 - product copy, specs, and conversation
 
@@ -46,11 +46,11 @@ Naming conventions alone cannot solve the first question; a glossary alone canno
 
 Not hypothetical. All three were verified in the tree on 2026-08-11.
 
-**1. One term, three spellings, no mapping recorded.** `screen_name` (DB column — `FanClubComment`, `FanClubPostUnlock`), `screenName` (PHP model getters / bound params), and `screenname` (JS — `roomView.svelte.js`'s `LiveMessage` typedef and its three read sites). Each is locally idiomatic. Nothing declares them the same concept, so nothing catches a fourth.
+**1. One term, three spellings, no mapping recorded.** `screen_name` (DB column — `FanClubComment`, `FanClubPostUnlock`), `screenName` (PHP model getters / bound params), and `screenname` (JS — `roomView.ts`'s `LiveMessage` type and its three read sites). Each is locally idiomatic. Nothing declares them the same concept, so nothing catches a fourth.
 
 **2. Two apps forked the same row-kind vocabulary.** `app/PerformerApplicationJs`'s `RoomRowKind` is `'tip' | 'model' | 'whisper' | 'customer'`. `app/ProductJs`'s chat tokens are `--color-chat-{welcome,model,tip,admin,promo,guest,group}` + `--color-chat-lovense-{from,to}`. They agree on exactly **two** members (`model`, `tip`). There is no `--color-chat-whisper` and no `--color-chat-customer`; `admin`, `promo`, `guest`, `group`, `welcome`, and `lovense` have no `RoomRowKind`. Two surfaces of one product, already unable to share a component.
 
-**3. Classification by substring on a frozen wire value.** `roomView.svelte.js:44` does `fontClass.includes('whisper')` against the PEP `font_class` field. Rename either side and rendering silently changes with no error anywhere — the hazard `docs/standards/design-system-handoff.md` §7 warns about, in production code.
+**3. Classification by substring on a frozen wire value.** `roomView.ts:44` does `fontClass.includes('whisper')` against the PEP `font_class` field. Rename either side and rendering silently changes with no error anywhere — the hazard `docs/standards/design-system-handoff.md` §7 warns about, in production code.
 
 The repo already had **three partial answers**, none load-bearing:
 
@@ -106,10 +106,17 @@ A term belongs here **iff it appears in ≥2 of the layers listed in §1**. One-
 
 Spellings below are **as-found in the tree on 2026-08-11**, including the inconsistent ones. A ⚠️ marks a divergence to be reconciled, not a convention to copy.
 
+> **Note (2026-09-16):** the worked example below is vocabulary from an unrelated product in the
+> neptune lineage — chat rooms, tips, cams, credits. It illustrates the *method* (one term, mapped
+> across language boundaries, with gaps marked) and nothing in uBixCore uses these terms. A
+> framework standard carrying another product's domain nouns is the same class of leak the root
+> `CLAUDE.md` boundary test exists to stop; replacing it with a product-neutral example is worth
+> doing, and is deliberately not bundled into the React re-flavour.
+
 | Term | PHP | DB / wire | JS | CSS token |
 |---|---|---|---|---|
 | **whisper** | — | `font_class` substring (frozen) | `'whisper'` (`RoomRowKind`) | ⚠️ none — gap |
-| **tip** | `ChatTipRequestDto`, `TipMenuItemDto`, `TipChatNotifierService` | — | `'tip'`, `TipPanel.svelte` | `--color-chat-tip` |
+| **tip** | `ChatTipRequestDto`, `TipMenuItemDto`, `TipChatNotifierService` | — | `'tip'`, `TipPanel.tsx` | `--color-chat-tip` |
 | **model** | `LiveCam*` (see §5.4) | — | `'model'` | `--color-chat-model` |
 | **screenname** | `screenName` | `screen_name` | `screenname` | — |
 | **guest** | customer type `8` | `<user type="8">` | ⚠️ `'customer'` (`RoomRowKind`) | `--color-chat-guest` |
@@ -117,7 +124,7 @@ Spellings below are **as-found in the tree on 2026-08-11**, including the incons
 | **lovense** | — | — | — | `--color-chat-lovense-{from,to}` |
 | **credits** | `UsdCurrency` where monetary | — | `credits` (`LiveMessage`) | — |
 | **room** | `ChatRoomDto`, `Service/ChatRoom/**` | — | `roomView`, `RoomCurtain` | — |
-| **curtain** | — | — | `RoomCurtain.svelte` | — |
+| **curtain** | — | — | `RoomCurtain.tsx` | — |
 
 ### 5.3 Known reconciliations (open)
 
@@ -194,7 +201,7 @@ const whisperLabel       = whispersOff ? t.whispersOffLabel : t.whisperLabel;
 const whisperToggleLabel = whispersOff ? t.whispersOnAsk    : t.whispersOffAction;
 ```
 
-```svelte
+```tsx
 <button data-whisper={whispersOff ? 'off' : 'on'} aria-label={whisperToggleLabel}>
 ```
 

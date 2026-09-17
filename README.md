@@ -53,7 +53,7 @@ php/Ubix/          the framework — Bootstrap/, Console/, Controller/, Middlewa
                    DataType/, Model/, Payload/, Service/, Tests/ (shipped PHPUnit bases),
                    ruleset.xml + Sniffs/ (the Ubix phpcs standard), phpstan.neon (baseline)
 skeleton/          the create-project template, published by the tag pipeline
-js/Ubix/           @ubixsys/ubixcore
+ts/Ubix/           @ubixsys/ubixcore
 tests/             framework tests, mirroring php/Ubix/
 sql/               ubixcore_test.sql (CI fixture) + the tracker's init migration
 docs/standards/    the house standards hosts inherit
