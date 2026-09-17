@@ -1,0 +1,14 @@
+# Package managers
+package-lock.json
+
+# Kubernetes manifests. Infrastructure that happens to sit in the app directory,
+# not app source -- prettier reformatting them couples `npm run lint` to
+# unrelated infra edits, so an infra-only change fails the JS stage.
+*-deploy.yaml
+*-ingress.yaml
+*-service.yaml
+
+# Generated / built
+.react-router/
+build/
+public/

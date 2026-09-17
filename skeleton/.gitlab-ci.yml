@@ -58,6 +58,18 @@ stages:
       RUNTIME_REF="${CI_REGISTRY_IMAGE}:${CI_COMMIT_REF_SLUG}"
       RUNTIME_SHA_REF="${CI_REGISTRY_IMAGE}:${CI_COMMIT_REF_SLUG}-${CI_COMMIT_SHA}"
       TEST_REF="${CI_REGISTRY_IMAGE}:${CI_COMMIT_SHA}-test"
+      NODE_REF="${CI_REGISTRY_IMAGE}:${CI_COMMIT_REF_SLUG}-node"
+      NODE_SHA_REF="${CI_REGISTRY_IMAGE}:${CI_COMMIT_SHA}-node"
+      # Frontend apps that get a node image. Add an app here and it is built,
+      # gated and deployable; there is no second place to remember. Leave empty
+      # if this project has no JS apps.
+      JS_APPS="HelloJs"
+      # Apps whose `npm test` runs in the plain node image. An app using vitest
+      # browser mode needs Playwright browsers the image does not carry, and its
+      # tests would silently never run -- so such an app must NOT be listed here
+      # until it is converted to jsdom.
+      JS_TEST_APPS="HelloJs"
+      PLATFORMS="${BUILD_PLATFORMS:-linux/amd64,linux/arm64}"
 
       # uBixCore comes from the private ubixsys group Composer registry. Auth is a
       # BuildKit secret (never a layer): a deploy token from uBixVault
@@ -74,6 +86,23 @@ stages:
       docker buildx build --provenance=false --sbom=false --platform linux/amd64 --push \
         --build-arg RUNTIME_IMAGE="$RUNTIME_SHA_REF" \
         -t "$TEST_REF" -f Dockerfile_Test .
+
+      # TWO images per JS app, from one Dockerfile:
+      #   -ci       the `build` stage, devDependencies intact -- what the gate
+      #             runs eslint / tsc / vitest in. amd64 only; never deployed.
+      #   (runtime) the pruned production image the Deployments pull.
+      # The runtime build reuses the build stage's layers, so the second pass is
+      # nearly free. Without the -ci image the gate dies on "eslint: not found",
+      # because the runtime stage prunes devDependencies.
+      for APP in $JS_APPS; do
+        SLUG="$(printf '%s' "$APP" | tr '[:upper:]' '[:lower:]')"
+        docker buildx build --provenance=false --sbom=false --platform linux/amd64 --push \
+          --target build --build-arg "APP_DIR=app/${APP}" \
+          -t "${NODE_SHA_REF}-${SLUG}-ci" -f Dockerfile_Node .
+        docker buildx build --provenance=false --sbom=false --platform "$PLATFORMS" --push \
+          --build-arg "APP_DIR=app/${APP}" \
+          -t "${NODE_REF}-${SLUG}" -t "${NODE_SHA_REF}-${SLUG}" -f Dockerfile_Node .
+      done
 
 build-dev:
   extends: .build
@@ -129,10 +158,44 @@ build-main:
           && php bin/ubix migrate:up --target=test --yes -n \\
           && vendor/bin/phpunit"
 
+# Per-app JS gate, in the `-ci` image the build stage pushed (the Dockerfile's
+# `build` target, before `npm prune --omit=dev`). The runtime image cannot be
+# used here: it has no eslint, tsc or vitest.
+.js_lint:
+  extends: .registry_login
+  stage: lint-and-test
+  tags: [shell]
+  timeout: 20 minutes
+  script:
+    - |
+      set -euo pipefail
+      JS_APPS="HelloJs"
+      JS_TEST_APPS="HelloJs"
+      [ -n "$JS_APPS" ] || { echo "no JS apps"; exit 0; }
+      for APP in $JS_APPS; do
+        SLUG="$(printf '%s' "$APP" | tr '[:upper:]' '[:lower:]')"
+        echo "--- $APP ---"
+        CMD="npm run lint && npm run check"
+        case " $JS_TEST_APPS " in *" $APP "*) CMD="$CMD && npm test" ;; esac
+        # The per-commit tag forces a registry pull: buildx pushes without
+        # loading locally, so a mutable tag on the runner can be stale.
+        docker run --rm --workdir /app "${CI_REGISTRY_IMAGE}:${CI_COMMIT_SHA}-node-${SLUG}-ci" \
+          sh -c "set -e && $CMD"
+      done
+
 static-checks-dev: { extends: .static_checks, only: [dev] }
 phpunit-dev:       { extends: .phpunit,       only: [dev] }
+js-lint-dev:       { extends: .js_lint,       only: [dev] }
 static-checks-staging: { extends: .static_checks, only: [staging] }
 phpunit-staging:       { extends: .phpunit,       only: [staging] }
+js-lint-staging:       { extends: .js_lint,       only: [staging] }
+
+# main gets the gate too. Promotion is fast-forward-only from a green staging,
+# so in the normal case this re-runs passing checks -- but "the normal case" is
+# exactly the assumption a production deploy should not rest on.
+static-checks-main: { extends: .static_checks, only: [main, master] }
+phpunit-main:       { extends: .phpunit,       only: [main, master] }
+js-lint-main:       { extends: .js_lint,       only: [main, master] }
 
 # ---------------------------------------------------------------------------
 # migrate — apply sql/migrations to the tier's database BEFORE the deploy
