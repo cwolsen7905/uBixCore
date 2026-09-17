@@ -95,7 +95,7 @@ interface SqlServiceInterface
      *
      * @return array<string, bool|int|float|string|null>|false Returns the first row of the parameterized SQL query if a row is found, otherwise false
      */
-    public function getRow(string $sql, array $parameters = [], bool $allowParameterReuse = false): array|false; // TEMPORARY: ANDREW:: is return false an anti-pattern? Andrew needs to discuss with Chris
+    public function getRow(string $sql, array $parameters = [], bool $allowParameterReuse = false): array|false; // TEMPORARY: decide whether returning false is an anti-pattern here
 
     /**
      * Return multiple rows of values from a SQL query
@@ -128,7 +128,7 @@ interface SqlServiceInterface
      *
      * @return string|false If a sequence name was not specified for the name parameter, lastInsertId() returns a string representing the row ID of the last row that was inserted into the database. If a sequence name was specified for the name parameter, lastInsertId() returns a string representing the last value retrieved from the specified sequence object.
      */
-    public function lastInsertId(?string $name = null): string|false; // TEMPORARY: ANDREW:: is return false an anti-pattern? Andrew needs to discuss with Chris
+    public function lastInsertId(?string $name = null): string|false; // TEMPORARY: decide whether returning false is an anti-pattern here
 
     /**
      * Initialize a transaction

@@ -234,7 +234,7 @@ class RequireDateTimeInterfaceSniff implements Sniff
                     continue;
                 }
 
-            switch ($type) { // TODO: should I be including more types that implement the DateTimeInterface? eg. DateTimeImmutable?
+            switch ($type) { // TEMPORARY: should I be including more types that implement the DateTimeInterface? eg. DateTimeImmutable?
                 case 'DateTime':
                 case '\DateTime':
                     $usesDateTimeType = true;

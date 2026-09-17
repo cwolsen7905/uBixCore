@@ -235,7 +235,7 @@ final class MigrationApplyService
 
     /**
      * Split a possibly-qualified object reference like
-     * `VSCASH.Foo` or `\`VSCASH\`.\`Foo\`` into a (schema, table)
+     * `SHOP.Foo` or `\`SHOP\`.\`Foo\`` into a (schema, table)
      * tuple. When the ref is unqualified, the migration's target
      * database fills in.
      *
@@ -306,17 +306,17 @@ final class MigrationApplyService
      * unprefixed runtime schema.
      *
      * Both quoting styles must be handled: the unquoted
-     * `ntl_db.transact` and the backtick-quoted form name the same
+     * `legacy_db.payments` and the backtick-quoted form name the same
      * object, and the backtick-quoted one is the more conventional.
      * The original plain `str_replace('<db>.', …)` matched only the
      * unquoted form, so a backticked body kept its unprefixed schema and
      * the apply died with `ERROR 1146 ... doesn't exist` against
      * the real cluster's schema name (dev pipeline, 2026-08-17 —
-     * `20260817221748_add_bin_8_column_to_ntl_db_transaction_tables`).
+     * `20260817221748_add_region_column_to_legacy_db_payment_tables`).
      *
      * The leading lookbehind keeps the match anchored to a whole
      * identifier, so a table whose name merely ENDS with the
-     * database name (`archive_ntl_db.x`) is left alone.
+     * database name (`archive_legacy_db.x`) is left alone.
      *
      * @param string $body     Raw migration body (on-disk bytes)
      * @param string $database The migration's declared `Database:` header value

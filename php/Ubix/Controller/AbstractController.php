@@ -87,7 +87,7 @@ abstract class AbstractController
         $response = $response->withStatus($statusCode->value);
 
         if (!isset($this->templateVariables['lastUrl'])) {
-            // TEMPORARY: ANDREW:: should I just pass $request into this method?
+            // TEMPORARY: should I just pass $request into this method?
             // $this->loadLastUrl($request);
             $this->sendToTemplate('lastUrl', '/');
         }

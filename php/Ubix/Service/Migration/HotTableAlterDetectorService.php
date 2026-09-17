@@ -13,9 +13,8 @@ use Psr\Log\LoggerInterface as Logger;
  * `docs/standards/migrations.md` §11.9.
  *
  * Rationale: inline DDL against a large, live table replays single-threaded
- * on every replica and stalls replication behind it (the 2026-07-29
- * BILLING incident — an index/column add on multi-million-row transaction
- * tables). Such statements must either carry a `RequiresDBA:` header
+ * on every replica and stalls replication behind it (an index or column add on
+ * multi-million-row transaction tables). Such statements must either carry a `RequiresDBA:` header
  * (routed out-of-band, applied via pt-online-schema-change) or an
  * `AlterAck:` header (the author explicitly vouches the table is small
  * enough for inline DDL). The parser enforces this for migrations newer
@@ -59,7 +58,7 @@ final class HotTableAlterDetectorService
      *
      * @param string $body SQL body — typically `MigrationFile::$body`
      *
-     * @return string[] Human-readable offender descriptions, e.g. `BILLING.Transaction_Stops (ALTER TABLE on line 22)`; empty when clean
+     * @return string[] Human-readable offender descriptions, e.g. `LEDGER.Order_Holds (ALTER TABLE on line 22)`; empty when clean
      */
     public function detect(string $body): array
     {
@@ -95,8 +94,8 @@ final class HotTableAlterDetectorService
 
     /**
      * Reduce a table reference to its bare, lower-case table name —
-     * backticks stripped, schema qualifier dropped — so `BILLING`.`X`,
-     * BILLING.X, and x all compare equal. Dropping the qualifier is safe
+     * backticks stripped, schema qualifier dropped — so `LEDGER`.`X`,
+     * LEDGER.X, and x all compare equal. Dropping the qualifier is safe
      * because a migration file targets exactly one database (the
      * `Database:` header), so a bare CREATE and a qualified ALTER of the
      * same name can only refer to the same table.

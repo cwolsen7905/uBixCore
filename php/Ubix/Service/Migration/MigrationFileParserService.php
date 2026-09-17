@@ -16,9 +16,9 @@ use Ubix\DataTransferObject\Migration\MigrationFile;
  *
  * ```
  * -- Migration: 20260505143045_pre_attribution_referrer_tables
- * -- Database: VSCASH
+ * -- Database: SHOP
  * -- Description: Two lookup tables for the Pre-Attribution chain.
- * -- Author: Christopher W. Olsen
+ * -- Author: Jane Doe
  * ```
  *
  * Optional 5th `Destructive:` line is required when the body
@@ -204,8 +204,8 @@ final class MigrationFileParserService
         }
 
         //  §11.9: inline DDL against a pre-existing table replays single-
-        //  threaded on replicas and can stall replication (2026-07-29 BILLING
-        //  incident). Newer migrations must route it via RequiresDBA (out-of-
+        //  threaded on replicas and can stall replication (a known
+        //  replication-lag failure mode). Newer migrations must route it via RequiresDBA (out-of-
         //  band pt-online-schema-change) or vouch the table is small (AlterAck).
         if ($headers['Migration'] >= self::HOT_TABLE_ENFORCEMENT_SINCE && $requiresDbaReason === null && $alterAckReason === null) {
             $hotTableOffenders = $this->hotTableDetector->detect($body);

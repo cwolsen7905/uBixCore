@@ -15,6 +15,7 @@ use Ubix\Tests\UbixConcreteClassOrEnumTestCaseInterface as IUbixConcreteClassOrE
  *
  * @coversDefaultClass \Ubix\Service\Migration\DestructiveStatementDetectorService
  * @coversDefaultClass \Ubis\Service\Migration\DestructiveStatementDetectorService
+ * @see                \Ubix\Tests\Tests\Service\Migration\DestructiveStatementDetectorServiceTestTest PHPUnit test case
  */
 final class DestructiveStatementDetectorServiceTest extends UbixConcreteClassOrEnumTestCase implements IUbixConcreteClassOrEnumTestCase
 {
@@ -37,7 +38,7 @@ final class DestructiveStatementDetectorServiceTest extends UbixConcreteClassOrE
     public function testDetectReturnsEmptyForCreateTable(): void
     {
         $detector = new DestructiveStatementDetectorService(new NullLogger());
-        $body     = "CREATE TABLE VSCASH.Foo (\n    id INT PRIMARY KEY\n);";
+        $body     = "CREATE TABLE SHOP.Foo (\n    id INT PRIMARY KEY\n);";
         $this->assertSame([], $detector->detect($body));
     }
 
@@ -51,15 +52,15 @@ final class DestructiveStatementDetectorServiceTest extends UbixConcreteClassOrE
     public function testDetectFiresForEveryStandardKind(): void
     {
         $cases = [
-            'ALTER TABLE VSCASH.Foo DROP COLUMN bar;'   => DestructiveStatementKind::ALTER_TABLE_DROP_COLUMN,
-            'ALTER TABLE VSCASH.Foo MODIFY bar BIGINT;' => DestructiveStatementKind::ALTER_TABLE_MODIFY,
-            'DELETE FROM VSCASH.Foo;'                   => DestructiveStatementKind::DELETE_FROM_NO_WHERE,
-            'DROP DATABASE Junk;'                       => DestructiveStatementKind::DROP_DATABASE,
-            'DROP INDEX idx_old ON VSCASH.Foo;'         => DestructiveStatementKind::DROP_INDEX,
-            'DROP TABLE VSCASH.Foo;'                    => DestructiveStatementKind::DROP_TABLE,
-            'DROP VIEW VSCASH.Old_View;'                => DestructiveStatementKind::DROP_VIEW,
-            'RENAME TABLE VSCASH.Foo TO VSCASH.Bar;'    => DestructiveStatementKind::RENAME_TABLE,
-            'TRUNCATE TABLE VSCASH.Foo;'                => DestructiveStatementKind::TRUNCATE_TABLE,
+            'ALTER TABLE SHOP.Foo DROP COLUMN bar;'   => DestructiveStatementKind::ALTER_TABLE_DROP_COLUMN,
+            'ALTER TABLE SHOP.Foo MODIFY bar BIGINT;' => DestructiveStatementKind::ALTER_TABLE_MODIFY,
+            'DELETE FROM SHOP.Foo;'                   => DestructiveStatementKind::DELETE_FROM_NO_WHERE,
+            'DROP DATABASE Junk;'                     => DestructiveStatementKind::DROP_DATABASE,
+            'DROP INDEX idx_old ON SHOP.Foo;'         => DestructiveStatementKind::DROP_INDEX,
+            'DROP TABLE SHOP.Foo;'                    => DestructiveStatementKind::DROP_TABLE,
+            'DROP VIEW SHOP.Old_View;'                => DestructiveStatementKind::DROP_VIEW,
+            'RENAME TABLE SHOP.Foo TO SHOP.Bar;'      => DestructiveStatementKind::RENAME_TABLE,
+            'TRUNCATE TABLE SHOP.Foo;'                => DestructiveStatementKind::TRUNCATE_TABLE,
         ];
 
         $detector = new DestructiveStatementDetectorService(new NullLogger());
@@ -82,7 +83,7 @@ final class DestructiveStatementDetectorServiceTest extends UbixConcreteClassOrE
     public function testDetectIgnoresDeleteFromWithWhere(): void
     {
         $detector = new DestructiveStatementDetectorService(new NullLogger());
-        $body     = 'DELETE FROM VSCASH.Foo WHERE id = 1;';
+        $body     = 'DELETE FROM SHOP.Foo WHERE id = 1;';
         $this->assertSame([], $detector->detect($body));
     }
 
@@ -97,7 +98,7 @@ final class DestructiveStatementDetectorServiceTest extends UbixConcreteClassOrE
     public function testDetectIgnoresLineCommentedDestructiveKeyword(): void
     {
         $detector = new DestructiveStatementDetectorService(new NullLogger());
-        $body     = "-- We will eventually DROP TABLE Foo, but not yet.\nCREATE TABLE VSCASH.Foo (id INT);";
+        $body     = "-- We will eventually DROP TABLE Foo, but not yet.\nCREATE TABLE SHOP.Foo (id INT);";
         $this->assertSame([], $detector->detect($body));
     }
 
@@ -111,7 +112,7 @@ final class DestructiveStatementDetectorServiceTest extends UbixConcreteClassOrE
     public function testDetectIgnoresBlockCommentedDestructiveKeyword(): void
     {
         $detector = new DestructiveStatementDetectorService(new NullLogger());
-        $body     = "/* Note: we used to DROP TABLE Foo here.\nNo longer needed. */\nCREATE TABLE VSCASH.Foo (id INT);";
+        $body     = "/* Note: we used to DROP TABLE Foo here.\nNo longer needed. */\nCREATE TABLE SHOP.Foo (id INT);";
         $matches  = $detector->detect($body);
         $this->assertSame([], $matches);
     }
@@ -126,7 +127,7 @@ final class DestructiveStatementDetectorServiceTest extends UbixConcreteClassOrE
     public function testDetectReportsMultipleStatementsWithLineNumbers(): void
     {
         $detector = new DestructiveStatementDetectorService(new NullLogger());
-        $body     = "DROP TABLE VSCASH.Foo;\nCREATE TABLE VSCASH.Bar (id INT);\nTRUNCATE TABLE VSCASH.Baz;";
+        $body     = "DROP TABLE SHOP.Foo;\nCREATE TABLE SHOP.Bar (id INT);\nTRUNCATE TABLE SHOP.Baz;";
         $matches  = $detector->detect($body);
 
         $this->assertCount(2, $matches);
@@ -149,7 +150,7 @@ final class DestructiveStatementDetectorServiceTest extends UbixConcreteClassOrE
     public function testDetectMatchesAlterTableModifyAcrossLines(): void
     {
         $detector = new DestructiveStatementDetectorService(new NullLogger());
-        $body     = "ALTER TABLE VSCASH.Foo\n    MODIFY COLUMN bar BIGINT NOT NULL;";
+        $body     = "ALTER TABLE SHOP.Foo\n    MODIFY COLUMN bar BIGINT NOT NULL;";
         $matches  = $detector->detect($body);
 
         $kinds = array_map(static fn ($match) => $match->kind, $matches);   // phpcs:ignore SlevomatCodingStandard.Functions.DisallowArrowFunction.DisallowedArrowFunction

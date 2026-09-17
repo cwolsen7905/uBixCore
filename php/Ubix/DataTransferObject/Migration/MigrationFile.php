@@ -43,7 +43,7 @@ final readonly class MigrationFile implements Dto
      * Constructor
      *
      * @param string  $id                Filename without `.sql` extension; matches the `Migration:` header value
-     * @param string  $targetDatabase    Target database name from the `Database:` header (e.g. `VSCASH`, `SYSTEMS`)
+     * @param string  $targetDatabase    Target database name from the `Database:` header (e.g. `SHOP`, `SYSTEMS`)
      * @param string  $description       One-line description from the `Description:` header (multi-line headers are joined with a single space)
      * @param string  $author            Author name from the `Author:` header
      * @param string  $body              SQL body (everything after the header); whitespace-trimmed at both ends

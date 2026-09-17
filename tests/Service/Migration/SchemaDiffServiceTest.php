@@ -18,6 +18,7 @@ use Ubix\Tests\UbixConcreteClassOrEnumTestCaseInterface as IUbixConcreteClassOrE
  *
  * @coversDefaultClass \Ubix\Service\Migration\SchemaDiffService
  * @coversDefaultClass \Ubis\Service\Migration\SchemaDiffService
+ * @see                \Ubix\Tests\Tests\Service\Migration\SchemaDiffServiceTestTest PHPUnit test case
  */
 final class SchemaDiffServiceTest extends UbixConcreteClassOrEnumTestCase implements IUbixConcreteClassOrEnumTestCase
 {
@@ -63,7 +64,7 @@ final class SchemaDiffServiceTest extends UbixConcreteClassOrEnumTestCase implem
         $this->assertSame([], $result->extraInLive);
         $this->assertSame([], $result->missingFromLive);
         $this->assertSame(
-            'Database `NOT_A_REAL_DATABASE_9016001` is not in the Ubix-consumed set; nothing to diff.',
+            'Database `NOT_A_REAL_DATABASE_9016001` has no schema baseline at sql/<database>.sql; nothing to diff.',
             $result->errorMessage,
         );
     }
@@ -78,9 +79,9 @@ final class SchemaDiffServiceTest extends UbixConcreteClassOrEnumTestCase implem
      */
     public function testDiffAllUnknownDatabaseResultEchoesTheFilter(): void
     {
-        $result = $this->service()->diffAll('flirt4free_typo_9016002')[0];
+        $result = $this->service()->diffAll('content_db_typo_9016002')[0];
 
-        $this->assertSame('flirt4free_typo_9016002', $result->database);
+        $this->assertSame('content_db_typo_9016002', $result->database);
     }
 
     /**

@@ -59,7 +59,7 @@ interface SchemaMigrationReaderInterface
      * is the only consumer; spinning up a parallel repo for one
      * call site would be unjustified ceremony.
      *
-     * @param string $schema MySQL schema name (e.g. `VSCASH`)
+     * @param string $schema MySQL schema name (e.g. `SHOP`)
      * @param string $table  Table name (e.g. `Pre_Attribution_Referrers`)
      *
      * @return bool True when the table exists in `INFORMATION_SCHEMA.TABLES`

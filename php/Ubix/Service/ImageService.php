@@ -57,7 +57,7 @@ final class ImageService
         } catch (ImagickException $e) {
             throw new InvalidArgumentException(
                 'Failed to process image: ' . $e->getMessage(),
-                ExceptionCode::PROSPECT_APPLICATION_IMAGE_INVALID->value,
+                ExceptionCode::IMAGE_INVALID->value,
             );
         } finally {
             $imagick->clear();

@@ -51,7 +51,7 @@ final class StatusCommand extends MigrationCommand
     {
         $this->setDescription('List every on-disk migration with its applied / pending state')
             ->setHelp('Renders one row per file in sql/migrations/ joined to its SYSTEMS.Schema_Migrations row when one exists. Use `--database` to filter to a single target schema. Use `--verify` to fail the command on any after-apply edit (drift).')
-            ->addOption('database', null, InputOption::VALUE_REQUIRED, 'Filter to one target database (e.g. `VSCASH`, `SYSTEMS`)')
+            ->addOption('database', null, InputOption::VALUE_REQUIRED, 'Filter to one target database (e.g. `SHOP`, `SYSTEMS`)')
             ->addOption('verify', null, InputOption::VALUE_NONE, 'Recompute each applied file\'s checksum and exit non-zero on any drift')
             ->addOption('destructive-pending', null, InputOption::VALUE_NONE, 'Machine-readable mode: print only `DESTRUCTIVE_MIGRATION=true|false` for whether any PENDING (unapplied) migration is destructive, then exit. Unlike the git-diff-based CI advisory, a destructive migration pending from an earlier push is reported here even though it is not in the latest git diff.');
         $this->configureTargetOptions();

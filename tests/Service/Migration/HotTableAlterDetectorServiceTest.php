@@ -14,6 +14,7 @@ use Ubix\Tests\UbixConcreteClassOrEnumTestCaseInterface as IUbixConcreteClassOrE
  *
  * @coversDefaultClass \Ubix\Service\Migration\HotTableAlterDetectorService
  * @coversDefaultClass \Ubis\Service\Migration\HotTableAlterDetectorService
+ * @see                \Ubix\Tests\Tests\Service\Migration\HotTableAlterDetectorServiceTestTest PHPUnit test case
  */
 final class HotTableAlterDetectorServiceTest extends UbixConcreteClassOrEnumTestCase implements IUbixConcreteClassOrEnumTestCase
 {
@@ -39,21 +40,21 @@ final class HotTableAlterDetectorServiceTest extends UbixConcreteClassOrEnumTest
     public function testFlagsAltersOfTablesNotCreatedInFile(): void
     {
         $body = <<<'SQL'
-        CREATE TABLE BILLING.Transaction_Attempts (
+        CREATE TABLE LEDGER.Payment_Attempts (
             id int unsigned NOT NULL AUTO_INCREMENT
         );
-        ALTER TABLE BILLING.Transaction_Attempts ADD KEY idx_own (id);
-        ALTER TABLE BILLING.Transaction_Stops ADD COLUMN attempt_id int NULL;
-        ALTER TABLE BILLING.Transaction_Stop_Events ADD COLUMN attempt_id int NULL;
-        CREATE INDEX idx_attempt ON BILLING.Internal_Response_Codes (attempt_id);
+        ALTER TABLE LEDGER.Payment_Attempts ADD KEY idx_own (id);
+        ALTER TABLE LEDGER.Order_Holds ADD COLUMN attempt_id int NULL;
+        ALTER TABLE LEDGER.Order_Hold_Events ADD COLUMN attempt_id int NULL;
+        CREATE INDEX idx_attempt ON LEDGER.Gateway_Response_Codes (attempt_id);
         SQL;
 
         $offenders = (new HotTableAlterDetectorService(new NullLogger()))->detect($body);
 
         $this->assertCount(3, $offenders);
-        $this->assertStringContainsString('Transaction_Stops', $offenders[0]);
-        $this->assertStringContainsString('Transaction_Stop_Events', $offenders[1]);
-        $this->assertStringContainsString('Internal_Response_Codes', $offenders[2]);
+        $this->assertStringContainsString('Order_Holds', $offenders[0]);
+        $this->assertStringContainsString('Order_Hold_Events', $offenders[1]);
+        $this->assertStringContainsString('Gateway_Response_Codes', $offenders[2]);
     }
 
     /**
@@ -67,10 +68,10 @@ final class HotTableAlterDetectorServiceTest extends UbixConcreteClassOrEnumTest
     public function testOwnTablesAndCommentsAreClean(): void
     {
         $body = <<<'SQL'
-        -- ALTER TABLE BILLING.Should_Not_Match ADD COLUMN x int;
-        /* CREATE INDEX nope ON BILLING.Also_No (x); */
-        CREATE TABLE IF NOT EXISTS `BILLING`.`New_Thing` (id int);
-        ALTER TABLE billing.new_thing ADD COLUMN y int;
+        -- ALTER TABLE LEDGER.Should_Not_Match ADD COLUMN x int;
+        /* CREATE INDEX nope ON LEDGER.Also_No (x); */
+        CREATE TABLE IF NOT EXISTS `LEDGER`.`New_Thing` (id int);
+        ALTER TABLE ledger.new_thing ADD COLUMN y int;
         SQL;
 
         $this->assertSame([], (new HotTableAlterDetectorService(new NullLogger()))->detect($body));
@@ -86,11 +87,11 @@ final class HotTableAlterDetectorServiceTest extends UbixConcreteClassOrEnumTest
      */
     public function testBacktickQualifiedOffenderRendersClean(): void
     {
-        $body = 'ALTER TABLE `BILLING`.`Transaction_Stops` ADD COLUMN attempt_id int NULL;';
+        $body = 'ALTER TABLE `LEDGER`.`Order_Holds` ADD COLUMN attempt_id int NULL;';
 
         $offenders = (new HotTableAlterDetectorService(new NullLogger()))->detect($body);
 
-        $this->assertSame(['BILLING.Transaction_Stops (ALTER TABLE on line 1)'], $offenders);
+        $this->assertSame(['LEDGER.Order_Holds (ALTER TABLE on line 1)'], $offenders);
     }
 
     /**
@@ -106,8 +107,8 @@ final class HotTableAlterDetectorServiceTest extends UbixConcreteClassOrEnumTest
     {
         $body = <<<'SQL'
         CREATE TABLE Bare_Created (id int);
-        ALTER TABLE BILLING.Bare_Created ADD COLUMN x int;
-        CREATE TABLE BILLING.Qualified_Created (id int);
+        ALTER TABLE LEDGER.Bare_Created ADD COLUMN x int;
+        CREATE TABLE LEDGER.Qualified_Created (id int);
         ALTER TABLE Qualified_Created ADD COLUMN y int;
         SQL;
 
@@ -126,14 +127,14 @@ final class HotTableAlterDetectorServiceTest extends UbixConcreteClassOrEnumTest
     public function testSyntaxVariantsDoNotBypassDetection(): void
     {
         $body = <<<'SQL'
-        CREATE INDEX idx_a USING BTREE ON BILLING.Table_A (x);
-        CREATE FULLTEXT INDEX idx_b ON BILLING.Table_B (x);
-        CREATE SPATIAL INDEX idx_c ON BILLING.Table_C (x);
-        CREATE INDEX IF NOT EXISTS idx_d ON BILLING.Table_D (x);
-        CREATE OR REPLACE UNIQUE INDEX idx_e ON BILLING.Table_E (x);
-        ALTER ONLINE TABLE BILLING.Table_F ADD COLUMN x int;
-        ALTER IGNORE TABLE BILLING.Table_G ADD COLUMN x int;
-        ALTER TABLE IF EXISTS BILLING.Table_H ADD COLUMN x int;
+        CREATE INDEX idx_a USING BTREE ON LEDGER.Table_A (x);
+        CREATE FULLTEXT INDEX idx_b ON LEDGER.Table_B (x);
+        CREATE SPATIAL INDEX idx_c ON LEDGER.Table_C (x);
+        CREATE INDEX IF NOT EXISTS idx_d ON LEDGER.Table_D (x);
+        CREATE OR REPLACE UNIQUE INDEX idx_e ON LEDGER.Table_E (x);
+        ALTER ONLINE TABLE LEDGER.Table_F ADD COLUMN x int;
+        ALTER IGNORE TABLE LEDGER.Table_G ADD COLUMN x int;
+        ALTER TABLE IF EXISTS LEDGER.Table_H ADD COLUMN x int;
         SQL;
 
         $offenders = (new HotTableAlterDetectorService(new NullLogger()))->detect($body);

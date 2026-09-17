@@ -27,7 +27,7 @@ final readonly class AppliedMigration implements Dto
      * Constructor
      *
      * @param string            $id             Migration ID — filename without `.sql` extension
-     * @param string            $targetDatabase Target database (`VSCASH`, `SYSTEMS`, `ntl_db`, `flirt4free`, etc.)
+     * @param string            $targetDatabase Target database (`SHOP`, `SYSTEMS`, `legacy_db`, `content_db`, etc.)
      * @param string            $description    Description from the `Description:` header
      * @param string            $checksum       SHA-256 hex digest of the migration file's body at the moment of apply
      * @param DateTimeInterface $appliedAt      When the migration finished applying

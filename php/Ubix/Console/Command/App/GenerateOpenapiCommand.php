@@ -97,7 +97,7 @@ final class GenerateOpenapiCommand extends Command
         $middleware = $this->getMiddleware($appName);
         $routes     = $this->getRoutes($appName);
 
-        $usesBearerTokenAuthentication = true; // TODO: make this dynamic by reading Middleware.php
+        $usesBearerTokenAuthentication = true; // TEMPORARY: make this dynamic by reading Middleware.php
 
         //
         //  Output the OpenAPI document
@@ -161,7 +161,7 @@ final class GenerateOpenapiCommand extends Command
                 $environment = 'prod';
             }
 
-            $data = Yaml::parseFile( // TODO: should this be in a new service called YamlService?
+            $data = Yaml::parseFile( // TEMPORARY: should this be in a new service called YamlService?
                 $file,
                 Yaml::PARSE_EXCEPTION_ON_INVALID_TYPE | Yaml::PARSE_DATETIME
             );
@@ -210,7 +210,7 @@ final class GenerateOpenapiCommand extends Command
             $pattern = $route->getPattern();
 
             // Skip your fallback 404 route (pattern '/{routes:.*}')
-            if ($pattern === '/{routes:.*}') { // TODO: move this magic string into a class constant
+            if ($pattern === '/{routes:.*}') { // TEMPORARY: move this magic string into a class constant
                 continue;
             }
 
@@ -225,8 +225,8 @@ final class GenerateOpenapiCommand extends Command
 
             $routes[] = [
                 'methods'    => $methods,    // e.g. ['GET']
-                'pattern'    => $pattern,    // e.g. '/user/{userId:[0-9]+}[/{sitekey:[a-zA-Z0-9]+}]'
-                'controller' => $controller, // e.g. 'Ubix\Controller\FanClubApi\PlatformUserController'
+                'pattern'    => $pattern,    // e.g. '/user/{userId:[0-9]+}[/{locale:[a-z]{2}}]'
+                'controller' => $controller, // e.g. 'App\\Controller\\ExampleApi\\UserController'
                 'action'     => $action,     // e.g. 'get'
                 'callable'   => $callable,   // original callable string/value for completeness
             ];

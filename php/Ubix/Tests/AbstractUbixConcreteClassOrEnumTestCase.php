@@ -322,14 +322,7 @@ abstract class AbstractUbixConcreteClassOrEnumTestCase extends TestCase
         //  Test all properties were correctly set
         //
         if (count($class->getProperties()) > 0) {
-            $exemptions = [
-                'Ubix\Model\ProspectApplication::$originalObject',
-            ];
             foreach ($class->getProperties() as $property) {
-                if (in_array($class->getName() . '::$' . $property->getName(), $exemptions, true)) { // If the property is exempted then skip the assertions and continue to the next one
-                    continue;
-                }
-
                 $propertyGetter = 'get' . strtoupper(substr($property->getName(), 0, 1)) . substr($property->getName(), 1);
                 $propertySetter = 'set' . strtoupper(substr($property->getName(), 0, 1)) . substr($property->getName(), 1);
 

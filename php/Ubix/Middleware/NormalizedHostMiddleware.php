@@ -60,22 +60,13 @@ final class NormalizedHostMiddleware implements Middleware
     private function normalizeHost(string $host): string
     {
         if (preg_match('/^(?P<subdomain>[a-zA-Z0-9-]+)\.(sandbox|dev|staging|lan)\.ubixsys\.com$/', $host, $matches)) {
-            switch ($matches['subdomain']) {
-                case 'fanclub-model': // This git repo should have been named model-flirt-fans
-                    return 'model.flirt.fans';
-
-                case 'fanclub-user': // This git repo should have been named flirt-fans
-                    return 'flirt.fans';
-
-                default:
-                    //
-                    //  In our encoded host format periods are represented by a dash and dashes are represented by two dashes, e.g. "example-host.com" would be encoded as "example--host-com"
-                    //
-                    $encodedHost = $matches['subdomain'];
-                    $encodedHost = str_replace('--', '#', $encodedHost);
-                    $encodedHost = str_replace('-', '.', $encodedHost);
-                    return str_replace('#', '-', $encodedHost);
-            }
+            //
+            //  In our encoded host format periods are represented by a dash and dashes are represented by two dashes, e.g. "example-host.com" would be encoded as "example--host-com"
+            //
+            $encodedHost = $matches['subdomain'];
+            $encodedHost = str_replace('--', '#', $encodedHost);
+            $encodedHost = str_replace('-', '.', $encodedHost);
+            return str_replace('#', '-', $encodedHost);
         }
 
         return $host;

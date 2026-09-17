@@ -15,54 +15,21 @@ use Ubix\Enum\Exception\ExceptionCode;
  */
 final class NetworkingService
 {
-    //
-    //  This list was copy/pasted from PHPCoreClasses/Networking.cl on 2025-07-16
-    //
-    private const INTERNAL_IP_ADDRESSES = [ // NOT_IMPLEMENTED: In a perfect world these would not be a class constant but stored in a database
-        '64.60.43.128/26/*', // HQ - Telepacific
-        '66.209.126.80/28', // HQ - SkyRiver
-        '4.35.153.192/26', // HQ - CenturyLink
-        '10.1.0.0/16', // HQ - Employees & Servers
-        '172.16.240.0/24', // HQ - Legacy Employees
-        '172.16.244.0/24', // HQ - Legacy Servers
-        '76.53.61.194/32', // HQ - New Office
-        '192.168.0', // VS Media IP
-        '192.168.1', // VS Media IP
-        '192.168.2', // VS Media IP
-        '207.178.215', // VS Media IP
-        '66.52.58', // VS Media IP
-        '66.42.57', // VS Media IP
-        '64.60.194', // VS Media IP (OFFICE)
-        '64.60.194.220', // VS Media IP (WIRELESS)
-        '64.60.43', // VS Media IP (NEW OFFICE)
-        '66.209.126.82', // VS Media IP (NEW OFFICE - Sky River backup)
-        '172.16.250', // VS Media Private IP
-        '172.16.244.1', // Office - VPN egress IP
-        '204.8.234.0/24', // LA3
-        '10.2.0.0/16', // LA3
-        '172.16.240', // VS Media office network block as of 2018-01-08
-        '10.3.0.0/16', // Prague
-        '10.3.20.0/16', // PR-VPN
-        '76.79.204.194/32', // Task 445324
-        '185.249.113.117/32', // Task 868a6gbkt
-    ];
-
-    //
-    //  This list was copy/pasted from PHPCoreClasses/Networking.cl on 2025-07-16
-    //
-    private const BLOCKED_IP_ADDRESSES = [ // NOT_IMPLEMENTED: why are ProspectService::BLOCKED_IP_ADDRESSES different to NetworkingService::BLOCKED_IP_ADDRESSES?
-        '68.60.224.8',
-        '85.110.57.111',
-        '186.154.93.170',
-    ];
-
     /**
      * Constructor
      *
-     * @param Logger $logger Logger
+     * Both lists are the host's: which networks count as internal, and which addresses are
+     * blocked, are operational facts about one deployment, never framework defaults. Entries
+     * are CIDR ranges (`10.0.0.0/8`) or address prefixes (`192.168.1`).
+     *
+     * @param Logger   $logger              Logger
+     * @param string[] $internalIpAddresses Networks treated as internal (default: none)
+     * @param string[] $blockedIpAddresses  Addresses or prefixes that are blocked (default: none)
      */
     public function __construct(
         private Logger $logger, // @phpstan-ignore property.onlyWritten (Logger is a required dependency of most uBixCore classes but has not been implemented in this class yet)
+        private array $internalIpAddresses = [],
+        private array $blockedIpAddresses = [],
     ) {
     }
 
@@ -75,8 +42,8 @@ final class NetworkingService
      */
     public function isBlockedIpAddress(string $ipAddress): bool
     {
-        foreach (self::BLOCKED_IP_ADDRESSES as $blockedIpAddress) {
-            if (str_starts_with($ipAddress, $blockedIpAddress)) { // NOT_IMPLEMENTED: We are using str_starts_with because the previous system worked that way - it would probably be better to convert all non-ranges in self::INTERNAL_IP_ADDRESSES into ranges and not do string matching at all
+        foreach ($this->blockedIpAddresses as $blockedIpAddress) {
+            if (str_starts_with($ipAddress, $blockedIpAddress)) { // Prefix match for non-CIDR entries
                 return true;
             }
         }
@@ -93,7 +60,7 @@ final class NetworkingService
      */
     public function isInternalIpAddress(string $ipAddress): bool
     {
-        foreach (self::INTERNAL_IP_ADDRESSES as $internalIpAddress) {
+        foreach ($this->internalIpAddresses as $internalIpAddress) {
             if (strpos($internalIpAddress, '/') !== false) { // If a slash is present check the CIDR range
                 if (
                     filter_var($ipAddress, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4)
@@ -101,7 +68,7 @@ final class NetworkingService
                 ) {
                     return true;
                 }
-            } elseif (str_starts_with($ipAddress, $internalIpAddress)) { // NOT_IMPLEMENTED: We are using str_starts_with because the previous system worked that way - it would probably be better to convert all non-ranges in self::BLOCKED_IP_ADDRESSES into ranges and not do string matching at all
+            } elseif (str_starts_with($ipAddress, $internalIpAddress)) { // Prefix match for non-CIDR entries
                 return true;
             }
         }
@@ -142,9 +109,9 @@ final class NetworkingService
     /**
      * Get the first usable host IP in an IPv4 CIDR block
      *
-     * @param string $cidr CIDR range, e.g. '204.8.234.0/24'
+     * @param string $cidr CIDR range, e.g. '198.51.100.0/24'
      *
-     * @return string The first usable IP address, e.g. '204.8.234.1'
+     * @return string The first usable IP address, e.g. '198.51.100.1'
      */
     public function getFirstUsableIpAddressInCidrRange(string $cidr): string
     {
@@ -156,11 +123,11 @@ final class NetworkingService
     /**
      * Get the last usable host IP from an IPv4 CIDR block
      *
-     * @param string $cidr CIDR range, e.g. '204.8.234.0/24'
+     * @param string $cidr CIDR range, e.g. '198.51.100.0/24'
      *
      * @throws Exception On bad input
      *
-     * @return string The last usable IP address, e.g. '204.8.234.254'
+     * @return string The last usable IP address, e.g. '198.51.100.254'
      */
     public function getLastUsableIpAddressInCidrRange(string $cidr): string
     {
@@ -205,12 +172,12 @@ final class NetworkingService
     /**
      * Get the next usable host IP in an IPv4 CIDR block after a given IP
      *
-     * @param string $cidr             The CIDR block, e.g. '204.8.234.0/24'
-     * @param string $currentIpAddress The “current” IP, e.g. '204.8.234.10'
+     * @param string $cidr             The CIDR block, e.g. '198.51.100.0/24'
+     * @param string $currentIpAddress The “current” IP, e.g. '198.51.100.10'
      *
      * @throws Exception If input is invalid or no next IP exists
      *
-     * @return string The next usable IP, e.g. '204.8.234.11'
+     * @return string The next usable IP, e.g. '198.51.100.11'
      */
     public function getNextUsableIpAddressInCidrRange(string $cidr, string $currentIpAddress): string
     {
@@ -267,11 +234,11 @@ final class NetworkingService
     /**
      * Get the (first) network address from an IPv4 CIDR block
      *
-     * @param string $cidr CIDR Range, e.g. '204.8.234.0/24'
+     * @param string $cidr CIDR Range, e.g. '198.51.100.0/24'
      *
      * @throws Exception On bad input
      *
-     * @return string Network address, e.g. '204.8.234.0'
+     * @return string Network address, e.g. '198.51.100.0'
      */
     private function getNetworkAddress(string $cidr): string
     {

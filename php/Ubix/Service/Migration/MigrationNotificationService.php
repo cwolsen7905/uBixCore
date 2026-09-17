@@ -26,8 +26,6 @@ use Ubix\Service\SlackService;
  */
 final class MigrationNotificationService
 {
-    private const CHANNEL = '#databases';
-
     // Match the deploy / #siteupdates-log branding (bin/deploy.sh) for a
     // consistent Ubix trident across all pipeline notifications.
     private const ICON = ':trident:';
@@ -47,11 +45,13 @@ final class MigrationNotificationService
      * Constructor
      *
      * @param Logger       $logger       Logger
-     * @param SlackService $slackService Slack transport (shared, #databases is whitelisted)
+     * @param SlackService $slackService Slack transport; the host must allow `$channel` (the CLI wiring does)
+     * @param string       $channel      Channel to post to (SLACK_MIGRATION_CHANNEL; default #databases)
      */
     public function __construct(
         private Logger $logger,
         private SlackService $slackService,
+        private string $channel = '#databases',
     ) {
     }
 
@@ -131,7 +131,7 @@ final class MigrationNotificationService
         try {
             $this->slackService->sendToChannel(
                 message:  implode(PHP_EOL, $lines),
-                channel:  self::CHANNEL,
+                channel:  $this->channel,
                 username: self::USERNAME,
                 icon:     self::ICON,
             );

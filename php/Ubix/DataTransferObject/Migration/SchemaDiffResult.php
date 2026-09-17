@@ -30,7 +30,7 @@ final readonly class SchemaDiffResult implements Dto
     /**
      * Constructor
      *
-     * @param string   $database        Target database (e.g. `VSCASH`)
+     * @param string   $database        Target database (e.g. `SHOP`)
      * @param bool     $hasDrift        True when either of the line lists is non-empty
      * @param string[] $extraInLive     Lines present live but not in the reference dump
      * @param string[] $missingFromLive Lines present in the reference dump but not live

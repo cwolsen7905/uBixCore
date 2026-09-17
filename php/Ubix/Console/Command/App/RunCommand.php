@@ -84,7 +84,7 @@ final class RunCommand extends Command
 
         $port = (int)$input->getOption('port');
         $host = (string)$input->getOption('host');
-        $host = '0.0.0.0'; // TEMPORARY: this was needed to run app:run on Andrew's old sandbox
+        $host = '0.0.0.0'; // Bind all interfaces so app:run is reachable from outside a container
         $output->writeln('Running the project on host: ' . $host . ', port: ' . $port);
 
         $result = $this->processService->executeAsSubprocess('php -S ' . escapeshellarg($host) . ':' . $port . ' -t public');

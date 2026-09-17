@@ -35,13 +35,13 @@ final class MachineCodeReviewService
 
     private const OVERFLOWED_LINE_SPACING = ' ';
 
-    private const PHPCS_COMMAND_ARGUMENTS = [ // TEMPORARY: ANDREW:: investigate using junit XML output as an alternative
+    private const PHPCS_COMMAND_ARGUMENTS = [ // TEMPORARY: investigate using junit XML output as an alternative
         '--report=json',
         '-s',
         '-v',
     ];
 
-    private const PHPSTAN_COMMAND_ARGUMENTS = [ // TEMPORARY: ANDREW:: investigate using junit XML output as an alternative
+    private const PHPSTAN_COMMAND_ARGUMENTS = [ // TEMPORARY: investigate using junit XML output as an alternative
         '--no-progress',
         '--error-format=json',
         '--memory-limit 1024M',
@@ -89,7 +89,7 @@ final class MachineCodeReviewService
         MachineCodeReview $review,
         Output $output,
         array $files = [],
-    ): void { // TEMPORARY: ANDREW:: does this method make more sense in the MachineCodeReview model?
+    ): void { // TEMPORARY: does this method make more sense in the MachineCodeReview model?
         //
         //  Show the violations line-by-line
         //
@@ -403,11 +403,11 @@ final class MachineCodeReviewService
                             //
                             //  Determine the line text
                             //
-                            $lineText = substr($violationText, $position, (new Terminal())->getWidth() - $lineNumberOffset); // TEMPORARY: ANDREW:: handle counting characters better - right now we count tags even though they won't be rendered on screen so some line breaks will be inserted in the output prematurely (the answer will probably include the $spacePosition code currently appearing later on in this method)
+                            $lineText = substr($violationText, $position, (new Terminal())->getWidth() - $lineNumberOffset); // TEMPORARY: handle counting characters better - right now we count tags even though they won't be rendered on screen so some line breaks will be inserted in the output prematurely (the answer will probably include the $spacePosition code currently appearing later on in this method)
 
                             // phpcs:disable
 
-                            if (false) { // @phpstan-ignore if.alwaysFalse (This is temporary until Andrew can finish)
+                            if (false) { // @phpstan-ignore if.alwaysFalse (Disabled pending the line-wrapping rework below)
                                 $remainderText     = substr($violationText, $position);
                                 $remainderPosition = 0;
 
@@ -452,7 +452,7 @@ final class MachineCodeReviewService
                                 }
 
                                 //
-                                //  Don't break a line in the middle of an open or close tag // TEMPORARY: ANDREW:: do open and closing tags need to be on the same line?
+                                //  Don't break a line in the middle of an open or close tag // TEMPORARY: do open and closing tags need to be on the same line?
                                 //
                                 $openTagPosition = strrpos($lineText, '<');
                                 if ($openTagPosition !== false && strpos($lineText, '>', $openTagPosition) !== false) { // We don't want to cut of a line in the middle of a tag so if that scenario is detected change the line to stop immediately before the tag opens
