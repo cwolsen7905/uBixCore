@@ -11,6 +11,3 @@ parameters:
 
   tmpDir: .phpstan.cache
 
-  excludePaths:
-    analyse:
-      - app/*Js/**/*.php
