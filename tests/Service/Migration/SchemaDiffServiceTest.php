@@ -64,7 +64,7 @@ final class SchemaDiffServiceTest extends UbixConcreteClassOrEnumTestCase implem
         $this->assertSame([], $result->extraInLive);
         $this->assertSame([], $result->missingFromLive);
         $this->assertSame(
-            'Database `NOT_A_REAL_DATABASE_9016001` is not in the Ubix-consumed set; nothing to diff.',
+            'Database `NOT_A_REAL_DATABASE_9016001` has no schema baseline at sql/<database>.sql; nothing to diff.',
             $result->errorMessage,
         );
     }
