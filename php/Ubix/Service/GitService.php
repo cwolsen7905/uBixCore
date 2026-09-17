@@ -51,6 +51,29 @@ final class GitService
     }
 
     /**
+     * Get the repository's default branch, as the remote reports it.
+     *
+     * Resolves `refs/remotes/origin/HEAD`, so it is correct for a host on
+     * `dev` and for a framework repo on `main` without either having to know
+     * about the other. Falls back rather than throwing: a fresh clone may have
+     * no `origin/HEAD` (it is set by `git clone`, but not by `git init` plus a
+     * manually added remote), and a missing default branch is not a reason to
+     * fail a command that can simply ask the user.
+     *
+     * @param string $fallback Branch to assume when the remote does not say.
+     *
+     * @return string The default branch name, e.g. `main`.
+     */
+    public function getDefaultBranch(string $fallback = 'dev'): string
+    {
+        $result = $this->processService->executeAsSubprocess(
+            'git symbolic-ref --quiet --short refs/remotes/origin/HEAD',
+        );
+
+        return $this->parseDefaultBranch($result->exitCode, $result->stdoutOutput, $fallback);
+    }
+
+    /**
      * Add file(s) to staging area
      *
      * @param string|array<string> $files File or array of files to add
@@ -189,5 +212,34 @@ final class GitService
             $this->logger->error('Git create merge request failed: ' . $result->stderrOutput);
             throw new Exception('Git create merge request failed: ' . $result->stderrOutput);
         }
+    }
+
+    /**
+     * Turn the output of `git symbolic-ref refs/remotes/origin/HEAD` into a branch name.
+     *
+     * Separated from the subprocess call so the interesting half is testable:
+     * `ProcessService` is final and cannot be doubled, and the call itself is
+     * one line with no logic in it. Kept an instance method because the `Ubix`
+     * standard forbids static ones.
+     *
+     * @param int    $exitCode Exit code git reported.
+     * @param string $stdout   Standard output git produced, e.g. `origin/main`.
+     * @param string $fallback Branch to assume when the remote does not say.
+     *
+     * @return string The default branch name.
+     */
+    public function parseDefaultBranch(int $exitCode, string $stdout, string $fallback = 'dev'): string
+    {
+        if ($exitCode !== 0) {
+            return $fallback;
+        }
+
+        // `origin/main` -> `main`. A branch name may itself contain slashes, so
+        // only the first segment (the remote) is removed.
+        $ref      = trim($stdout);
+        $position = strpos($ref, '/');
+        $branch   = $position === false ? $ref : substr($ref, $position + 1);
+
+        return $branch === '' ? $fallback : $branch;
     }
 }
