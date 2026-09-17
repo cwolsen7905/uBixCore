@@ -1314,11 +1314,30 @@ final class BearerTokenAuthenticationMiddleware implements Middleware
 
 #### Available Middleware
 
-1. **BearerTokenAuthenticationMiddleware** - API token validation
+1. **BearerTokenAuthenticationMiddleware** - API token validation (tokens supplied by the host — see below)
 2. **AccountAuthenticationMiddleware** - User session validation
 3. **SessionMiddleware** - Session management
 4. **NormalizedIpAddressMiddleware** - Extract client IP
 5. **NormalizedHostMiddleware** - Standardize host header
+
+#### Supplying bearer tokens
+
+`BearerTokenAuthenticationMiddleware` ships **no tokens**. A token compiled into the framework
+is published to everyone who installs the package, so the accepted list is injected by the host
+app — read from uBixVault, never from source or a committed `.env`:
+
+```php
+// app/{AppName}/src/Dependencies.php
+BearerTokenAuthenticationMiddleware::class => static fn (ContainerInterface $c) =>
+    new BearerTokenAuthenticationMiddleware(
+        $c->get(Logger::class),
+        $c->get(VaultTokenProvider::class)->bearerTokens('my-api'), // list<string>
+    ),
+```
+
+It **fails closed**: with an empty list every request is rejected with `403`, so a missing or
+unreadable secret disables the API rather than silently disabling its authentication. Tokens are
+compared with `hash_equals`, and a rejected token is never logged.
 
 #### Middleware Registration
 

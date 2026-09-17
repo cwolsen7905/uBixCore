@@ -14,51 +14,82 @@ use Slim\Exception\HttpForbiddenException;
 /**
  * Middleware to authenticate requests with bearer tokens
  *
+ * The accepted tokens are supplied by the host application -- typically read from
+ * uBixVault in the app's Dependencies.php. The framework ships NO tokens: a token
+ * compiled into a package is a token published to everyone who installs it.
+ *
+ * Fails closed. With no tokens configured, every request is rejected rather than
+ * every request being let through, so a missing secret cannot silently disable
+ * authentication.
+ *
  * @see \Ubix\Tests\Middleware\BearerTokenAuthenticationMiddlewareTest PHPUnit test case
  */
 final class BearerTokenAuthenticationMiddleware implements Middleware
 {
-    private const BEARER_TOKENS = [ // TEMPORARY: Bearer tokens should be moved into MySQL and out of the source code
-        '<removed-credential>', // The flirt.fans Python website managed by Miro
-    ];
-
     /**
      * Constructor
      *
-     * @param Logger $logger Logger
+     * @param Logger             $logger       PSR-3 logger
+     * @param array<int, string> $bearerTokens Accepted tokens, supplied by the host; empty rejects everything
      */
     public function __construct(
-        private Logger $logger, // @phpstan-ignore property.onlyWritten (Logger is a required dependency of most uBixCore classes but has not been implemented in this class yet)
+        private Logger $logger,
+        private array $bearerTokens,
     ) {
     }
 
     /**
-     * Process the request
+     * Allow the request through only when it carries one of the configured tokens
      *
-     * @param Request $request PSR request
-     * @param Handler $handler PSR handler
+     * @param Request $request PSR-7 request
+     * @param Handler $handler Next handler
      *
-     * @throws HttpForbiddenException If the bearer token is missing or invalid
+     * @return Response
      *
-     * @return Response PSR response
+     * @throws HttpForbiddenException When the token is missing, unknown, or none are configured
      */
     public function process(Request $request, Handler $handler): Response
     {
-        //
-        //  Get the bearer token from the request's Authorization header
-        //
-        $bearerToken = preg_match('/^Bearer\s+(.+)$/i', $request->getHeaderLine('Authorization'), $matches) ? $matches[1] : null;
+        $tokens = array_values(array_filter(
+            $this->bearerTokens,
+            static function (string $token): bool {
+                return $token !== '';
+            },
+        ));
 
-        //
-        //  If the bearer token is missing or is invalid throw an HTTP forbidden exception
-        //
-        if (!in_array($bearerToken, self::BEARER_TOKENS, true)) {
+        if ($tokens === []) {
+            $this->logger->error('Bearer token authentication has no tokens configured; rejecting request');
             throw new HttpForbiddenException($request, 'You must include a valid bearer token');
         }
 
-        //
-        //  The bearer token is valid so we can continue processing the request
-        //
+        $presented = preg_match('/^Bearer\s+(\S+)$/i', $request->getHeaderLine('Authorization'), $matches) === 1 ? $matches[1] : null;
+
+        if ($presented === null || !$this->isAccepted($presented, $tokens)) {
+            // Never log the presented value: a near-miss token is still a secret.
+            $this->logger->notice('Rejected request with a missing or invalid bearer token');
+            throw new HttpForbiddenException($request, 'You must include a valid bearer token');
+        }
+
         return $handler->handle($request);
+    }
+
+    /**
+     * Constant-time membership check, so response timing does not leak token prefixes
+     *
+     * @param string             $presented Token from the request
+     * @param array<int, string> $tokens    Configured tokens
+     *
+     * @return bool
+     */
+    private function isAccepted(string $presented, array $tokens): bool
+    {
+        $accepted = false;
+
+        foreach ($tokens as $token) {
+            // No early return: compare against every token either way.
+            $accepted = hash_equals($token, $presented) || $accepted;
+        }
+
+        return $accepted;
     }
 }
