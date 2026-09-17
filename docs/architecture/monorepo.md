@@ -1,38 +1,57 @@
-# uBix Core Monorepo
+# uBix Core — Repository Shape
 
-How this repository is organised and how work flows from a feature branch to production. For per-app architecture detail see the linked docs in each section — this document is about the shape of the repo and the release process, not the internals of any one app.
+> **Status:** v2.0 — corrected 2026-09-16. v1.x described uBixCore as "a single git repository
+> containing every service in the product suite", with `app/*Api`, `*Js`, `*Web`, `*Py`, `*Go` and
+> `UbixCli` living here. **None of that is true any more.** OSS-10 moved every product app to its
+> host repo; this repository is the framework and the skeleton, and has no `app/` directory at all.
+>
+> What survives is the *shape uBixCore defines for a host*, which is most of this document.
 
 ## Overview
 
-uBix Core is a **single git repository containing every service in the product suite**: the public-facing PHP APIs, the Latte-templated PHP web apps, the SvelteKit frontend apps, shared PHP framework code, a shared Svelte component library, the CLI tool, deployment manifests, and database schema. One checkout, one issue tracker, one CI pipeline, one CHANGELOG.
+uBixCore is **a framework, not a product monorepo**. It publishes three packages from one tree —
+`ubixsys/ubixcore` (Composer), `@ubixsys/ubixcore` (npm) and `ubixsys/ubixcore-skeleton` — and ships
+the tooling that is not code: the `Ubix` coding standard, the PHPStan baseline, PHPUnit base
+classes, the migration runner and the `bin/ubix` CLI.
 
-The monorepo exists because:
+Products built on it live in their own repositories, generated from the skeleton. A host is a
+monorepo in the sense this document originally meant: it holds every app for one product, and those
+apps share the framework through `vendor/` and `node_modules/` rather than through this tree.
 
-- The PHP apps share a substantial framework (`php/Ubix/`) — controllers, services, repositories, Payload/DataType validation, PHPCS sniffs — and every app upgrades together when framework conventions change.
-- The JS apps share a component library (`js/Ubix/`) and follow the same SvelteKit conventions; duplicating that across repositories would multiply maintenance.
-- Every app deploys to the same infrastructure with the same tooling; a single source of truth for k8s manifests (`config/`) and deploy scripts beats N per-app copies.
-- Atomic changes that touch both the API and its frontend (e.g., adding a field) land in one commit instead of two coordinated PRs.
-
-Each app still deploys independently. The monorepo is source-of-truth; the deploy pipeline can release one app at a time.
-
-## Repository shape
+## This repository
 
 ```
-app/             # Every uBix Core application lives here. Suffix determines type.
-│  *Api/         #   PHP REST API (Slim 4, shares public/index.php)
-│  *Js/          #   SvelteKit frontend
-│  *Web/         #   PHP web app using Latte templates (shares public/index.php)
-│  *Py/          #   Python FastAPI service (py/Ubix framework)
-│  *Go/          #   Go service (cmd/ + internal/, self-contained module)
-│  UbixCli/   #   CLI (Symfony Console)
-bin/             # `ubix` CLI entry point + scripts
-config/          # DevOps config (nginx, k8s manifests)
-js/Ubix/          # Shared Svelte component library (imported by *Js apps)
-php/Ubix/         # Shared PHP framework (controllers, services, DataTypes, ...)
-py/Ubix/          # Shared Python framework (`@ubixsys/ubixcore` namespace: app factory, env, Redis)
-public/          # Single shared web root for ALL PHP apps — APP_NAME env var selects
-specs/           # Technical specification documents
-sql/             # Database schema files (one per database)
+bin/             # `ubix` CLI entry point + scripts (also the template hosts inherit)
+config/          # DevOps config templates
+docs/            # standards, architecture, project records
+php/Ubix/        # the PHP framework — Ubix\ , PSR-4
+public/          # thin shared web root (index.php), copied into hosts
+skeleton/        # the `composer create-project` template -> ubixsys/ubixcore-skeleton
+sql/             # the framework's own test fixture schema + tracker init migration
+templates/       # Latte templates shipped with the framework
+tests/           # framework tests
+ts/Ubix/         # the React 19 + TypeScript component library -> @ubixsys/ubixcore
+```
+
+There is no `app/`, no `js/`, no `py/` and no `specs/`. `ts/` names the ecosystem and mirrors
+`php/Ubix/`.
+
+## The shape a host takes
+
+Generated from the skeleton, and the reason the app-type suffixes below matter:
+
+```
+<host>/
+  app/             # Every application lives here. Suffix determines type.
+  │  *Api/         #   PHP REST API (Slim 4, shares public/index.php)
+  │  *Js/          #   React Router v8 frontend
+  │  *Web/         #   PHP web app using Latte templates (shares public/index.php)
+  bin/             # thin `ubix` entry point, deploy/promote scripts
+  config/          # DevOps config (nginx, k8s manifests)
+  php/<Host>/      # the product's own PHP, its own PSR-4 root
+  ts/<Host>/       # optional: cross-product frontend code that is NOT framework material
+  public/          # single shared web root for ALL PHP apps — APP_NAME selects
+  sql/migrations/  # timestamped migrations applied by `ubix migrate:up`
 templates/       # Latte templates, organised per app (e.g. templates/fanclub-api-v1/)
 tests/           # PHPUnit tests (mirrors php/ structure)
 vendor/          # Composer dependencies (git-ignored)
@@ -46,7 +65,7 @@ The suffix on a directory name under `app/` is load-bearing — it tells the bui
 | -------- | -------- | ---------------------------------------- | --------------------- |
 | `*Api`   | PHP 8.5+ | REST API (JSON in/out via Payloads)      | `FanClubApi`          |
 | `*Web`   | PHP 8.5+ | Server-rendered web app via Latte        | (future)              |
-| `*Js`    | Node 22+ | SvelteKit frontend                       | `ProductJs`           |
+| `*Js`    | Node 22+ | React Router v8 frontend                 | `SowingMeJs`          |
 | `*Py`    | Python 3.12 | FastAPI/gunicorn service (onnx AI, ...) | `RoomSfwCheckerPy`    |
 | `*Go`    | Go 1.25+ | NATS-subscriber / WebSocket services     | `RealtimeFanoutGo`    |
 | CLI tool | PHP 8.5+ | Symfony Console commands (exact name)    | `UbixCli`          |
@@ -58,8 +77,7 @@ Adding a new app means creating a new `app/<Name>{Api,Js,Web}/` directory and wi
 Three libraries are consumed by other apps in the repo (Go apps are self-contained modules today — no shared Go library yet):
 
 - **`php/Ubix/`** — the PHP framework. Controllers, services, repositories, models, DataTypes, Payloads, custom PHPCS sniffs. Every `*Api` / `*Web` / CLI app depends on it. See [complete-php-guide.md](complete-php-guide.md) for the deep dive.
-- **`js/Ubix/`** — a Svelte 5 raw-source library wired through **npm workspaces** (declared in the repo-root `package.json`'s `"workspaces": ["js/Ubix", "app/*Js"]`). Every `*Js` app declares `"@ubixsys/ubixcore": "*"` and imports as `import { Foo } from '@ubixsys/ubixcore'`; the workspace install creates a symlink from `node_modules/@ubixsys/ubixcore` to `js/Ubix`. No build step inside the library — Vite's Svelte plugin processes raw `.svelte` source via the package's `svelte` exports field. Components shared across more than one JS app belong here; app-specific components stay in `app/*Js/src/lib/`. See [complete-js-guide.md → Shared JS code](complete-js-guide.md#shared-js-code--jsvsm) for the deeper writeup.
-- **`py/Ubix/`** — the shared Python framework (`@ubixsys/ubixcore` namespace: FastAPI app factory, env loading, Redis client seam, `py.typed`). Every `*Py` app depends on it via an editable co-install (`ubix py:install`). See [complete-py-guide.md](complete-py-guide.md).
+- **`ts/Ubix/`** — the React 19 + TypeScript component library, published as `@ubixsys/ubixcore`. It ships **built**: `exports` resolves to `dist/*.js` + `dist/*.d.ts`, produced by `tsup` at `prepack`, and `react`/`react-dom` are peer dependencies. A host installs it from the registry like any other dependency — it is not an npm workspace, because it is consumed cross-repo and a host never sees its source. Components shared across more than one of a host's JS apps belong in that host's own `ts/<Host>/`, not here; only code that passes the boundary test in `CLAUDE.md` goes upstream. See [complete-js-guide.md](complete-js-guide.md).
 
 Framework changes in either shared library are monorepo-wide events — they happen alongside the updates to every consuming app in the same commit or PR.
 
@@ -94,13 +112,13 @@ Each app's `src/` must contain:
 - `Routes.php` — route definitions, **alphabetically sorted** (enforced by a PHPCS sniff).
 - `Theme.php` — Latte template configuration (only for `*Web` apps).
 
-In production, a single PHP container image is built once and N pods run it with different `APP_NAME` values. There is no per-app PHP Dockerfile. See [complete-php-guide.md](complete-php-guide.md) for the framework detail and [specs/](../specs/) for the spec history.
+In production, a single PHP container image is built once and N pods run it with different `APP_NAME` values. There is no per-app PHP Dockerfile. See [complete-php-guide.md](complete-php-guide.md) for the framework detail and specs/ for the spec history.
 
 ### JS apps — independent projects
 
-Each `app/*Js/` is a self-contained SvelteKit project with its own `package.json`, `vite.config.js`, and `svelte.config.js`. Each app has its own K8s deployment YAMLs and runs on its own hostname. The full architecture — route files, components, runes conventions, server helpers, SSE endpoints, testing, deployment — is documented in [complete-js-guide.md](complete-js-guide.md).
+Each `app/*Js/` is a self-contained React Router v8 project with its own `package.json`, `vite.config.ts`, `react-router.config.ts` and `tsconfig.json`. Each has its own K8s deployment YAMLs and runs on its own hostname. The full architecture — route modules, loaders, state, styling, testing, deployment — is in [complete-js-guide.md](complete-js-guide.md).
 
-The shared `js/Ubix/` library is wired in via npm workspaces (see "Shared code" above). It already provides a small public surface (a `formatCount` utility today) and grows as cross-app sharing needs emerge.
+`@ubixsys/ubixcore` is installed from the registry per app, not symlinked through a workspace.
 
 - Each JS app runs its own `npm run dev`, `npm run build`, `npm run check`, and `npm test` inside its own directory.
 - `npm install` is run **once at the repo root**, not per-app — the workspace install handles every member in a single pass.
@@ -112,7 +130,7 @@ See [complete-js-guide.md](complete-js-guide.md) for the per-app architecture de
 
 Some cross-cutting capabilities apply to a defined subset of the monorepo's apps rather than to all of them. The rule is captured per-capability in its tech spec; flagged here so the scope question is discoverable when adding a new app.
 
-- **i18n / localisation** — applies to all `*Js` apps + `*Api` apps that power them. Integration-only `*Api` apps (consumed by partners, server-to-server tooling, or external webhooks) do **not** adopt the i18n envelope contract and ship plain English strings. See [`docs/surfaces/i18n/technical-spec.md`](../surfaces/i18n/technical-spec.md) §1.5 for the per-app classification + future-app rule.
+- **i18n / localisation** — applies to all `*Js` apps + `*Api` apps that power them. Integration-only `*Api` apps (consumed by partners, server-to-server tooling, or external webhooks) do **not** adopt the i18n envelope contract and ship plain English strings. See `docs/surfaces/i18n/technical-spec.md` §1.5 for the per-app classification + future-app rule.
 
 A new app inherits the rule by default — a new `*Js` adopts the architecture, a new integration `*Api` doesn't. When an `*Api` serves both `*Js` consumers AND integrations, ship envelopes universally (integration consumers use the `fallbackText` field and ignore the rest); simpler than per-endpoint classification.
 
@@ -135,7 +153,7 @@ Each app declares its non-derivable facts in a small, language-neutral **`app/<A
 
 Fields:
 
-- **`exposure`** (`"public"` | `"internal"`) — the **network-reachability** axis: is this app reachable from *outside* our network? `public` includes partner/integration APIs (server-to-server, webhooks), not just browser-facing ones. This is the field that drives the `trident` decision below. It is **not** the same as the i18n *audience* classification (customer-facing vs integration vs internal — see the [i18n spec](../surfaces/i18n/technical-spec.md) §1.5); keep the two axes distinct.
+- **`exposure`** (`"public"` | `"internal"`) — the **network-reachability** axis: is this app reachable from *outside* our network? `public` includes partner/integration APIs (server-to-server, webhooks), not just browser-facing ones. This is the field that drives the `trident` decision below. It is **not** the same as the i18n *audience* classification (customer-facing vs integration vs internal — see the i18n spec §1.5); keep the two axes distinct.
 - **`description`** — one-line human summary.
 
 Do **not** store the app *type* here — it's derived from the directory suffix (`*Api`/`*Web`/`*Js`/`*Py`/`*Go`), and duplicating it invites drift. Every app carries a `ubix.json`, including non-service apps like `UbixCli` (`internal`, no HTTP surface). The file is expected to grow additional fields over time (owner/team, health-probe path, etc.) — add them when a consumer needs them, not speculatively.
@@ -285,9 +303,7 @@ uBix Core uses **CalVer** (`YYYY.MM.MICRO`) — see the [Versioning section of t
 ## Related documentation
 
 - [complete-php-guide.md](complete-php-guide.md) — the PHP framework in depth (`php/Ubix`, validation, DI, repositories, controllers).
-- [complete-js-guide.md](complete-js-guide.md) — the JS side in depth (SvelteKit conventions, runes, load functions, hooks, server helpers, SSE endpoints, deployment).
-- [architecture-models-and-datatypes.md](architecture-models-and-datatypes.md) — Model pattern, DataType hierarchy, `markChanged` concurrency model.
-- [architecture-review-payloads-vs-dtos.md](architecture-review-payloads-vs-dtos.md) — why the Payload/DataType/DTO split exists instead of traditional DTOs.
+- [complete-js-guide.md](complete-js-guide.md) — the JS side in depth (React Router v8 route modules, loaders, state, server helpers, SSE endpoints, deployment).
 - [database.md](../standards/database.md) — DB conventions (naming, column standards, soft-FK rules); [migrations.md](../standards/migrations.md) — how schema changes land.
 - [unit-testing.md](../standards/unit-testing.md) — test conventions across PHP / JS / Python.
 - [complete-py-guide.md](complete-py-guide.md) — the Python (`*Py`) leg; [go-coding-guidelines.md](../standards/go-coding-guidelines.md) — the Go (`*Go`) leg.
@@ -295,7 +311,6 @@ uBix Core uses **CalVer** (`YYYY.MM.MICRO`) — see the [Versioning section of t
 - [js-code-review.md](../standards/js-code-review.md) — root-level JS review suite (Knip, CSpell, Prettier).
 - [peck-setup.md](../standards/peck-setup.md) — PHP spell checker setup.
 - [feature-test-system.md](feature-test-system.md) — planning-phase proposal for the Feature Tests system rewrite.
-- [hover-preview-latency.md](hover-preview-latency.md) — planning-phase discussion of hover-preview transport options (HLS vs H5Live vs WebRTC).
 
 ## Changes to this document
 

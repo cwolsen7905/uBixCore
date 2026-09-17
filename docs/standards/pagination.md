@@ -130,7 +130,7 @@ Making page-to-page navigation faster is a **synchronous, on-demand** concern �
 The biggest perceived-latency win, and it needs no backend infrastructure:
 
 - Make the pager **URL-driven** (`?offset=…&sort=…&order=…&search=…`) so pages are shareable / bookmarkable and the framework can preload them.
-- **Prefetch the next page** on idle, or on hover of "Next" (SvelteKit `preloadData`, or a background `fetch`), so the click is instant.
+- **Prefetch the next page** on idle, or on hover of "Next" (React Router prefetching, or a background `fetch`), so the click is instant.
 - **Cache visited pages** in a client-side `Map` keyed by `(offset, sort, order, search)` and serve back-navigation from it; invalidate the map whenever the sort or any filter changes.
 
 ### 7.2 Server-side cache-aside (only when a surface measurably needs it)

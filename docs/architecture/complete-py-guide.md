@@ -1,3 +1,9 @@
+> **Status: STALE — documents a `py/` tree this repository no longer has.** OSS-10 moved the
+> product apps out and `py/Ubix/` went with them; `complete-js-guide.md` and `monorepo.md` were
+> corrected for React on 2026-09-16 and this one was left because it is not JS. It needs the
+> same treatment: either rewritten as guidance for a host's `*Py` apps, or deleted if the
+> Python app type is not coming back.
+
 # Complete Python Guide
 
 How Python is structured in uBix Core — the **third language leg** alongside PHP (`app/*Api`/`*Web`) and JS (`app/*Js`). Python services are the `*Py` app type: small, typed, FastAPI-based services for work that wants the Python ecosystem (local-AI/ML, image processing, queue consumers) rather than the PHP request/response stack. `RoomSfwCheckerPy` is the first.
@@ -12,7 +18,7 @@ uBix Core runs one philosophy per language: a **shared framework package** named
 | Language | Shared lib | Namespace | Apps | Packaging | Image |
 | --- | --- | --- | --- | --- | --- |
 | PHP | `php/Ubix/` | `Ubix\` | `app/*Api`, `app/*Web` | composer autoload | one shared image, `APP_NAME` selects |
-| JS | `js/Ubix/` | `@ubixsys/ubixcore` | `app/*Js` | npm workspace | per-app node image |
+| JS | `ts/Ubix/` | `@ubixsys/ubixcore` | `app/*Js` | registry install | per-app node image |
 | **Python** | **`py/Ubix/`** | **`@ubixsys/ubixcore`** | **`app/*Py`** | editable install | per-app image on a shared base |
 
 The load-bearing idea is the same as everywhere else in uBix Core: **reuse lives at the seam.** Anything a second `*Py` app would want — app bootstrap, config loading, a Redis client, (later) bearer auth / structured logging / a uBix Core-API client — belongs in `py/Ubix` under the `@ubixsys/ubixcore` namespace, built as the reusable form on first use. App packages hold only what is genuinely app-specific.
@@ -31,7 +37,7 @@ from ubix import create_app, create_redis_client, load_env
 
 **`@ubixsys/ubixcore` ships its inline types** — `ubix/py.typed` (PEP 561) is packaged as `package-data`, so consumers get `@ubixsys/ubixcore`'s types under mypy `strict` with no stub package.
 
-**When you add a shared primitive:** put it in a module under `ubix/`, re-export it from `ubix/__init__.py`, add it to `__all__`, and give it a test in `py/Ubix/tests/`. That is the whole "extend the framework" ritual — the same instinct as adding a DataType/Service in `php/Ubix` or a component in `js/Ubix`.
+**When you add a shared primitive:** put it in a module under `ubix/`, re-export it from `ubix/__init__.py`, add it to `__all__`, and give it a test in `py/Ubix/tests/`. That is the whole "extend the framework" ritual — the same instinct as adding a DataType/Service in `php/Ubix` or a component in `ts/Ubix`.
 
 ## App structure — `app/<Name>Py`
 

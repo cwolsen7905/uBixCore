@@ -176,11 +176,11 @@ Four triggers, in order of how often they fire:
 | Trigger | When | SLA |
 |---|---|---|
 | **Weekly floor** | Every Monday (or first work day of the week), regardless of churn | Same day |
-| **Shared-framework alarm** | Any merge to `dev` touches `php/Ubix/*` or `js/Ubix/*` | Within 48h, all active project leads sync |
+| **Shared-framework alarm** | Any merge to `dev` touches `php/Ubix/*` or `ts/Ubix/*` | Within 48h, all active project leads sync |
 | **File-overlap signal** | Merge to `dev` touches a file this project also touches | Within 24h |
 | **Pre-PR mandatory** | Before opening the project → `dev` PR | Always — non-negotiable |
 
-The shared-framework and file-overlap signals can be detected mechanically with `git log dev --stat --since="<last sync>"` — grep for `php/Ubix/`, `js/Ubix/`, or the specific paths the project touches.
+The shared-framework and file-overlap signals can be detected mechanically with `git log dev --stat --since="<last sync>"` — grep for `php/Ubix/`, `ts/Ubix/`, or the specific paths the project touches.
 
 ### Heads-up norm for structural changes
 
@@ -240,7 +240,7 @@ Because all worktrees share one `.git`, the branch topology, the [Core Rule](#th
 Concurrent agents can't feel a Monday sync or notice a peer editing the same file. That awareness has to be written down. Every repo with concurrent agent sessions keeps a root **`AGENTS-COORD.md`** — the living coordination contract, read before branching, before editing a shared file, and before merging to `dev`. It carries three things:
 
 - **Lane table** — one row per agent: role/scope + owned branch prefix. A new agent adds its row and claims a distinct prefix *before* touching anything.
-- **Path ownership** — which paths each lane edits freely, plus the shared-file set that must be claimed in the log first: root `CHANGELOG.md`, `README.md`, `CLAUDE.md`, and the framework trees `php/Ubix/*` / `js/Ubix/*`.
+- **Path ownership** — which paths each lane edits freely, plus the shared-file set that must be claimed in the log first: root `CHANGELOG.md`, `README.md`, `CLAUDE.md`, and the framework trees `php/Ubix/*` / `ts/Ubix/*`.
 - **Append-only live log** — timestamped claims and landing announcements; never rewrite another agent's entries.
 
 **The live file is untracked — per-sandbox state, never pushed (decision: 2026-07-30).** The lane table and log coordinate the agents of *one* sandbox's checkout; on another sandbox they are noise, and committing them dragged session state through cross-lane merge races that repeatedly corrupted log entries on origin. The *contract* is versioned as the committed **`AGENTS-COORD.template.md`**; a fresh sandbox seeds its live copy once with `cp AGENTS-COORD.template.md AGENTS-COORD.md` (the file is `.gitignore`d). Consequences: the live file is no longer in the shared-file claim set, and one lane's coordination edits can never trip another lane's push gate.
@@ -252,7 +252,7 @@ Concurrent agents can't feel a Monday sync or notice a peer editing the same fil
 The common case: two agents own two different project branches. The topology and the [Core Rule](#the-core-rule) are unchanged — each project branch merges in from `dev`, each agent rebases its own feature branch onto its project branch. What concurrency *adds*:
 
 - **Separate worktrees**, one per agent (the physical rule above).
-- **The collision set becomes explicit rather than felt.** For two humans it's ambient; for agents it must be enumerated in `AGENTS-COORD.md`: the framework trees (`php/Ubix/*`, `js/Ubix/*`), the per-app registration files that *every* feature appends to — `app/<App>/src/Routes.php`, `app/<App>/src/Dependencies.php` — and the root shared files. Claim them in the log before editing; on a merge conflict the resolution is almost always **keep both sides** (two features each added their own route / DI binding / CHANGELOG bullet).
+- **The collision set becomes explicit rather than felt.** For two humans it's ambient; for agents it must be enumerated in `AGENTS-COORD.md`: the framework trees (`php/Ubix/*`, `ts/Ubix/*`), the per-app registration files that *every* feature appends to — `app/<App>/src/Routes.php`, `app/<App>/src/Dependencies.php` — and the root shared files. Claim them in the log before editing; on a merge conflict the resolution is almost always **keep both sides** (two features each added their own route / DI binding / CHANGELOG bullet).
 - **The merge-to-`dev` window is serialized** — see below.
 
 ### One land path: MR-only `dev` (2026-07-30)
@@ -429,11 +429,11 @@ This document codifies the workflow as norms. The next iteration of this standar
 | ~~One worktree per concurrent session~~ | **Shipped (v0.5)** as `ubix code:worktree <lane> <slice>` — creates `../ubixcore-worktrees/<lane>` off `origin/<trunk>` with the correctly-named branch, verifies the lane is claimed in `AGENTS-COORD.md`, and prunes stale worktrees. |
 | Unbypassable `code:review` gate on `dev` | The committed `.githooks/pre-push` gate (shipped in v0.4) is client-side and `--no-verify`-bypassable. When unsupervised agents run, promote it to **server-side branch protection** on `dev` requiring the `code:review` status check — enforced by the forge, not by a local hook. |
 | Pre-PR sync mandatory | `ubix branch:check` (or a pre-push hook) — refuses to push if the branch is behind the project branch or `dev`. |
-| Weekly + file-overlap + framework-alarm sync triggers | `ubix branch:sync-status` — for each active project branch, reports whether it's overdue (weekly floor breached), whether `dev` touched `php/Ubix/*` or `js/Ubix/*` since last sync, and whether `dev` touched any file this project also touches. |
+| Weekly + file-overlap + framework-alarm sync triggers | `ubix branch:sync-status` — for each active project branch, reports whether it's overdue (weekly floor breached), whether `dev` touched `php/Ubix/*` or `ts/Ubix/*` since last sync, and whether `dev` touched any file this project also touches. |
 | Docs / README / CHANGELOG in-sync gate | `ubix code:review --changelog-check` — flags PRs that change user-visible behavior without touching `CHANGELOG.md` or the relevant `docs/` page. |
 | Migration gate | Existing `ubix migrations:*` commands extended with a PR-gate mode that fails if new migrations don't conform to [`docs/standards/migrations.md`](migrations.md). |
 | No unresolved TBDs in touched standards docs | `ubix code:review` extension — scans touched `docs/standards/*` files for `**TBD**` markers and fails if any remain unresolved or unticketed. |
-| Heads-up norm for structural changes | `ubix branch:notify-structural` — detects when a PR touches `php/Ubix/*` or `js/Ubix/*` and prompts the author to post in the team channel before merging. |
+| Heads-up norm for structural changes | `ubix branch:notify-structural` — detects when a PR touches `php/Ubix/*` or `ts/Ubix/*` and prompts the author to post in the team channel before merging. |
 
 Until those land, the gates above are enforced by reviewer discipline + PR-template checklists.
 
@@ -472,7 +472,7 @@ Initial decisions resolved during 2026-05-18 review:
 3. **Project → `dev` merge style** — squash merge; project branch kept around at least one release cycle for granular history.
 4. **Feature PR gate** — CI green + 1 reviewer + up-to-date + conversations resolved + linked ticket.
 5. **Project PR gate** — feature-gate carryovers + project lead + 1 other reviewer + branch up-to-date with `dev` + docs/README/CHANGELOG in sync + migration check + no unresolved TBDs in touched standards + linked release/milestone.
-6. **Sync triggers** — weekly floor + shared-framework alarm (`php/Ubix/*`, `js/Ubix/*`) + file-overlap signal + mandatory pre-PR sync; project-lead heads-up norm for structural changes.
+6. **Sync triggers** — weekly floor + shared-framework alarm (`php/Ubix/*`, `ts/Ubix/*`) + file-overlap signal + mandatory pre-PR sync; project-lead heads-up norm for structural changes.
 
 ## Version History
 
