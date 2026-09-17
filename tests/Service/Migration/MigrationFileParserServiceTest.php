@@ -17,6 +17,7 @@ use Ubix\Tests\UbixConcreteClassOrEnumTestCaseInterface as IUbixConcreteClassOrE
  *
  * @coversDefaultClass \Ubix\Service\Migration\MigrationFileParserService
  * @coversDefaultClass \Ubis\Service\Migration\MigrationFileParserService
+ * @see                \Ubix\Tests\Tests\Service\Migration\MigrationFileParserServiceTestTest PHPUnit test case
  */
 final class MigrationFileParserServiceTest extends UbixConcreteClassOrEnumTestCase implements IUbixConcreteClassOrEnumTestCase
 {
@@ -41,14 +42,14 @@ final class MigrationFileParserServiceTest extends UbixConcreteClassOrEnumTestCa
      */
     public function testParseSucceedsForCleanMigration(): void
     {
-        $body   = 'CREATE TABLE VSCASH.Foo (id INT PRIMARY KEY);';
+        $body   = 'CREATE TABLE SHOP.Foo (id INT PRIMARY KEY);';
         $path   = $this->writeFixture(self::MIGRATION_ID, $body, null);
         $parser = $this->buildParser();
 
         $migration = $parser->parse($path);
 
         $this->assertSame(self::MIGRATION_ID, $migration->id);
-        $this->assertSame('VSCASH', $migration->targetDatabase);
+        $this->assertSame('SHOP', $migration->targetDatabase);
         $this->assertNull($migration->destructiveReason);
     }
 
@@ -61,7 +62,7 @@ final class MigrationFileParserServiceTest extends UbixConcreteClassOrEnumTestCa
      */
     public function testParseAcceptsDestructiveMigrationWithHeader(): void
     {
-        $body   = 'DROP TABLE VSCASH._deprecated_Old;';
+        $body   = 'DROP TABLE SHOP._deprecated_Old;';
         $reason = 'Verified zero reads against legacy + Ubix for 30 days.';
         $path   = $this->writeFixture(self::MIGRATION_ID, $body, $reason);
         $parser = $this->buildParser();
@@ -81,7 +82,7 @@ final class MigrationFileParserServiceTest extends UbixConcreteClassOrEnumTestCa
      */
     public function testParseRejectsDestructiveMigrationMissingHeader(): void
     {
-        $body   = 'DROP TABLE VSCASH._deprecated_Old;';
+        $body   = 'DROP TABLE SHOP._deprecated_Old;';
         $path   = $this->writeFixture(self::MIGRATION_ID, $body, null);
         $parser = $this->buildParser();
 
@@ -100,7 +101,7 @@ final class MigrationFileParserServiceTest extends UbixConcreteClassOrEnumTestCa
      */
     public function testParseAcceptsBodyWhereDestructiveKeywordIsCommentedOut(): void
     {
-        $body   = "-- We will eventually DROP TABLE Foo, but not yet.\nCREATE TABLE VSCASH.Foo (id INT PRIMARY KEY);";
+        $body   = "-- We will eventually DROP TABLE Foo, but not yet.\nCREATE TABLE SHOP.Foo (id INT PRIMARY KEY);";
         $path   = $this->writeFixture(self::MIGRATION_ID, $body, null);
         $parser = $this->buildParser();
 
@@ -123,7 +124,7 @@ final class MigrationFileParserServiceTest extends UbixConcreteClassOrEnumTestCa
      */
     public function testParseNormalizesCrlfLineEndings(): void
     {
-        $body         = "ALTER TABLE VSCASH.Foo\n    ADD bar VARCHAR(22) DEFAULT NULL;";
+        $body         = "ALTER TABLE SHOP.Foo\n    ADD bar VARCHAR(22) DEFAULT NULL;";
         $expectedBody = $body;
 
         $lfPath   = $this->writeFixture(self::MIGRATION_ID, $body, null);
@@ -151,7 +152,7 @@ final class MigrationFileParserServiceTest extends UbixConcreteClassOrEnumTestCa
     public function testParseCapturesRequiresDbaHeader(): void
     {
         $reason = 'Full-table rewrite on a hot table; run via pt-osc with throttling.';
-        $path   = $this->writeFixtureWithRequiresDba(self::MIGRATION_ID, 'CREATE TABLE VSCASH.Foo (id INT PRIMARY KEY);', null, $reason);
+        $path   = $this->writeFixtureWithRequiresDba(self::MIGRATION_ID, 'CREATE TABLE SHOP.Foo (id INT PRIMARY KEY);', null, $reason);
         $parser = $this->buildParser();
 
         $migration = $parser->parse($path);
@@ -171,7 +172,7 @@ final class MigrationFileParserServiceTest extends UbixConcreteClassOrEnumTestCa
     {
         $destructive = 'Dropping the legacy column after a full rewrite.';
         $dba         = 'Rewrite is online-DDL; coordinate with #databases.';
-        $path        = $this->writeFixtureWithRequiresDba(self::MIGRATION_ID, 'ALTER TABLE VSCASH.Foo DROP COLUMN bar;', $destructive, $dba);
+        $path        = $this->writeFixtureWithRequiresDba(self::MIGRATION_ID, 'ALTER TABLE SHOP.Foo DROP COLUMN bar;', $destructive, $dba);
         $parser      = $this->buildParser();
 
         $migration = $parser->parse($path);
@@ -197,7 +198,7 @@ final class MigrationFileParserServiceTest extends UbixConcreteClassOrEnumTestCa
             mkdir($dir, 0o777, true);
         }
         $path = $dir . '/' . $id . '.sql';
-        file_put_contents($path, '-- Migration: ' . $id . "\n-- Database: VSCASH\n-- Description: Guard fixture.\n-- Author: Test\n\nALTER TABLE VSCASH.Big_Existing ADD COLUMN x int;\n");
+        file_put_contents($path, '-- Migration: ' . $id . "\n-- Database: SHOP\n-- Description: Guard fixture.\n-- Author: Test\n\nALTER TABLE SHOP.Big_Existing ADD COLUMN x int;\n");
 
         $this->expectException(InvalidArgumentException::class);
         $this->expectExceptionMessageMatches('/AlterAck/');
@@ -221,7 +222,7 @@ final class MigrationFileParserServiceTest extends UbixConcreteClassOrEnumTestCa
             mkdir($dir, 0o777, true);
         }
         $path = $dir . '/' . $id . '.sql';
-        file_put_contents($path, '-- Migration: ' . $id . "\n-- Database: VSCASH\n-- Description: Guard fixture.\n-- Author: Test\n-- AlterAck: tiny lookup table, seconds to alter\n\nALTER TABLE VSCASH.Tiny_Lookup ADD COLUMN x int;\n");
+        file_put_contents($path, '-- Migration: ' . $id . "\n-- Database: SHOP\n-- Description: Guard fixture.\n-- Author: Test\n-- AlterAck: tiny lookup table, seconds to alter\n\nALTER TABLE SHOP.Tiny_Lookup ADD COLUMN x int;\n");
 
         $migration = $this->buildParser()->parse($path);
 
@@ -249,13 +250,13 @@ final class MigrationFileParserServiceTest extends UbixConcreteClassOrEnumTestCa
         }
         $path    = $dir . '/' . $id . '.sql';
         $header  = '-- Migration: ' . $id . "\n";
-        $header .= "-- Database: VSCASH\n";
+        $header .= "-- Database: SHOP\n";
         $header .= "-- Description: Guard fixture.\n";
         $header .= "-- Author: Test\n";
         $header .= "-- RequiresDBA: Applied out-of-band by the MariaDB team, then recorded per tier with\n";
         $header .= "--              migrate:reconcile. The body below matches EXACTLY what they will run.\n";
         $header .= "--              Not pipeline-safe: the index build forces INPLACE at prod scale.\n";
-        file_put_contents($path, $header . "\nCREATE TABLE VSCASH.Foo (id INT PRIMARY KEY);\n");
+        file_put_contents($path, $header . "\nCREATE TABLE SHOP.Foo (id INT PRIMARY KEY);\n");
 
         $migration = $this->buildParser()->parse($path);
 
@@ -283,7 +284,7 @@ final class MigrationFileParserServiceTest extends UbixConcreteClassOrEnumTestCa
     /**
      * Write a fixture migration file in a per-process temp directory
      * and return its absolute path. The header always declares
-     * `Database: VSCASH` and `Author: Test`.
+     * `Database: SHOP` and `Author: Test`.
      *
      * @param string  $id     Migration ID — also the filename without `.sql`
      * @param string  $body   SQL body
@@ -299,7 +300,7 @@ final class MigrationFileParserServiceTest extends UbixConcreteClassOrEnumTestCa
         }
 
         $header  = '-- Migration: ' . $id . "\n";
-        $header .= "-- Database: VSCASH\n";
+        $header .= "-- Database: SHOP\n";
         $header .= "-- Description: Slice 1.5 fixture.\n";
         $header .= "-- Author: Test\n";
         if ($reason !== null) {
@@ -329,7 +330,7 @@ final class MigrationFileParserServiceTest extends UbixConcreteClassOrEnumTestCa
         }
 
         $header  = '-- Migration: ' . $id . "\r\n";
-        $header .= "-- Database: VSCASH\r\n";
+        $header .= "-- Database: SHOP\r\n";
         $header .= "-- Description: Slice 1.5 fixture.\r\n";
         $header .= "-- Author: Test\r\n";
         if ($reason !== null) {
@@ -361,7 +362,7 @@ final class MigrationFileParserServiceTest extends UbixConcreteClassOrEnumTestCa
         }
 
         $header  = '-- Migration: ' . $id . "\n";
-        $header .= "-- Database: VSCASH\n";
+        $header .= "-- Database: SHOP\n";
         $header .= "-- Description: Slice 1.5 fixture.\n";
         $header .= "-- Author: Test\n";
         if ($destructiveReason !== null) {

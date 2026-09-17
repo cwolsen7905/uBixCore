@@ -77,6 +77,6 @@ final class NormalizedIpAddressMiddleware implements Middleware
          */
         $serverParams = $request->getServerParams();
 
-        return filter_var($serverParams['REMOTE_ADDR'] ?? null, FILTER_VALIDATE_IP) ? $serverParams['REMOTE_ADDR'] : null; // NOT_IMPLEMENTED: should we throw an exception rather than setting a null value if no IP address is found? (question for Chris)
+        return filter_var($serverParams['REMOTE_ADDR'] ?? null, FILTER_VALIDATE_IP) ? $serverParams['REMOTE_ADDR'] : null; // TEMPORARY: decide whether a missing IP address should throw instead of yielding null
     }
 }

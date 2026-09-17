@@ -22,6 +22,7 @@ use Ubix\Tests\UbixConcreteClassOrEnumTestCaseInterface as IUbixConcreteClassOrE
  *
  * @coversDefaultClass \Ubix\Service\SlackService
  * @coversDefaultClass \Ubis\Service\SlackService
+ * @see                \Ubix\Tests\Tests\Service\SlackServiceTestTest PHPUnit test case
  */
 final class SlackServiceTest extends UbixConcreteClassOrEnumTestCase implements IUbixConcreteClassOrEnumTestCase
 {
@@ -150,6 +151,7 @@ final class SlackServiceTest extends UbixConcreteClassOrEnumTestCase implements 
             $cache ?? $this->createStub(SimpleCache::class),
             new JsonService($logger),
             self::API_ENDPOINT,
+            [self::WHITELISTED_CHANNEL],
         );
     }
 }

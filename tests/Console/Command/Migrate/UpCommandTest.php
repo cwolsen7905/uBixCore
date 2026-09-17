@@ -16,6 +16,7 @@ use Ubix\Tests\UbixConcreteClassOrEnumTestCaseInterface as IUbixConcreteClassOrE
  *
  * @coversDefaultClass \Ubix\Console\Command\Migrate\UpCommand
  * @coversDefaultClass \Ubis\Console\Command\Migrate\UpCommand
+ * @see                \Ubix\Tests\Tests\Console\Command\Migrate\UpCommandTestTest PHPUnit test case
  */
 final class UpCommandTest extends UbixConcreteClassOrEnumTestCase implements IUbixConcreteClassOrEnumTestCase
 {
@@ -56,8 +57,8 @@ final class UpCommandTest extends UbixConcreteClassOrEnumTestCase implements IUb
      */
     public function testPartitionDamsOnlySameDatabaseBehindHold(): void
     {
-        $held      = $this->migrationFile(id: '20260730000001_alter_big_hot_table', database: 'ntl_db', requiresDbaReason: 'Millions of rows; runs out-of-band.');
-        $sameDb    = $this->migrationFile(id: '20260730000002_add_index_to_big_hot_table', database: 'ntl_db');
+        $held      = $this->migrationFile(id: '20260730000001_alter_big_hot_table', database: 'legacy_db', requiresDbaReason: 'Millions of rows; runs out-of-band.');
+        $sameDb    = $this->migrationFile(id: '20260730000002_add_index_to_big_hot_table', database: 'legacy_db');
         $otherDb   = $this->migrationFile(id: '20260730000003_create_events_table', database: 'SYSTEMS');
         $partition = $this->invokePartitionPending([$held, $sameDb, $otherDb], Env::DEV, false);
 
@@ -77,7 +78,7 @@ final class UpCommandTest extends UbixConcreteClassOrEnumTestCase implements IUb
      */
     public function testPartitionHoldsUnacknowledgedDestructiveOnStagingAndProd(): void
     {
-        $file = $this->migrationFile(id: '20260730000004_drop_legacy_table', database: 'VSCASH', destructiveReason: 'Drops a soft-deleted table.');
+        $file = $this->migrationFile(id: '20260730000004_drop_legacy_table', database: 'SHOP', destructiveReason: 'Drops a soft-deleted table.');
 
         foreach ([Env::STAGING, Env::PROD] as $environment) {
             $this->assertSame([$file], $this->invokePartitionPending([$file], $environment, false)['destructiveHeld']);
@@ -98,7 +99,7 @@ final class UpCommandTest extends UbixConcreteClassOrEnumTestCase implements IUb
      */
     public function testPartitionRequiresDbaAppliesInlineOnTestTier(): void
     {
-        $file      = $this->migrationFile(id: '20260730000001_alter_big_hot_table', database: 'ntl_db', requiresDbaReason: 'Millions of rows; runs out-of-band.');
+        $file      = $this->migrationFile(id: '20260730000001_alter_big_hot_table', database: 'legacy_db', requiresDbaReason: 'Millions of rows; runs out-of-band.');
         $partition = $this->invokePartitionPending([$file], Env::TEST, false);
 
         $this->assertSame([$file], $partition['applicable']);
@@ -116,7 +117,7 @@ final class UpCommandTest extends UbixConcreteClassOrEnumTestCase implements IUb
     {
         $file = $this->migrationFile(
             id:                '20260730000001_alter_big_hot_table',
-            database:          'ntl_db',
+            database:          'legacy_db',
             requiresDbaReason: 'Millions of rows; runs out-of-band.',
             destructiveReason: 'Also drops a column.',
         );

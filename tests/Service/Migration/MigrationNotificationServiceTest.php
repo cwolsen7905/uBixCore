@@ -24,6 +24,7 @@ use Ubix\Tests\UbixConcreteClassOrEnumTestCaseInterface as IUbixConcreteClassOrE
  *
  * @coversDefaultClass \Ubix\Service\Migration\MigrationNotificationService
  * @coversDefaultClass \Ubis\Service\Migration\MigrationNotificationService
+ * @see                \Ubix\Tests\Tests\Service\Migration\MigrationNotificationServiceTestTest PHPUnit test case
  */
 final class MigrationNotificationServiceTest extends UbixConcreteClassOrEnumTestCase implements IUbixConcreteClassOrEnumTestCase
 {
@@ -57,8 +58,8 @@ final class MigrationNotificationServiceTest extends UbixConcreteClassOrEnumTest
     public function testNotifyAppliedPostsHeaderBulletsAndFooter(): void
     {
         $applied = [
-            $this->migration('2026_01_01_000000_create_widgets', 'flirt4free', 'cli:chris'),
-            $this->migration('2026_01_02_000000_alter_widgets', 'SYSTEMS', 'cli:chris'),
+            $this->migration('2026_01_01_000000_create_widgets', 'content_db', 'cli:jane'),
+            $this->migration('2026_01_02_000000_alter_widgets', 'SYSTEMS', 'cli:jane'),
         ];
 
         $this->service($this->capturingHttpClient())->notifyApplied(Env::DEV, $applied);
@@ -68,9 +69,9 @@ final class MigrationNotificationServiceTest extends UbixConcreteClassOrEnumTest
 
         $expected = implode(PHP_EOL, [
             '*Migrations applied — DEV* (2)',
-            '• 2026_01_01_000000_create_widgets (flirt4free)',
+            '• 2026_01_01_000000_create_widgets (content_db)',
             '• 2026_01_02_000000_alter_widgets (SYSTEMS)',
-            'by `cli:chris`',
+            'by `cli:jane`',
         ]);
         $this->assertSame($expected, $message);
     }
@@ -86,7 +87,7 @@ final class MigrationNotificationServiceTest extends UbixConcreteClassOrEnumTest
     {
         $this->service($this->capturingHttpClient())->notifyApplied(
             Env::SANDBOX,
-            [$this->migration('2026_01_01_000000_create_widgets', 'flirt4free', 'cli:chris')],
+            [$this->migration('2026_01_01_000000_create_widgets', 'content_db', 'cli:jane')],
         );
 
         $this->assertSame([], $this->capturedBodies);
@@ -103,7 +104,7 @@ final class MigrationNotificationServiceTest extends UbixConcreteClassOrEnumTest
     {
         $this->service($this->capturingHttpClient())->notifyApplied(
             Env::TEST,
-            [$this->migration('2026_01_01_000000_create_widgets', 'flirt4free', 'cli:chris')],
+            [$this->migration('2026_01_01_000000_create_widgets', 'content_db', 'cli:jane')],
         );
 
         $this->assertSame([], $this->capturedBodies);
@@ -142,7 +143,7 @@ final class MigrationNotificationServiceTest extends UbixConcreteClassOrEnumTest
         $service = $this->service($httpClient, $logger);
         $service->notifyApplied(
             Env::PROD,
-            [$this->migration('2026_01_01_000000_create_widgets', 'flirt4free', 'cli:chris')],
+            [$this->migration('2026_01_01_000000_create_widgets', 'content_db', 'cli:jane')],
         );
 
         $this->assertSame([], $this->capturedBodies);
@@ -158,7 +159,7 @@ final class MigrationNotificationServiceTest extends UbixConcreteClassOrEnumTest
      */
     public function testNotifyReconciledPostsReconciledMessage(): void
     {
-        $reconciled = $this->migration('2026_01_03_000000_hotfix_index', 'VSCASH', 'manual:chris+destructive-ack');
+        $reconciled = $this->migration('2026_01_03_000000_hotfix_index', 'SHOP', 'manual:jane+destructive-ack');
 
         $this->service($this->capturingHttpClient())->notifyReconciled(Env::STAGING, $reconciled);
 
@@ -167,8 +168,8 @@ final class MigrationNotificationServiceTest extends UbixConcreteClassOrEnumTest
 
         $expected = implode(PHP_EOL, [
             '*Migration reconciled — STAGING* (recorded as applied without running)',
-            '• 2026_01_03_000000_hotfix_index (VSCASH)',
-            'by `manual:chris+destructive-ack`',
+            '• 2026_01_03_000000_hotfix_index (SHOP)',
+            'by `manual:jane+destructive-ack`',
         ]);
         $this->assertSame($expected, $message);
     }
@@ -184,7 +185,7 @@ final class MigrationNotificationServiceTest extends UbixConcreteClassOrEnumTest
     {
         $this->service($this->capturingHttpClient())->notifyReconciled(
             Env::SANDBOX,
-            $this->migration('2026_01_03_000000_hotfix_index', 'VSCASH', 'manual:chris+destructive-ack'),
+            $this->migration('2026_01_03_000000_hotfix_index', 'SHOP', 'manual:jane+destructive-ack'),
         );
 
         $this->assertSame([], $this->capturedBodies);
@@ -276,6 +277,7 @@ final class MigrationNotificationServiceTest extends UbixConcreteClassOrEnumTest
             $this->createStub(SimpleCache::class),
             new JsonService($this->createStub(Logger::class)),
             self::API_ENDPOINT,
+            ['databases'],
         );
 
         return new MigrationNotificationService($logger, $slackService);

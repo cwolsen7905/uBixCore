@@ -31,7 +31,7 @@ interface SchemaMigrationWriterInterface
      * @param string $targetDatabase Target database from the file's `Database:` header
      * @param string $description    Description from the file's `Description:` header
      * @param string $checksum       SHA-256 hex digest of the body bytes at apply time
-     * @param string $appliedBy      Actor identifier — see standard §3 for shape (e.g. `cli:olsenchristopher`, `ci:deploy-prod-…`, `manual:<username>+destructive-ack`)
+     * @param string $appliedBy      Actor identifier — see standard §3 for shape (e.g. `cli:jdoe`, `ci:deploy-prod-…`, `manual:<username>+destructive-ack`)
      * @param int    $durationMs     Wall-clock duration of the apply, in milliseconds
      *
      * @return void

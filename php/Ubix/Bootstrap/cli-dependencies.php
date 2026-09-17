@@ -21,6 +21,7 @@ use Ubix\Repository\SchemaMigration\SchemaMigrationReaderInterface as SchemaMigr
 use Ubix\Repository\SchemaMigration\SchemaMigrationSqlRepository;
 use Ubix\Repository\SchemaMigration\SchemaMigrationWriterInterface as SchemaMigrationWriter;
 use Ubix\Service\Migration\MigrationFileScannerService;
+use Ubix\Service\Migration\MigrationNotificationService;
 use Ubix\Service\ProjectRootService;
 use Ubix\Service\SlackService;
 use Ubix\Service\Sql\MigrationPdoSqlService;
@@ -73,7 +74,14 @@ return static function (): Container {
         SchemaMigrationSqlRepository::class => autowire(SchemaMigrationSqlRepository::class)->constructorParameter('sqlService', get(MigrationPdoSqlService::class)),
         SchemaMigrationReader::class        => get(SchemaMigrationSqlRepository::class),
         SchemaMigrationWriter::class        => get(SchemaMigrationSqlRepository::class),
-        SlackService::class                 => autowire()->constructorParameter('apiEndpoint', (string) getenv('SLACK_API_ENDPOINT')),
+        SlackService::class                 => autowire()
+            ->constructorParameter('apiEndpoint', (string) getenv('SLACK_API_ENDPOINT'))
+            ->constructorParameter('channelAllowlist', array_values(array_unique(array_filter([
+                ...array_map('trim', explode(',', (string) getenv('SLACK_CHANNEL_ALLOWLIST'))),
+                ltrim(getenv('SLACK_MIGRATION_CHANNEL') ?: '#databases', '#'), // Always allow the migration notifier's own channel
+            ])))),
+        MigrationNotificationService::class => autowire()
+            ->constructorParameter('channel', getenv('SLACK_MIGRATION_CHANNEL') ?: '#databases'),
     ]);
 
     return $container->build();

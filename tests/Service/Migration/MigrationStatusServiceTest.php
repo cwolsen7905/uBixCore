@@ -20,6 +20,7 @@ use Ubix\Tests\UbixConcreteClassOrEnumTestCaseInterface as IUbixConcreteClassOrE
  *
  * @coversDefaultClass \Ubix\Service\Migration\MigrationStatusService
  * @coversDefaultClass \Ubis\Service\Migration\MigrationStatusService
+ * @see                \Ubix\Tests\Tests\Service\Migration\MigrationStatusServiceTestTest PHPUnit test case
  */
 final class MigrationStatusServiceTest extends UbixConcreteClassOrEnumTestCase implements IUbixConcreteClassOrEnumTestCase
 {
@@ -178,16 +179,16 @@ final class MigrationStatusServiceTest extends UbixConcreteClassOrEnumTestCase i
         );
         $this->writeMigrationFile(
             self::OTHER_DATABASE_MIGRATION_ID,
-            'VSCASH',
-            'Vscash table',
-            'CREATE TABLE VSCASH.Ubix_Status_Other_90150005 (id INT);',
+            'SHOP',
+            'Shop table',
+            'CREATE TABLE SHOP.Ubix_Status_Other_90150005 (id INT);',
         );
 
-        $entries = $this->service()->getStatus('VSCASH');
+        $entries = $this->service()->getStatus('SHOP');
 
         $this->assertCount(1, $entries);
         $this->assertSame(self::OTHER_DATABASE_MIGRATION_ID, $entries[0]->id);
-        $this->assertSame('VSCASH', $entries[0]->targetDatabase);
+        $this->assertSame('SHOP', $entries[0]->targetDatabase);
     }
 
     /**

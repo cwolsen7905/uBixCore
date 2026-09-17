@@ -16,6 +16,7 @@ use Ubix\Tests\UbixConcreteClassOrEnumTestCaseInterface as IUbixConcreteClassOrE
  *
  * @coversDefaultClass \Ubix\Service\Migration\MigrationConnectionTargetService
  * @coversDefaultClass \Ubis\Service\Migration\MigrationConnectionTargetService
+ * @see                \Ubix\Tests\Tests\Service\Migration\MigrationConnectionTargetServiceTestTest PHPUnit test case
  */
 final class MigrationConnectionTargetServiceTest extends UbixConcreteClassOrEnumTestCase implements IUbixConcreteClassOrEnumTestCase
 {
@@ -26,7 +27,7 @@ final class MigrationConnectionTargetServiceTest extends UbixConcreteClassOrEnum
      * suite. The critical one is `DATABASE_PREFIX`: it is read live by
      * `UbixDatabase::databaseName()` in every later repository test's
      * seed SQL, so leaving it unset here would make those tests query the
-     * unprefixed schema (`ntl_db` instead of `t<pipeline_id>_ntl_db`).
+     * unprefixed schema (`legacy_db` instead of `t<pipeline_id>_legacy_db`).
      */
     private const PRESERVED_ENV_KEYS = [
         'DATABASE_PREFIX',
@@ -94,7 +95,7 @@ final class MigrationConnectionTargetServiceTest extends UbixConcreteClassOrEnum
      * string that passes the `^[A-Za-z0-9_]+$` validation
      * `AbstractMigrationCommand::applyTargetOptions()` applies to
      * `--prefix`. The whole point of the auto-derive is that a
-     * username with a hyphen (`christopher-olsen`) can't get rejected
+     * username with a hyphen (`jane-doe`) can't get rejected
      * by the validation, so the contract under test is "the result
      * always matches the prefix grammar" — the inner username value
      * itself is hostile to assert against because `get_current_user()`
@@ -300,8 +301,8 @@ final class MigrationConnectionTargetServiceTest extends UbixConcreteClassOrEnum
     {
         $service = new MigrationConnectionTargetService(new NullLogger());
 
-        putenv('SANDBOX_MYSQL_WRITE_DATABASE=ntl_db');
-        $this->assertSame('ntl_db', $service->getTargetDatabase(Env::SANDBOX));
+        putenv('SANDBOX_MYSQL_WRITE_DATABASE=legacy_db');
+        $this->assertSame('legacy_db', $service->getTargetDatabase(Env::SANDBOX));
 
         // Clean up.
         putenv('SANDBOX_MYSQL_WRITE_DATABASE');
@@ -323,7 +324,7 @@ final class MigrationConnectionTargetServiceTest extends UbixConcreteClassOrEnum
         putenv('SANDBOX_MYSQL_WRITE_DATABASE');
         $this->assertNull($service->getTargetDatabase(Env::SANDBOX));
 
-        putenv('SANDBOX_MYSQL_WRITE_DATABASE=ntl_db');
+        putenv('SANDBOX_MYSQL_WRITE_DATABASE=legacy_db');
         $this->assertNull($service->getTargetDatabase(Env::DEV));
         $this->assertNull($service->getTargetDatabase(Env::STAGING));
         $this->assertNull($service->getTargetDatabase(Env::PROD));
@@ -511,7 +512,7 @@ final class MigrationConnectionTargetServiceTest extends UbixConcreteClassOrEnum
             port:                '30306',
             writeUsername:       'root',
             writePassword:       'SandboxTestPassword1234',
-            writeDatabase:       'ntl_db',
+            writeDatabase:       'legacy_db',
             clearMigrationCreds: true,
             username:            null,
             password:            null,
@@ -524,12 +525,12 @@ final class MigrationConnectionTargetServiceTest extends UbixConcreteClassOrEnum
         $this->assertSame('30306', getenv('MYSQL_WRITE_PORT'));
         $this->assertSame('root', getenv('MYSQL_WRITE_USERNAME'));
         $this->assertSame('SandboxTestPassword1234', getenv('MYSQL_WRITE_PASSWORD'));
-        $this->assertSame('ntl_db', getenv('MYSQL_WRITE_DATABASE'));
+        $this->assertSame('legacy_db', getenv('MYSQL_WRITE_DATABASE'));
         $this->assertFalse(getenv('MYSQL_MIGRATION_USERNAME'));
         $this->assertFalse(getenv('MYSQL_MIGRATION_PASSWORD'));
 
         $banner = $output->fetch();
-        $this->assertStringContainsString('MYSQL_WRITE_DATABASE → ntl_db (per-tier)', $banner);
+        $this->assertStringContainsString('MYSQL_WRITE_DATABASE → legacy_db (per-tier)', $banner);
         $this->assertStringContainsString('MYSQL_MIGRATION_USERNAME → (cleared for sandbox)', $banner);
         $this->assertStringContainsString('MYSQL_MIGRATION_PASSWORD → (cleared for sandbox)', $banner);
 
@@ -568,7 +569,7 @@ final class MigrationConnectionTargetServiceTest extends UbixConcreteClassOrEnum
             port:                '30306',
             writeUsername:       'root',
             writePassword:       'SandboxTestPassword1234',
-            writeDatabase:       'ntl_db',
+            writeDatabase:       'legacy_db',
             clearMigrationCreds: true,
             username:            'dba_user',
             password:            'prompt_pw',
@@ -614,7 +615,7 @@ final class MigrationConnectionTargetServiceTest extends UbixConcreteClassOrEnum
             port:                '30306',
             writeUsername:       'root',
             writePassword:       'SandboxTestPassword1234',
-            writeDatabase:       'ntl_db',
+            writeDatabase:       'legacy_db',
             clearMigrationCreds: true,
             username:            null,
             password:            null,

@@ -126,7 +126,7 @@ final class MigrationConnectionTargetService
      * `--prefix=^[A-Za-z0-9_]+$` validation. Mirrors the sanitisation
      * in `tests/AbstractTestCase.php` so the prefix the operator
      * bootstraps from the CLI matches the prefix `phpunit` looks for
-     * at query time — usernames with hyphens (e.g. `christopher-olsen`)
+     * at query time — usernames with hyphens (e.g. `jane-doe`)
      * normalise to underscores consistently on both sides.
      *
      * Used by `database:resetSchema` / `database:dropSchemas` when
@@ -134,7 +134,7 @@ final class MigrationConnectionTargetService
      * — the local-dev shorthand for "drop / materialise MY prefixed
      * schemas, no typing".
      *
-     * @return string Sanitised local-dev prefix (e.g. `tlocal_christopher_olsen_`)
+     * @return string Sanitised local-dev prefix (e.g. `tlocal_jane_doe_`)
      */
     public function deriveLocalPrefix(): string
     {

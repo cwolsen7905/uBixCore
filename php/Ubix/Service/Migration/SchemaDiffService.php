@@ -35,28 +35,6 @@ use Ubix\Service\ProjectRootService;
 final class SchemaDiffService
 {
     /**
-     * Ubix-consumed databases. Mirrors the sandbox list in
-     * `Ubix\Console\Command\Database\ResetSchemaCommand`. If the
-     * Ubix database set changes, update both.
-     */
-    private const array DATABASES = [
-        'ADSERVER',
-        'BILLING',
-        'CHAT_SYSTEM_LOG',
-        'CHAT_SYSTEM',
-        'FLIRT_REWARDS',
-        'flirt4free',
-        'MAILINGS',
-        'MESSAGING',
-        'ntl_db',
-        'STUDIOS_STATS',
-        'STUDIOS',
-        'SYSTEMS',
-        'VSCASH_STATS',
-        'VSCASH',
-    ];
-
-    /**
      * Constructor
      *
      * @param Logger                             $logger             PSR-3 logger
@@ -85,9 +63,10 @@ final class SchemaDiffService
      */
     public function diffAll(?string $databaseFilter = null): array
     {
-        $databases = self::DATABASES;
+        $known     = $this->databases();
+        $databases = $known;
         if ($databaseFilter !== null) {
-            $databases = in_array($databaseFilter, self::DATABASES, true) ? [$databaseFilter] : [];
+            $databases = in_array($databaseFilter, $known, true) ? [$databaseFilter] : [];
             if ($databases === []) {
                 return [
                     new SchemaDiffResult(
@@ -96,7 +75,7 @@ final class SchemaDiffService
                         extraInLive:     [],
                         missingFromLive: [],
                         errorMessage:    sprintf(
-                            'Database `%s` is not in the Ubix-consumed set; nothing to diff.',
+                            'Database `%s` has no schema baseline at sql/<database>.sql; nothing to diff.',
                             $databaseFilter,
                         ),
                     ),
@@ -259,6 +238,26 @@ final class SchemaDiffService
         // is. Strip both forms so the diff doesn't false-positive on
         // dump-flag differences.
         return preg_match('/^DROP\s+TABLE\s+IF\s+EXISTS\b/i', $trimmed) === 1;
+    }
+
+    /**
+     * The host's databases, one per sql/<name>.sql baseline
+     *
+     * @return string[]
+     */
+    private function databases(): array
+    {
+        //
+        //  The databases are the host's: every sql/<name>.sql baseline it ships is one
+        //  schema to diff. Same rule as ResetSchemaCommand, so the two cannot drift.
+        //
+        $databases = [];
+        foreach (glob($this->projectRoot->getPath('sql', '*.sql')) ?: [] as $baseline) {
+            $databases[] = basename($baseline, '.sql');
+        }
+        sort($databases);
+
+        return $databases;
     }
 
     /**

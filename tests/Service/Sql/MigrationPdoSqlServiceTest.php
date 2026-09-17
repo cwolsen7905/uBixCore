@@ -14,15 +14,16 @@ use Ubix\Tests\UbixConcreteClassOrEnumTestCaseInterface as IUbixConcreteClassOrE
  *
  * @coversDefaultClass \Ubix\Service\Sql\MigrationPdoSqlService
  * @coversDefaultClass \Ubix\Service\Sql\MigrationPdoSqlService
+ * @see                \Ubix\Tests\Tests\Service\Sql\MigrationPdoSqlServiceTestTest PHPUnit test case
  */
 final class MigrationPdoSqlServiceTest extends UbixConcreteClassOrEnumTestCase implements IUbixConcreteClassOrEnumTestCase
 {
     // Seed ids sit far above anything real data will reach, clear of other agents.
-    private const BROADCASTER_ID_ONE = 9000000;
+    private const USER_ID_ONE = 9000000;
 
-    private const BROADCASTER_ID_THREE = 9000002;
+    private const USER_ID_THREE = 9000002;
 
-    private const BROADCASTER_ID_TWO = 9000001;
+    private const USER_ID_TWO = 9000001;
 
     private const NAME_ONE = 'UbixMigrationSqlTestOne';
 
@@ -43,19 +44,19 @@ final class MigrationPdoSqlServiceTest extends UbixConcreteClassOrEnumTestCase i
     {
         $this->tearDown(); // Idempotent: a crashed earlier run can leave the seed rows behind
 
-        $studios = (string) getenv('DATABASE_PREFIX') . self::TEST_DATABASE;
+        $schema = (string) getenv('DATABASE_PREFIX') . self::TEST_DATABASE;
 
         $this->insertSeedData(
-            'INSERT INTO ' . $studios . ".users SET id=:id, display_name=:name, email=:email, password_hash='x', status='active'",
-            ['id' => self::BROADCASTER_ID_ONE, 'name' => self::NAME_ONE, 'email' => self::NAME_ONE . '@example.test'],
+            'INSERT INTO ' . $schema . ".users SET id=:id, display_name=:name, email=:email, password_hash='x', status='active'",
+            ['id' => self::USER_ID_ONE, 'name' => self::NAME_ONE, 'email' => self::NAME_ONE . '@example.test'],
         );
         $this->insertSeedData(
-            'INSERT INTO ' . $studios . ".users SET id=:id, display_name=:name, email=:email, password_hash='x', status='active'",
-            ['id' => self::BROADCASTER_ID_TWO, 'name' => self::NAME_TWO, 'email' => self::NAME_TWO . '@example.test'],
+            'INSERT INTO ' . $schema . ".users SET id=:id, display_name=:name, email=:email, password_hash='x', status='active'",
+            ['id' => self::USER_ID_TWO, 'name' => self::NAME_TWO, 'email' => self::NAME_TWO . '@example.test'],
         );
         $this->insertSeedData(
-            'INSERT INTO ' . $studios . ".users SET id=:id, display_name=:name, email=:email, password_hash='x', status='inactive'",
-            ['id' => self::BROADCASTER_ID_THREE, 'name' => self::NAME_THREE, 'email' => self::NAME_THREE . '@example.test'],
+            'INSERT INTO ' . $schema . ".users SET id=:id, display_name=:name, email=:email, password_hash='x', status='inactive'",
+            ['id' => self::USER_ID_THREE, 'name' => self::NAME_THREE, 'email' => self::NAME_THREE . '@example.test'],
         );
     }
 
@@ -66,14 +67,14 @@ final class MigrationPdoSqlServiceTest extends UbixConcreteClassOrEnumTestCase i
      */
     public function tearDown(): void
     {
-        $studios = (string) getenv('DATABASE_PREFIX') . self::TEST_DATABASE;
+        $schema = (string) getenv('DATABASE_PREFIX') . self::TEST_DATABASE;
 
         $this->insertSeedData(
-            'DELETE FROM ' . $studios . '.users WHERE id IN (:idOne, :idTwo, :idThree)',
+            'DELETE FROM ' . $schema . '.users WHERE id IN (:idOne, :idTwo, :idThree)',
             [
-                'idOne'   => self::BROADCASTER_ID_ONE,
-                'idThree' => self::BROADCASTER_ID_THREE,
-                'idTwo'   => self::BROADCASTER_ID_TWO,
+                'idOne'   => self::USER_ID_ONE,
+                'idThree' => self::USER_ID_THREE,
+                'idTwo'   => self::USER_ID_TWO,
             ],
         );
     }
@@ -98,11 +99,11 @@ final class MigrationPdoSqlServiceTest extends UbixConcreteClassOrEnumTestCase i
      */
     public function testGetColumnReadsThroughLazyInitialisedConnection(): void
     {
-        $studios = (string) getenv('DATABASE_PREFIX') . self::TEST_DATABASE;
+        $schema = (string) getenv('DATABASE_PREFIX') . self::TEST_DATABASE;
 
         $name = $this->buildMigrationSqlService()->getColumn(
-            'SELECT display_name FROM ' . $studios . '.users WHERE id=:id',
-            ['id' => self::BROADCASTER_ID_ONE],
+            'SELECT display_name FROM ' . $schema . '.users WHERE id=:id',
+            ['id' => self::USER_ID_ONE],
         );
 
         $this->assertSame(self::NAME_ONE, $name);
@@ -118,11 +119,11 @@ final class MigrationPdoSqlServiceTest extends UbixConcreteClassOrEnumTestCase i
      */
     public function testGetColumnReturnsFalseWhenNoMatch(): void
     {
-        $studios = (string) getenv('DATABASE_PREFIX') . self::TEST_DATABASE;
+        $schema = (string) getenv('DATABASE_PREFIX') . self::TEST_DATABASE;
 
         $name = $this->buildMigrationSqlService()->getColumn(
-            'SELECT display_name FROM ' . $studios . '.users WHERE id=:id',
-            ['id' => self::BROADCASTER_ID_THREE + 1000],
+            'SELECT display_name FROM ' . $schema . '.users WHERE id=:id',
+            ['id' => self::USER_ID_THREE + 1000],
         );
 
         $this->assertFalse($name);
@@ -137,16 +138,16 @@ final class MigrationPdoSqlServiceTest extends UbixConcreteClassOrEnumTestCase i
      */
     public function testGetRowReturnsAssociativeRow(): void
     {
-        $studios = (string) getenv('DATABASE_PREFIX') . self::TEST_DATABASE;
+        $schema = (string) getenv('DATABASE_PREFIX') . self::TEST_DATABASE;
 
         $row = $this->buildMigrationSqlService()->getRow(
-            'SELECT id, display_name AS name FROM ' . $studios . '.users WHERE id=:id',
-            ['id' => self::BROADCASTER_ID_TWO],
+            'SELECT id, display_name AS name FROM ' . $schema . '.users WHERE id=:id',
+            ['id' => self::USER_ID_TWO],
         );
 
         $this->assertIsArray($row);
         $this->assertSame(self::NAME_TWO, $row['name']);
-        $this->assertSame(self::BROADCASTER_ID_TWO, (int) $row['id']);
+        $this->assertSame(self::USER_ID_TWO, (int) $row['id']);
     }
 
     /**
@@ -158,15 +159,15 @@ final class MigrationPdoSqlServiceTest extends UbixConcreteClassOrEnumTestCase i
      */
     public function testGetRowsYieldsEachMatchingRow(): void
     {
-        $studios = (string) getenv('DATABASE_PREFIX') . self::TEST_DATABASE;
+        $schema = (string) getenv('DATABASE_PREFIX') . self::TEST_DATABASE;
 
         $names = [];
         $rows  = $this->buildMigrationSqlService()->getRows(
-            'SELECT display_name AS name FROM ' . $studios . '.users WHERE id IN (:idOne, :idTwo, :idThree) ORDER BY id ASC',
+            'SELECT display_name AS name FROM ' . $schema . '.users WHERE id IN (:idOne, :idTwo, :idThree) ORDER BY id ASC',
             [
-                'idOne'   => self::BROADCASTER_ID_ONE,
-                'idThree' => self::BROADCASTER_ID_THREE,
-                'idTwo'   => self::BROADCASTER_ID_TWO,
+                'idOne'   => self::USER_ID_ONE,
+                'idThree' => self::USER_ID_THREE,
+                'idTwo'   => self::USER_ID_TWO,
             ],
         );
         foreach ($rows as $row) {
@@ -186,14 +187,14 @@ final class MigrationPdoSqlServiceTest extends UbixConcreteClassOrEnumTestCase i
      */
     public function testQueryReturnsAffectedRowCount(): void
     {
-        $studios    = (string) getenv('DATABASE_PREFIX') . self::TEST_DATABASE;
+        $schema     = (string) getenv('DATABASE_PREFIX') . self::TEST_DATABASE;
         $sqlService = $this->buildMigrationSqlService();
 
         // Seeded statuses are TWO=1 and THREE=0; updating both to 5 changes
         // both rows so MySQL's affected-row count is a clean 2.
         $affected = $sqlService->query(
-            'UPDATE ' . $studios . ".users SET status='suspended' WHERE id IN (:idTwo, :idThree)",
-            ['idThree' => self::BROADCASTER_ID_THREE, 'idTwo' => self::BROADCASTER_ID_TWO],
+            'UPDATE ' . $schema . ".users SET status='suspended' WHERE id IN (:idTwo, :idThree)",
+            ['idThree' => self::USER_ID_THREE, 'idTwo' => self::USER_ID_TWO],
         );
 
         $this->assertSame(2, $affected);
@@ -209,17 +210,17 @@ final class MigrationPdoSqlServiceTest extends UbixConcreteClassOrEnumTestCase i
      */
     public function testWriteIsImmediatelyReadableWithoutReplicaLag(): void
     {
-        $studios    = (string) getenv('DATABASE_PREFIX') . self::TEST_DATABASE;
+        $schema     = (string) getenv('DATABASE_PREFIX') . self::TEST_DATABASE;
         $sqlService = $this->buildMigrationSqlService();
 
         $sqlService->query(
-            'UPDATE ' . $studios . ".users SET status='suspended' WHERE id=:id",
-            ['id' => self::BROADCASTER_ID_ONE],
+            'UPDATE ' . $schema . ".users SET status='suspended' WHERE id=:id",
+            ['id' => self::USER_ID_ONE],
         );
 
         $status = $sqlService->getColumn(
-            'SELECT status FROM ' . $studios . '.users WHERE id=:id',
-            ['id' => self::BROADCASTER_ID_ONE],
+            'SELECT status FROM ' . $schema . '.users WHERE id=:id',
+            ['id' => self::USER_ID_ONE],
         );
 
         $this->assertSame('suspended', $status);
@@ -234,23 +235,23 @@ final class MigrationPdoSqlServiceTest extends UbixConcreteClassOrEnumTestCase i
      */
     public function testCommitPersistsTransactionalWrite(): void
     {
-        $studios    = (string) getenv('DATABASE_PREFIX') . self::TEST_DATABASE;
+        $schema     = (string) getenv('DATABASE_PREFIX') . self::TEST_DATABASE;
         $sqlService = $this->buildMigrationSqlService();
 
         $sqlService->beginTransaction();
         $this->assertTrue($sqlService->inTransaction());
 
         $sqlService->query(
-            'UPDATE ' . $studios . ".users SET status='pending' WHERE id=:id",
-            ['id' => self::BROADCASTER_ID_TWO],
+            'UPDATE ' . $schema . ".users SET status='pending' WHERE id=:id",
+            ['id' => self::USER_ID_TWO],
         );
         $sqlService->commit();
 
         $this->assertFalse($sqlService->inTransaction());
 
         $status = $sqlService->getColumn(
-            'SELECT status FROM ' . $studios . '.users WHERE id=:id',
-            ['id' => self::BROADCASTER_ID_TWO],
+            'SELECT status FROM ' . $schema . '.users WHERE id=:id',
+            ['id' => self::USER_ID_TWO],
         );
         $this->assertSame('pending', $status);
     }

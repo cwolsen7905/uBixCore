@@ -14,12 +14,6 @@ use Ubix\Service\Sql\AbstractPdoSqlService as PdoSqlService;
  */
 final class SqlitePdoSqlService extends PdoSqlService
 {
-    private const DATABASES = [
-        'ntl_db',
-        'BILLING',
-        'VSCASH',
-    ];
-
     /**
      * Constructor
      *
@@ -38,11 +32,38 @@ final class SqlitePdoSqlService extends PdoSqlService
             writeDsn: $writeDsn,
         );
 
-        foreach (self::DATABASES as $database) {
+        //
+        //  Attach every <name>.db beside test.db as a schema called <name>, so a query can
+        //  address `<name>.table` exactly as it would against MySQL. Which schemas exist is
+        //  the host's business: it decides by which files it puts in SQLITE_DATABASE_PATH.
+        //
+        foreach ($this->attachableDatabases() as $database) {
             $this->query('ATTACH DATABASE \'' . getenv('SQLITE_DATABASE_PATH') . '/' . $database . '.db\' as ' . $database);
             if ($readDsn !== $writeDsn) { // We call getRow() to run this query on the read PDO as well after query() handles the write PDO if they aren't identical
                 $this->getRow('ATTACH DATABASE \'' . getenv('SQLITE_DATABASE_PATH') . '/' . $database . '.db\' as ' . $database);
             }
         }
+    }
+
+    /**
+     * Schema names for every attachable *.db file in SQLITE_DATABASE_PATH
+     *
+     * Only names that are safe as unquoted SQL identifiers are attached; test.db is the
+     * main database, not an attachment.
+     *
+     * @return string[]
+     */
+    private function attachableDatabases(): array
+    {
+        $databases = [];
+        foreach (glob(getenv('SQLITE_DATABASE_PATH') . '/*.db') ?: [] as $file) {
+            $name = basename($file, '.db');
+            if ($name !== 'test' && preg_match('/^[A-Za-z_][A-Za-z0-9_]*$/', $name) === 1) {
+                $databases[] = $name;
+            }
+        }
+        sort($databases);
+
+        return $databases;
     }
 }

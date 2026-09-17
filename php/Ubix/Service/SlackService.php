@@ -31,76 +31,25 @@ final class SlackService
 {
     private const CHANNEL_DEFAULT = '#notification-test';
 
-    private const CHANNELS_WHITELIST = [
-        'activity',
-        'affiliate-alerts',
-        'affiliate_team',
-        'bc-alerts',
-        'bc-rejections',
-        'bcnewapplications',
-        'billing-alerts',
-        'billingupdates',
-        'broadcastalerts',
-        'broadcasting-processes-monitoring',
-        'chat-alerts',
-        'chat_system',
-        'chatdev',
-        'cs-alerts',
-        'databases',
-        'earnings',
-        'email',
-        'email-alerts',
-        'hacklab-alerts',
-        'interactive_usage',
-        'it-systems',
-        'mbing-alerts',
-        'mobilefirstbroadcasts',
-        'model-access-monitoring',
-        'model-acq-alerts',
-        'model-monitor-tool-alert',
-        'modelclips',
-        'ubix-alerts',
-        'notification-test',
-        'pa-alerts',
-        'paygen-reports',
-        'payments-generation-report',
-        'php-alerts',
-        'php-pager-duty',
-        'reports',
-        'risk-alerts',
-        'seo-alerts',
-        'siteissues',
-        'siteupdates',
-        'siteupdates-log',
-        'stream',
-        'test-bc-messages',
-        'trafficvolume',
-        'uawg-alerts',
-        'user-acq-alerts',
-        'userdev-alerts',
-        'vod',
-        'xvtgeneral',
-        'yankahacker',
-    ];
-
     private const ICON_DEFAULT = ':robot_face:';
 
     private const RESPONSE_SUCCESS = 'ok';
 
     private const SIMPLE_CACHE_KEY_PREFIX = 'slack_msg_';
 
-    private const USERNAME_DEFAULT = 'Flirtbot';
+    private const USERNAME_DEFAULT = 'uBix';
 
     /**
      * Constructor
      *
-     * @param Logger         $logger         Logger
-     * @param HttpClient     $httpClient     HTTP client
-     * @param RequestFactory $requestFactory Request factory
-     * @param StreamFactory  $streamFactory  Stream factory
-     * @param SimpleCache    $simpleCache    Simple cache
-     * @param JsonService    $jsonService    JSON service
-     * @param string         $apiEndpoint    API endpoint
+     * @param Logger         $logger           Logger
+     * @param HttpClient     $httpClient       HTTP client
+     * @param RequestFactory $requestFactory   Request factory
+     * @param StreamFactory  $streamFactory    Stream factory
+     * @param SimpleCache    $simpleCache      Simple cache
+     * @param JsonService    $jsonService      JSON service
+     * @param string         $apiEndpoint      API endpoint
+     * @param string[]       $channelAllowlist Channels the host allows, besides the default (SLACK_CHANNEL_ALLOWLIST)
      */
     public function __construct(
         private Logger $logger, // @phpstan-ignore property.onlyWritten (Logger is a required dependency of most uBixCore classes but has not been implemented in this class yet)
@@ -110,6 +59,7 @@ final class SlackService
         private SimpleCache $simpleCache,
         private JsonService $jsonService,
         private string $apiEndpoint,
+        private array $channelAllowlist = [],
     ) {
     }
 
@@ -156,7 +106,7 @@ final class SlackService
                 throw new InvalidArgumentException('You must include a channel', ExceptionCode::MISSING_SLACK_CHANNEL->value);
             }
 
-            if (!in_array(ltrim($channel, '#'), self::CHANNELS_WHITELIST, true)) {
+            if (!$this->isChannelAllowed(ltrim($channel, '#'))) {
                 throw new InvalidArgumentException('The `' . $channel . '` channel is not in the white list', ExceptionCode::SLACK_CHANNEL_NOT_WHITELISTED->value);
             }
         }
@@ -221,5 +171,21 @@ final class SlackService
     private function getCacheKey(string $channel, string $message): string
     {
         return self::SIMPLE_CACHE_KEY_PREFIX . md5($channel . $message);
+    }
+
+    /**
+     * Whether a channel may be posted to
+     *
+     * The allowlist is the host's (SLACK_CHANNEL_ALLOWLIST, wired in the app's dependencies);
+     * the framework ships none. The default channel is always allowed so an unconfigured host
+     * can still send to it.
+     *
+     * @param string $channel Channel name without the leading '#'
+     *
+     * @return bool
+     */
+    private function isChannelAllowed(string $channel): bool
+    {
+        return $channel === ltrim(self::CHANNEL_DEFAULT, '#') || in_array($channel, $this->channelAllowlist, true);
     }
 }

@@ -19,11 +19,11 @@ use Ubix\Service\Email\EmailServiceInterface as EmailService;
  */
 final class PhpMailFunctionEmailService implements EmailService // NOT_IMPLEMENTED: The legacy system has a concept of "priority" that is an integer (1 = wish, 2 = low, 3 = normal, 4 = high) with a default value of 3
 {
-    private const CHARSET_DEFAULT = 'iso-8859-1';  // This was copy/pasted from PHPCoreClasses/core/notifications/EmailAlert.cl on 2025-08-29
+    private const CHARSET_DEFAULT = 'iso-8859-1';  // Conventional default for the PHP mail function
 
-    private const CONTENT_TRANSFER_ENCODING_DEFAULT = '8bit'; // This was copy/pasted from PHPCoreClasses/core/notifications/EmailAlert.cl on 2025-08-29
+    private const CONTENT_TRANSFER_ENCODING_DEFAULT = '8bit'; // Conventional default for the PHP mail function
 
-    private const MIME_VERSION_DEFAULT = '1.0'; // This was copy/pasted from PHPCoreClasses/core/notifications/EmailAlert.cl on 2025-08-29
+    private const MIME_VERSION_DEFAULT = '1.0'; // Conventional default for the PHP mail function
 
     /**
      * Constructor
