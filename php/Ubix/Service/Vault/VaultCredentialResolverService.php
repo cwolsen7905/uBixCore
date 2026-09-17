@@ -77,6 +77,62 @@ final class VaultCredentialResolverService
         $this->logger->info('Hydrated database credentials from uBix Vault', [
             'vars' => array_keys($credentials), // Names only — never the values.
         ]);
+
+        $this->hydrateAppSecrets($vaultAddress, $token);
+    }
+
+    /**
+     * Hydrate the host application's own secrets (API tokens, webhook signing keys, ...)
+     *
+     * Opt-in via `VAULT_APP_KV_PATH`. Every key in that KV v2 secret whose name is an
+     * UPPER_SNAKE_CASE environment-variable name becomes an environment variable, the
+     * same way the database credentials do — so hosts never need a local shim, and never
+     * need a secret in source or in a committed `.env`.
+     *
+     * Keys in the `VAULT_*` and `MYSQL_*` namespaces are refused: those are this
+     * resolver's own inputs and outputs, and an app secret must not be able to redirect
+     * Vault auth or replace the database credentials resolved above.
+     *
+     * @param string $vaultAddress Base address of the Vault server
+     * @param string $token        A valid Vault client token
+     *
+     * @return void
+     *
+     * @throws RuntimeException When the path is set but the secret yields no usable keys
+     */
+    private function hydrateAppSecrets(string $vaultAddress, string $token): void
+    {
+        $path = $this->readEnv('VAULT_APP_KV_PATH');
+
+        if ($path === '') {
+            return;
+        }
+
+        $hydrated = [];
+
+        foreach ($this->vaultService->readKvV2Secret($vaultAddress, $token, $path) as $key => $value) {
+            if (
+                preg_match('/^[A-Z][A-Z0-9_]*$/', (string) $key) !== 1
+                || str_starts_with((string) $key, 'VAULT_')
+                || str_starts_with((string) $key, 'MYSQL_')
+                || $value === ''
+            ) {
+                continue;
+            }
+
+            putenv($key . '=' . $value);
+            $hydrated[] = $key;
+        }
+
+        if ($hydrated === []) {
+            // Fail closed: a configured path that yields nothing means a misconfigured
+            // or empty secret, and the app would otherwise boot without its credentials.
+            throw new RuntimeException('uBix Vault KV secret `' . $path . '` (VAULT_APP_KV_PATH) yielded no usable UPPER_SNAKE_CASE keys.');
+        }
+
+        $this->logger->info('Hydrated app secrets from uBix Vault', [
+            'vars' => $hydrated, // Names only — never the values.
+        ]);
     }
 
     /**
