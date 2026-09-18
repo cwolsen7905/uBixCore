@@ -223,7 +223,7 @@ final class AttributionService
         private AffiliateReader $affiliateReader,
         private AffiliateWriter $affiliateWriter,
         private PlatformUserService $platformUserService,
-        private BillingTransactionReader $transactionReader,
+        private LedgerTransactionReader $transactionReader,
         private JsonService $jsonService,
         private AffiliateService $affiliateService,
         private AttributionLogWriter $attributionLogWriter,
@@ -309,9 +309,9 @@ Repository/
 │   ├── AffiliateReaderInterface.php
 │   ├── AffiliateWriterInterface.php
 │   └── AffiliateSqlRepository.php
-├── Performer/
-│   ├── PerformerReaderInterface.php
-│   └── PerformerSqlRepository.php
+├── Account/
+│   ├── AccountReaderInterface.php
+│   └── AccountSqlRepository.php
 └── PlatformUser/
     ├── PlatformUserReaderInterface.php
     ├── PlatformUserWriterInterface.php
@@ -322,7 +322,7 @@ Repository/
 
 **Reader Interface** - Query operations
 ```php
-interface PerformerReaderInterface
+interface AccountReaderInterface
 {
     public function getByUsername(string $username): array;
     public function getById(int $id): array;
@@ -341,7 +341,7 @@ interface AffiliateWriterInterface
 
 **Repository Implementation** - Implements both
 ```php
-final class PerformerSqlRepository implements PerformerReaderInterface
+final class AccountSqlRepository implements AccountReaderInterface
 {
     public function __construct(
         private Logger $logger,
@@ -350,16 +350,16 @@ final class PerformerSqlRepository implements PerformerReaderInterface
 
     public function getByUsername(string $username): array
     {
-        $options = new PerformerOptions(username: $username, limit: 1);
+        $options = new AccountOptions(username: $username, limit: 1);
         return $this->query($options);
     }
 
     /**
      * Private query builder using Options DTO
      */
-    private function query(PerformerOptions $options): array
+    private function query(AccountOptions $options): array
     {
-        $sql = 'SELECT * FROM performers WHERE 1=1';
+        $sql = 'SELECT * FROM accounts WHERE 1=1';
         $parameters = [];
 
         if ($options->id !== null) {
@@ -377,16 +377,16 @@ final class PerformerSqlRepository implements PerformerReaderInterface
         }
 
         // Execute and map to Models
-        $performers = [];
+        $accounts = [];
         foreach ($this->sqlService->getRows($sql, $parameters) as $row) {
-            $performers[] = new Performer(
-                id: new PerformerId($row['id']),
+            $accounts[] = new Account(
+                id: new AccountId($row['id']),
                 username: new Varchar($row['username']),
                 // ... map all properties from row
             );
         }
 
-        return $performers;
+        return $accounts;
     }
 }
 ```
@@ -423,7 +423,7 @@ Do **not** reach for a migration that adds a `DEFAULT` purely to silence a missi
 Each repository has a corresponding Options DTO in `php/Ubix/DataTransferObject/SqlRepository/`:
 
 ```php
-final readonly class PerformerOptions implements DtoInterface
+final readonly class AccountOptions implements DtoInterface
 {
     public function __construct(
         public readonly ?int $id = null,
@@ -566,7 +566,7 @@ final class Affiliate extends AbstractModel
 
 #### Model with Domain Logic
 
-**File:** `php/Ubix/Model/Performer.php`
+**File:** `php/Ubix/Model/Account.php`
 
 > ⚠️ **Legacy interop — do NOT replicate this pattern.** The example below is shown
 > because it demonstrates *where* domain logic lives on a Model, but the password
@@ -580,7 +580,7 @@ final class Affiliate extends AbstractModel
 > in [`docs/projects/auth-rewrite/charter.md`](../projects/auth-rewrite/charter.md).
 
 ```php
-final class Performer extends AbstractModel implements AccountInterface
+final class Account extends AbstractModel implements AccountInterface
 {
     // ... properties and getters/setters
 
@@ -662,7 +662,7 @@ Why the row mapper itself stays single-table: a Model spanning two tables has
 ambiguous `save()` semantics (transaction boundary, partial-failure behaviour,
 which table owns a default) and a muddy identity. The canonical anti-pattern in
 this codebase is the legacy `AdminUser`, which is hydrated from
-`STUDIOS.Admin_Users` on one path and `VSCASH.Admin_Users` on another — one
+`TENANTS.Admin_Users` on one path and `SHOP.Admin_Users` on another — one
 class, two physical schemas. The M3-05 `AdminUserAccount` repository (kept
 separate from the auth `AdminUserReader`) is the model to follow.
 
@@ -692,7 +692,7 @@ AbstractDataType (root)
 ├── AbstractIntDataType
 │   ├── Integer, BigInt, SmallInt, TinyInt, MediumInt
 │   ├── Unsigned variants (UnsignedInt, UnsignedBigInt, etc.)
-│   ├── Domain IDs (PlatformUserId, AffiliateId, PerformerId)
+│   ├── Domain IDs (PlatformUserId, AffiliateId, AccountId)
 │   └── AutoIncrement
 ├── AbstractStringDataType
 │   ├── Varchar, Text, Char
@@ -1094,7 +1094,7 @@ return $this->renderJsonWithPayload($response, $responsePayload);
 **1. SqlRepository Options** - `DataTransferObject/SqlRepository/`
 
 ```php
-final readonly class PerformerOptions implements DtoInterface
+final readonly class AccountOptions implements DtoInterface
 {
     public function __construct(
         public readonly ?int $id = null,
@@ -1238,9 +1238,9 @@ Enum/
 │   ├── AffiliateIsHouse.php
 │   ├── AffiliateProductType.php
 │   └── AffiliateRateType.php
-├── Performer/
-│   ├── PerformerStatus.php
-│   └── PerformerGender.php
+├── Account/
+│   ├── AccountStatus.php
+│   └── AccountGender.php
 ├── Email/
 │   └── EmailContentType.php
 └── ... (organized by domain)
@@ -1481,7 +1481,7 @@ return static function (): Container {
             ->constructorParameter('handlers', [...]),
 
         // Reader/Writer pattern
-        PerformerReader::class => autowire(PerformerSqlRepository::class),
+        AccountReader::class => autowire(AccountSqlRepository::class),
 
         // Same repository for read and write
         PlatformUserReader::class => autowire(PlatformUserSqlRepository::class),
@@ -1574,7 +1574,7 @@ final class AttributionService
 
 ```php
 // Read-only operations
-interface PerformerReaderInterface
+interface AccountReaderInterface
 {
     public function getByUsername(string $username): array;
     public function getById(int $id): array;
@@ -1600,9 +1600,9 @@ final class AffiliateSqlRepository implements
 
 ```php
 // Flexible querying via Options DTO
-private function query(PerformerOptions $options): array
+private function query(AccountOptions $options): array
 {
-    $sql = 'SELECT ... FROM performers WHERE 1=1';
+    $sql = 'SELECT ... FROM accounts WHERE 1=1';
     $parameters = [];
 
     if ($options->id !== null) {
@@ -1621,7 +1621,7 @@ private function query(PerformerOptions $options): array
 
     // Execute and map to Models
     foreach ($this->sqlService->getRows($sql, $parameters) as $row) {
-        $objects[] = new Performer(...$row);
+        $objects[] = new Account(...$row);
     }
 
     return $objects;
@@ -1654,7 +1654,7 @@ private ?AffiliateId $affiliateId;
 
 ```php
 // Build specification
-$spec = new PerformerOptions(
+$spec = new AccountOptions(
     username: 'john',
     isActive: true,
     limit: 10
@@ -1840,14 +1840,14 @@ harmless, since `toUtf8()` is idempotent on valid UTF-8.)
 > ```php
 > // Read: name the result column(s).
 > $row = $this->sqlService->getRow(
->     sql:            'SELECT username, ip_address_long FROM ntl_db.optiusers_site_logins WHERE id = :id',
+>     sql:            'SELECT username, ip_address_long FROM legacy_db.optiusers_site_logins WHERE id = :id',
 >     parameters:     ['id' => $id->value],
 >     binaryFields:   ['ip_address_long'],
 > );
 >
 > // Write: name the bound parameter(s).
 > $this->sqlService->query(
->     sql:            'INSERT INTO ntl_db.optiusers_site_logins SET ip_address_long = :ip',
+>     sql:            'INSERT INTO legacy_db.optiusers_site_logins SET ip_address_long = :ip',
 >     parameters:     ['ip' => $packedIp],
 >     binaryFields:   ['ip'],
 > );
@@ -1855,9 +1855,9 @@ harmless, since `toUtf8()` is idempotent on valid UTF-8.)
 >
 > `$binaryFields` is one list naming result columns and/or bound parameters, so a
 > repository that reads and writes the same blob usually needs it once per call.
-> This tier has real binary columns — `ntl_db.optiusers_site_logins.ip_address_long`
-> (`varbinary(16)`), `VSCASH.enc_cc_num` / `enc_DDA` / `enc_card_suffix`
-> (`tinyblob`), `VSCASH.binary_data` (`longblob`), and 100+ further `varbinary`
+> This tier has real binary columns — `legacy_db.optiusers_site_logins.ip_address_long`
+> (`varbinary(16)`), `SHOP.enc_cc_num` / `enc_DDA` / `enc_card_suffix`
+> (`tinyblob`), `SHOP.binary_data` (`longblob`), and 100+ further `varbinary`
 > columns across the schemas reachable through the same `MysqlPdoSqlService` — so
 > this is a live concern, not a hypothetical one. See
 > `MysqlPdoSqlServiceTest::testDeclaredBinaryParameterIsWrittenWithoutEncoding()`
@@ -1925,7 +1925,7 @@ truncate mid-sequence and store invalid UTF-8.
 
 **Examples:**
 - `SqlServiceInterface`
-- `PerformerReaderInterface`
+- `AccountReaderInterface`
 - `AffiliateWriterInterface`
 - `BlobServiceInterface`
 
@@ -1988,9 +1988,9 @@ php/Ubix/
 |------|---------|---------|
 | **Controller** | `{Domain}Controller` | `AttributionController` |
 | **Service** | `{Domain}Service` | `AffiliateService` |
-| **Repository** | `{Entity}SqlRepository` | `PerformerSqlRepository` |
-| **Model** | `{Entity}` | `Performer`, `Affiliate` |
-| **DTO** | `{Purpose}` | `PerformerOptions`, `Attribution` |
+| **Repository** | `{Entity}SqlRepository` | `AccountSqlRepository` |
+| **Model** | `{Entity}` | `Account`, `Affiliate` |
+| **DTO** | `{Purpose}` | `AccountOptions`, `Attribution` |
 | **DataType** | `{DomainConcept}` | `MpCode`, `AffiliateId` |
 | **Enum** | `{Domain}{Concept}` | `AffiliateStatus`, `StatusCode` |
 | **Middleware** | `{Purpose}Middleware` | `BearerTokenAuthenticationMiddleware` |
@@ -2189,11 +2189,11 @@ getResponseData()           {
 
 **What none of these four layers is: authorization.**
 
-Validation answers *"is this value well-formed?"*. Authorization answers *"may this caller act on it?"*. Every layer above answers the first question and none answers the second, so a hostile request that is perfectly well-formed passes the entire stack. `performer_id: 41827` is a valid `PlatformUserId` — it satisfies the Payload, the DataType, and the FK. It simply isn't the caller's.
+Validation answers *"is this value well-formed?"*. Authorization answers *"may this caller act on it?"*. Every layer above answers the first question and none answers the second, so a hostile request that is perfectly well-formed passes the entire stack. `account_id: 41827` is a valid `PlatformUserId` — it satisfies the Payload, the DataType, and the FK. It simply isn't the caller's.
 
 **The rule: identity comes from the authenticated principal, never from a request field.** In uBix Core that principal is whatever the middleware established — the session recovered by `AccountAuthenticationMiddleware`, or a verified signed token such as `PaSessionTokenService::verify()`. A controller that reads an owner id out of the request body and acts on it has no authorization step at all, however thoroughly that id was validated.
 
-The precedent: `SessionController::pepHash()` originally accepted `performer_id` in the request body and returned a live PEP broadcast credential for it. Every validation layer passed; any bearer-token holder could mint credentials for any performer. It now accepts only `session_token`, verifies the signature, and derives the performer from the verified payload — there is deliberately no performer id in the request. MR review caught this, not the gate; it is a review-blocking class on sight.
+The precedent: `SessionController::pepHash()` originally accepted `account_id` in the request body and returned a live PEP broadcast credential for it. Every validation layer passed; any bearer-token holder could mint credentials for any account. It now accepts only `session_token`, verifies the signature, and derives the account from the verified payload — there is deliberately no account id in the request. MR review caught this, not the gate; it is a review-blocking class on sight.
 
 Two habits follow. **Fail closed:** when a verifier cannot verify — missing secret, expired signature, unreachable dependency — return 401, never a fallback identity. **Don't accept a redundant id:** if the endpoint can derive the subject from the principal, accepting it in the payload too creates a mismatch path that must then be checked, and one day won't be.
 
@@ -2227,7 +2227,7 @@ class AttributionService
 **Secondary: Models** - Entity-specific behavior
 
 ```php
-class Performer extends AbstractModel
+class Account extends AbstractModel
 {
     // DOMAIN LOGIC: Password validation
     // (legacy-interop formats — see the "Model with Domain Logic" warning above;
@@ -2596,7 +2596,7 @@ Every PHP app carries the same `src/` quartet; the app suffix determines its typ
 **Current Apps table in `CLAUDE.md`** — don't trust a hardcoded list here to stay
 current. As of 2026-07 the PHP apps are: `AffiliateApi`, `FanClubApi`,
 `IntegrationApi`, `InternalAdminApi`, `ModelSignupApi`, `UbixCli` (CLI),
-`PerformerApplicationApi`, `ProductApi` (plus the non-PHP `*Js` / `*Py` / `*Go` apps).
+`AccountApplicationApi`, `ProductApi` (plus the non-PHP `*Js` / `*Py` / `*Go` apps).
 
 ```
 app/
@@ -2636,7 +2636,7 @@ return static function (): Container {
         Logger::class => autowire(MonologLogger::class),
 
         // Repository bindings
-        PerformerReader::class => autowire(PerformerSqlRepository::class),
+        AccountReader::class => autowire(AccountSqlRepository::class),
         AffiliateReader::class => autowire(AffiliateSqlRepository::class),
         AffiliateWriter::class => autowire(AffiliateSqlRepository::class),
 
@@ -2722,7 +2722,7 @@ When you make a non-trivial change to a section, append a row to the version-his
 |---------|------------|-----------------------|-------|
 | 1.0     | 2025-11-26 | Christopher W. Olsen | Initial baseline. Captures the PHP-side architecture as it stood at the document's first cut: layered architecture (HTTP → Middleware → Controller → Service → Repository → SqlService → MySQL), strict type safety via custom DataTypes, the Payload pattern as the validation boundary, SOLID enforcement via PHPCS sniffs, three-layer validation (Request Payload / Service / Response Payload), DI via PHP-DI in each app's `Dependencies.php`, Repository pattern with Reader/Writer interfaces, Model pattern with strict getter/setter enforcement, Symfony Validator integration in `Abstract*DataType` classes, and the PER (PSR-12 Extended) coding standard. The original document carried a top-of-document `**Version:** 1.0` / `**Date:** 2025-11-26` header but no version-history table; this row reconstructs the baseline retrospectively when v1.1 introduces the table. |
 | 1.1     | 2026-05-14 | Christopher W. Olsen | **Document Control table added.** No content changes — purely introduces the version-history pattern and the "Changes to this document" convention paragraph above, mirroring `docs/standards/migrations.md`, `docs/projects/migrations/cutover-runbook.md`, and `docs/architecture/complete-js-guide.md` (also versioned the same day, in the same session). Top-of-document `**Version:**` bumped 1.0 → 1.1, `**Date:**` bumped 2025-11-26 → 2026-05-14. Going forward, every non-trivial section change appends a row here AND updates the top-line fields. Why now: the JS guide just received substantive content tightening (per-layer guidance subsection, §4.2 + §4.9 mechanical rules) and added its own version table; the PHP guide should match the discipline so the two stay symmetric and future framework changes are auditable in-doc rather than only in git history. |
-| 1.2     | 2026-07-28 | Christopher W. Olsen | **Standards-benchmark corrections (SB-06 + SB-12/13, from `docs/audits/standards-benchmark-2026-07.md`).** Security-adverse examples defused: the `Performer::validatePassword()` example is now explicitly labeled **legacy interop — do not replicate** with the OWASP target state (`password_hash`/`password_verify`, `hash_equals`) and a pointer to the auth-rewrite charter; the caching example's PSR-16-reserved colon key (`affiliate:`) replaced with a `memcache-keys.md`-conformant key + incident-history warning; `UsdCurrency` money-as-float and `AbstractDataType::validate()`'s generic first-violation `Exception` marked as **known deviations** (SB-07 / SB-06) rather than patterns to copy. Contradiction fixes: the Affiliate constructor example and AbstractModel API listing now use `markNonNullChanged()` per `models-and-datatypes.md` Rule 4 (was `markAllChanged()`, which writes NULLs over unloaded columns). Staleness: dead `architecture-review-payloads-vs-dtos.md` link → `../projects/reviews/payloads-vs-dtos.md`; Application Structure app list (had retired `HelloWorldApi`/`FanClubWeb`, missed five real apps) now defers to the CLAUDE.md table; new **API contracts (OpenAPI)** subsection documenting `#[ApiContract]` → `openapi:generate` → the gate's drift check. |
+| 1.2     | 2026-07-28 | Christopher W. Olsen | **Standards-benchmark corrections (SB-06 + SB-12/13, from `docs/audits/standards-benchmark-2026-07.md`).** Security-adverse examples defused: the `Account::validatePassword()` example is now explicitly labeled **legacy interop — do not replicate** with the OWASP target state (`password_hash`/`password_verify`, `hash_equals`) and a pointer to the auth-rewrite charter; the caching example's PSR-16-reserved colon key (`affiliate:`) replaced with a `memcache-keys.md`-conformant key + incident-history warning; `UsdCurrency` money-as-float and `AbstractDataType::validate()`'s generic first-violation `Exception` marked as **known deviations** (SB-07 / SB-06) rather than patterns to copy. Contradiction fixes: the Affiliate constructor example and AbstractModel API listing now use `markNonNullChanged()` per `models-and-datatypes.md` Rule 4 (was `markAllChanged()`, which writes NULLs over unloaded columns). Staleness: dead `architecture-review-payloads-vs-dtos.md` link → `../projects/reviews/payloads-vs-dtos.md`; Application Structure app list (had retired `HelloWorldApi`/`FanClubWeb`, missed five real apps) now defers to the CLAUDE.md table; new **API contracts (OpenAPI)** subsection documenting `#[ApiContract]` → `openapi:generate` → the gate's drift check. |
 | 1.3     | 2026-07-28 | Christopher W. Olsen | **DataType validation now throws typed `DataTypeValidationException`** (`ExceptionCode::DATA_TYPE_VALIDATION_FAILED`) — closes the main half of the SB-06 known deviation. Both `validate()` snippets updated; the Base DataType Pattern callout now documents the catch contract (catch `DataTypeValidationException` for reject/re-roll paths; never `DtoException` around a DataType constructor — the never-matching catch was the root cause of the UsernameGenerator flake). Remaining deviations noted: first-violation-only message, per-construction validator build. |
 | 1.4     | 2026-08-05 | Christopher W. Olsen | **Legacy latin1 charset boundary moved to the PDO seam** — new `#### The legacy charset boundary` subsection under `AbstractPdoSqlService`. The runtime DSN is `charset=latin1`, so legacy CP1252 bytes reached string DataTypes as invalid UTF-8 and their `#[Length]` charset check threw mid-hydration — the DM+ Android login failure ("This value does not match the expected UTF-8 charset." on a customer named "Martín", thrown before the password was even checked). `CharsetService::toUtf8()` existed but only 5 of 71 repositories called it. Both directions now apply centrally in `AbstractPdoSqlService` (fetched strings decode; bound parameters encode via the new `CharsetService::toCp1252()`), so **repositories must no longer call `CharsetService` themselves** — documented along with the two deliberate pass-throughs (non-UTF-8 / CP1252-unrepresentable input, rather than `mb_convert_encoding`'s silent `?` substitution) and the DSN-derived guard that leaves `SqlitePdoSqlService` alone and self-disables on the eventual utf8mb4 migration (`ARCH-12` / `PP-07`). Includes the **binary-column** callout: the seam transcodes text and PDO cannot report that a column is BLOB/VARBINARY (a `varbinary(16)` reports `native_type => VAR_STRING`, indistinguishable from `varchar`), so such fields MUST be named in the new `$binaryFields` argument on `query()`/`getColumn()`/`getRow()`/`getRows()` or their bytes are altered in both directions. |
-| 1.5     | 2026-08-05 | Christopher W. Olsen | **New `Validation Locations` closer: "What none of these four layers is: authorization."** The section enumerated four validation layers (Payload, DataType, Service, DB constraints) without ever noting that none of them answers *may this caller act on this value?* — which let a real defect through: `SessionController::pepHash()` accepted `performer_id` in the request body and returned a live PEP broadcast credential for it, passing every validation layer, so any bearer-token holder could mint credentials for any performer (now takes only `session_token` and derives the performer from the verified payload). The new subsection states the rule — identity comes from the authenticated principal (`AccountAuthenticationMiddleware`'s session, or a verified token such as `PaSessionTokenService::verify()`), never from a request field — plus the two habits that follow: fail closed (401 when a verifier cannot verify, never a fallback identity) and don't accept a redundant id the endpoint can already derive. Paired with `complete-js-guide.md` v1.6, which carries the same rule at the `+server.js` boundary. |
+| 1.5     | 2026-08-05 | Christopher W. Olsen | **New `Validation Locations` closer: "What none of these four layers is: authorization."** The section enumerated four validation layers (Payload, DataType, Service, DB constraints) without ever noting that none of them answers *may this caller act on this value?* — which let a real defect through: `SessionController::pepHash()` accepted `account_id` in the request body and returned a live PEP broadcast credential for it, passing every validation layer, so any bearer-token holder could mint credentials for any account (now takes only `session_token` and derives the account from the verified payload). The new subsection states the rule — identity comes from the authenticated principal (`AccountAuthenticationMiddleware`'s session, or a verified token such as `PaSessionTokenService::verify()`), never from a request field — plus the two habits that follow: fail closed (401 when a verifier cannot verify, never a fallback identity) and don't accept a redundant id the endpoint can already derive. Paired with `complete-js-guide.md` v1.6, which carries the same rule at the `+server.js` boundary. |

@@ -55,7 +55,7 @@ Review findings converge because every finding class drains into exactly one of 
 
 The stop rule per MR: when a review round comes back all minor-severity polish, dismiss the marginal with reasons and **merge** — the termination condition is human satisfaction, never reviewer silence (model reviews are samples, not proofs; a fresh pass always finds *something*).
 
-Chartered (build order + slices in [`docs/projects/engineering-leaderboard/status.md`](../projects/engineering-leaderboard/status.md) → "Review analytics"): per-finding records (`SYSTEMS.Code_Review_Findings` — agent-agnostic naming, `reviewer` column) with fingerprint identity, a nightly disposition harvester parsing the §3 resolution markers, Internal Admin roll-up + triage pages, and the two automations (dismiss-rate threshold → prompt out-of-scope proposal; recurring mechanical class → gate-tool candidate).
+Chartered (build order + slices in [`docs/projects/engineering-leaderboard/status.md`](../projects/engineering-leaderboard/status.md) → "Review analytics"): per-finding records (`SYSTEMS.Code_Review_Findings` — agent-agnostic naming, `reviewer` column) with fingerprint identity, a nightly disposition harvester parsing the §3 resolution markers, internal admin roll-up + triage pages, and the two automations (dismiss-rate threshold → prompt out-of-scope proposal; recurring mechanical class → gate-tool candidate).
 
 ## 5. Operational surface
 

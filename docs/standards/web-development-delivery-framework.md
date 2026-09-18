@@ -916,7 +916,7 @@ What comes out of each step
 
 ### 
 
-### 5\. External Communication (Vendors, Partners, Banks, Affiliates, Studios, etc.)
+### 5\. External Communication (Vendors, Partners, Banks, Affiliates, Tenants, etc.)
 
 ### 
 

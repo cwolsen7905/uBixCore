@@ -403,7 +403,7 @@ On the resulting `main` pipeline:
 
 ### What is deliberately NOT gated
 
-There is **no mechanical correctness gate in front of prod today.** A green pipeline proves pods *serve*; it does not prove the release is *correct*. The sign-off queue that would close this — a pinned-release-candidate queue surfaced in Internal Admin with one-click Ship — is designed in [`docs/projects/continuous-delivery/release-gate.md`](../projects/continuous-delivery/release-gate.md) and is **not built** (status: planned/design). Until it is, the confidence gate is human judgement plus staging soak time. Treat the two clicks as the real gate, and do not press either one on someone else's behalf without knowing what is in the batch.
+There is **no mechanical correctness gate in front of prod today.** A green pipeline proves pods *serve*; it does not prove the release is *correct*. The sign-off queue that would close this — a pinned-release-candidate queue surfaced in an internal admin console with one-click Ship — is designed in [`docs/projects/continuous-delivery/release-gate.md`](../projects/continuous-delivery/release-gate.md) and is **not built** (status: planned/design). Until it is, the confidence gate is human judgement plus staging soak time. Treat the two clicks as the real gate, and do not press either one on someone else's behalf without knowing what is in the batch.
 
 ### Cutting a CalVer release
 

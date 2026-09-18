@@ -1,7 +1,6 @@
 # Schema Migration Standards
 
 **Status:** Approved
-**Audience:** VS Media Development Department
 **Last Updated:** 2026-08-18
 
 This document defines how schema changes flow into uBix Core's databases. It complements [`database.md`](database.md) — that doc covers _what_ a well-formed schema looks like; this doc covers _how_ a schema change actually lands in dev / staging / prod and how the platform tracks what's been applied where.
@@ -12,7 +11,7 @@ This document defines how schema changes flow into uBix Core's databases. It com
 
 These standards apply to:
 
-- Any change to the schema of a uBix Core-consumed database (`VSCASH`, `SYSTEMS`, `ntl_db`, `BILLING`, etc.) — `CREATE TABLE`, `ALTER TABLE`, `CREATE INDEX`, view / trigger / stored-procedure changes.
+- Any change to the schema of a uBix Core-consumed database (`SHOP`, `SYSTEMS`, `legacy_db`, `LEDGER`, etc.) — `CREATE TABLE`, `ALTER TABLE`, `CREATE INDEX`, view / trigger / stored-procedure changes.
 - Any data backfill or seed that needs to land alongside a schema change (with a split between **schema** migrations and **seed** files — see §6).
 - The full flow from authoring a migration on a feature branch to applying it on prod via the deploy pipeline.
 
@@ -53,12 +52,12 @@ Every migration file begins with a structured comment header that the runner par
 
 ```sql
 -- Migration: 20260505143045_pre_attribution_referrer_tables
--- Database: VSCASH
+-- Database: SHOP
 -- Description: Two lookup tables for the Pre-Attribution chain
 --              (Pre_Attribution_Referrer_Mappings + Triggers).
 -- Author: Christopher W. Olsen
 
-CREATE TABLE VSCASH.Pre_Attribution_Referrer_Mappings (
+CREATE TABLE SHOP.Pre_Attribution_Referrer_Mappings (
     ...
 );
 ```
@@ -66,13 +65,13 @@ CREATE TABLE VSCASH.Pre_Attribution_Referrer_Mappings (
 Required fields:
 
 - **Migration:** matches the filename (without extension). The runner verifies they agree.
-- **Database:** the target database (`VSCASH`, `SYSTEMS`, etc.). One database per migration — if a logical change spans two databases, write two migrations and rely on filename ordering for sequencing.
+- **Database:** the target database (`SHOP`, `SYSTEMS`, etc.). One database per migration — if a logical change spans two databases, write two migrations and rely on filename ordering for sequencing.
 - **Description:** human-readable summary; first line is shown by `migrate:status`.
 - **Author:** name of the engineer who authored the migration.
 
 The runner refuses to apply a file with a malformed or missing header.
 
-**Body qualification + the prefixed-schema rewrite (2026-08-18):** qualify body statements with the `Database:` value (`VSCASH.Foo`) — either quoting style is fine, bare or backtick-quoted (`` `VSCASH`.`Foo` ``). When `DATABASE_PREFIX` is set (the unit-test / CI test-DB pass, `migrate:* --prefix=`), `MigrationApplyService` rewrites **every** reference to the declared database at `<prefix><DB>` before piping the body to the `mariadb` CLI, so a prefixed run can never reach the runtime schema. Both quoting styles are rewritten; until 2026-08-18 only the bare form was, and a backtick-quoted `ALTER TABLE` kept its unprefixed schema and died in the dev pipeline with `ERROR 1146 ... Table 'ntl_db.transact' doesn't exist` (`20260817221748_add_bin_8_column_to_ntl_db_transaction_tables` — a `RequiresDBA:` file, which is exactly the class that DOES apply inline on TEST per §11.8). A reference to any **other** database is not rewritten and would hit the real cluster in a prefixed run — one database per migration (the `Database:` rule above) is what keeps that from happening.
+**Body qualification + the prefixed-schema rewrite (2026-08-18):** qualify body statements with the `Database:` value (`SHOP.Foo`) — either quoting style is fine, bare or backtick-quoted (`` `SHOP`.`Foo` ``). When `DATABASE_PREFIX` is set (the unit-test / CI test-DB pass, `migrate:* --prefix=`), `MigrationApplyService` rewrites **every** reference to the declared database at `<prefix><DB>` before piping the body to the `mariadb` CLI, so a prefixed run can never reach the runtime schema. Both quoting styles are rewritten; until 2026-08-18 only the bare form was, and a backtick-quoted `ALTER TABLE` kept its unprefixed schema and died in the dev pipeline with `ERROR 1146 ... Table 'legacy_db.transact' doesn't exist` (`20260817221748_add_bin_8_column_to_legacy_db_transaction_tables` — a `RequiresDBA:` file, which is exactly the class that DOES apply inline on TEST per §11.8). A reference to any **other** database is not rewritten and would hit the real cluster in a prefixed run — one database per migration (the `Database:` rule above) is what keeps that from happening.
 
 **Header grammar (parser contract, 2026-07-30):** the header vocabulary is exactly `Migration:`, `Database:`, `Description:`, `Author:`, `Destructive:`, `RequiresDBA:`, `AlterAck:` — **only these keys start a header line**. Any other `-- …` line while a header is open is a *continuation* of that header, including continuations whose text contains colons (`migrate:reconcile`, `pipeline-safe: …`, URLs). Earlier parser behavior treated any `word:` continuation as a fresh header and silently truncated the recorded reason — the value the §11.8 hold banner shows operators — which a Claude pipeline review caught on a real `RequiresDBA:` note (2026-07-30).
 
@@ -102,7 +101,7 @@ CREATE TABLE SYSTEMS.Schema_Migrations (
 Columns:
 
 - **`id`** — the migration's full filename (sans extension), e.g. `20260505143045_pre_attribution_referrer_tables`. Globally unique because timestamps include seconds.
-- **`target_database`** — populated from the file's `Database:` header. `migrate:status --database=VSCASH` filters on this.
+- **`target_database`** — populated from the file's `Database:` header. `migrate:status --database=SHOP` filters on this.
 - **`description`** — first line of the `Description:` header; surfaced in `migrate:status`.
 - **`checksum`** — SHA-256 of the migration file body (everything after the header). Used to detect after-the-fact edits to applied migrations (§7).
 - **`applied_at`** — when the migration finished successfully. Failed migrations leave no row.
@@ -124,17 +123,17 @@ Migrations are applied via Symfony Console commands on `bin/ubix`. The command s
 
 ```
 php bin/ubix migrate:up
-php bin/ubix migrate:up --database=VSCASH
+php bin/ubix migrate:up --database=SHOP
 php bin/ubix migrate:up --dry-run
 
 php bin/ubix migrate:status
-php bin/ubix migrate:status --database=VSCASH
+php bin/ubix migrate:status --database=SHOP
 php bin/ubix migrate:status --verify
 
 php bin/ubix migrate:reconcile <migration_id> --reason="DBA emergency 2026-05-05"
 
 php bin/ubix migrate:diff
-php bin/ubix migrate:diff --database=VSCASH
+php bin/ubix migrate:diff --database=SHOP
 
 # Operator-driven retarget (§4.5) — --target is required on every
 # invocation. --host / --port override the cluster per-call:
@@ -399,12 +398,12 @@ A destructive migration MUST add a fifth header line declaring intent:
 
 ```sql
 -- Migration: 20260612091522_drop_legacy_voyeur_columns
--- Database: VSCASH
--- Description: Drop the unused voyeur_* columns from Performer_Login.
+-- Database: SHOP
+-- Description: Drop the unused voyeur_* columns from Account_Login.
 -- Author: Christopher W. Olsen
 -- Destructive: Voyeur columns last referenced 2025-Q1; verified zero reads in legacy + uBix Core.
 
-ALTER TABLE VSCASH.Performer_Login
+ALTER TABLE SHOP.Account_Login
     DROP COLUMN voyeur_enabled,
     DROP COLUMN voyeur_price_credits;
 ```
@@ -417,7 +416,7 @@ The `Destructive:` value is a free-form one-line reason explaining _why this can
 
 ```
 DESTRUCTIVE MIGRATIONS PENDING:
-  20260612091522_drop_legacy_voyeur_columns (VSCASH)
+  20260612091522_drop_legacy_voyeur_columns (SHOP)
     Reason: Voyeur columns last referenced 2025-Q1; verified zero reads.
 
 Re-run with --i-acknowledge-destructive to proceed.
@@ -479,11 +478,11 @@ The strongest safety pattern is **don't drop in the same migration that retires 
 
 1. Migration A renames the about-to-be-dropped object to a `_deprecated_` prefix:
    ```sql
-   RENAME TABLE VSCASH.Old_Table TO VSCASH._deprecated_Old_Table_2026_06_12;
+   RENAME TABLE SHOP.Old_Table TO SHOP._deprecated_Old_Table_2026_06_12;
    ```
 2. Migration B (≥ 30 days later, after monitoring confirms zero reads) actually drops:
    ```sql
-   DROP TABLE VSCASH._deprecated_Old_Table_2026_06_12;
+   DROP TABLE SHOP._deprecated_Old_Table_2026_06_12;
    ```
 
 Both A and B are flagged destructive (rename and drop both trip the lint), so both go through layers 11.2 + 11.3. The 30-day buffer gives the platform real recovery time if the retirement was premature — a `RENAME` can be undone in seconds; a `DROP` cannot.
@@ -518,7 +517,7 @@ A migration declares this with a sixth header line:
 
 ```sql
 -- Migration: 20260701120000_rewrite_transactions_charset
--- Database: BILLING
+-- Database: LEDGER
 -- Description: Convert Transactions to utf8mb4 (full table rewrite, ~400M rows).
 -- Author: Christopher W. Olsen
 -- RequiresDBA: Full-table rewrite on a hot table; run via pt-osc with throttling. Coordinate via #databases.
@@ -530,7 +529,7 @@ The `RequiresDBA:` value is a free-form one-line note on *why* it needs the team
 
 ```
 REQUIRES-DBA MIGRATIONS PENDING:
-  20260701120000_rewrite_transactions_charset (BILLING)
+  20260701120000_rewrite_transactions_charset (LEDGER)
     Reason: Full-table rewrite on a hot table; run via pt-osc with throttling.
 
 Apply out-of-band via the MariaDB team (online DDL), then record it with:
@@ -556,7 +555,7 @@ On **dev**, an engineer may instead apply a `RequiresDBA` migration manually aga
 
 ### 11.9 Hot-table DDL guard — `AlterAck:` (machine-enforced since 2026-07-30)
 
-**The incident this prevents:** 2026-07-29, a migration created one table and inline-`ALTER`ed three *pre-existing* BILLING transaction tables (millions of rows). The DDL replayed single-threaded on the replicas and stalled replication behind it. §11.8 existed for exactly this case — but nothing forced the classification.
+**The incident this prevents:** 2026-07-29, a migration created one table and inline-`ALTER`ed three *pre-existing* LEDGER transaction tables (millions of rows). The DDL replayed single-threaded on the replicas and stalled replication behind it. §11.8 existed for exactly this case — but nothing forced the classification.
 
 **The rule (enforced by the parser for migration IDs ≥ `20260730000000`):** any `ALTER TABLE` or `CREATE INDEX … ON` whose target table is **not created in the same file** must carry one of:
 
@@ -630,13 +629,13 @@ The `00000000000000_` prefix is reserved for the bootstrap migration; never use 
 | 2.5 | 2026-06-24 | Christopher W. Olsen | **Per-tier deploy gating + explicit emergency bypass (§10 deploy paragraph).** Every runtime tier now has a gated normal deploy plus an explicit `deploy-<tier>-emergency` manual bypass (`needs: [build-*]` only — ships the built image past all gates; never auto-fires, visible in history), mirroring the dev model across staging + prod. Normal deploys: `deploy-staging` gated on `static-checks-staging` + `phpunit-staging` (hard) + `migrate-verify-staging` (advisory); `deploy-prod` gated on `migrate-verify-prod` (blocking — prod drift makes the normal button un-playable, use the emergency to override). Replaces the prior "staging/prod deploy `needs: [build]` only, the normal job IS the emergency mechanism" framing — the normal job is now safe-by-default and the bypass is explicit. Still gates on migrate-**verify** (drift signal + escape hatch), not migrate-**apply** (the §13 post-cutover target). `.gitlab-ci.yml` only. |
 | 2.6 | 2026-06-24 | Christopher W. Olsen | **`deploy-staging` flipped manual → auto-on-green (§10 deploy paragraph; §13).** Staging now does continuous delivery: `deploy-staging` fires automatically once the build, both quality gates, and `migrate-apply-staging` succeed — coupling deploy → migrate-**apply** at the staging tier, so it auto-deploys only when there's no blocking (destructive / `RequiresDBA`) migration (a blocking one aborts migrate-apply red and holds the deploy until handled + `deploy-staging-emergency`). `deploy-prod` stays manual; §13 gains the prod-continuous-deployment prerequisites (progressive/canary rollout via Argo Rollouts/Flagger, SLO-driven auto-rollback, a prod smoke gate, feature-flag-decoupled release). `.gitlab-ci.yml` only. |
 | 2.7 | 2026-06-27 | Christopher W. Olsen | **Expected holds no longer red the pipeline + destructive deploy path + backup-dir dind fix (§10, §11.3, §11.3.1, §11.4).** Two problems fixed. **(1) Pipeline status:** a pending destructive / `RequiresDBA` migration made `migrate-apply-<tier>` exit non-zero with `allow_failure: false`, reddening the whole pipeline for an *expected, human-gated* state. `UpCommand` now returns dedicated exit codes — `EXIT_DESTRUCTIVE_PENDING` (3) / `EXIT_REQUIRES_DBA_PENDING` (4) — distinct from `Command::FAILURE` (1, a real error), and the migrate-apply jobs (all tiers) carry `allow_failure.exit_codes: [3,4]`, so an expected hold is a ⚠️ warning (pipeline stays green) while a genuine apply error still hard-fails. `UpCommandTest::testHoldExitCodesMatchCiContract` pins the codes. **Deploy gating expressed as two jobs** (GitLab `needs:` has no OR): `deploy-<tier>` `needs:` the plain apply (held → skipped); new **`deploy-<tier>-destructive`** `needs:` the manual `migrate-apply-<tier>-destructive` and auto-cascades on its green (manual on prod), replacing "ship via `-emergency` after a destructive apply". Corrected the stale "deploy `needs: [build-*]` only" note. **(2) Backup dir (§11.4):** the bind-mount approach (`-v /tmp:/var/...` + job-side `chmod 777`) **broke under the `the original monorepo` dind runner** — the `-v` source resolves on the daemon fs, so Docker auto-created it root-owned and the non-root `www` user got `EACCES` (the `mkdir(): Permission denied` on `20260627110741_drop_idx_pa_status_app_date`). Replaced with `-e UBIX_MIGRATION_BACKUP_DIR=/tmp/ubix-migration-backups` (a `www`-owned in-container path); snapshots are ephemeral under dind (already the accepted state), durable prod snapshots still need a persistent volume (RWX — the runner's RWO PVC `Multi-Attach`-fails under concurrent pods). `.gitlab-ci.yml` + `UpCommand` + `UpCommandTest`. |
-| 2.8 | 2026-07-17 | Christopher W. Olsen | **Seeds now run automatically + idempotency is enforced (§6).** A new `seed` pipeline stage runs `seed:apply --all` after `migrate-apply` on **dev + staging only** — staging shares prod's DB cluster, so seeding staging seeds prod (no prod seed job). Realizes the previously-aspirational "CI runs all seeds as a routine sync." `seed:apply` gains an `--all` flag (apply every `sql/seeds/*.sql`, no-fail-fast) alongside the single-`<descriptor>` form. New `Ubix\Tests\SeedFileIdempotencyTest` (a `code:review`/phpunit gate) fails any seed whose `INSERT INTO` lacks `ON DUPLICATE KEY UPDATE` — a non-idempotent seed would duplicate-key-error on its second (every-deploy) apply. Fixed + de-duplicated the flat50 seed (`add_1461418_to_flat50`: `Seed:` header now matches the filename, `Database: STUDIOS`; removed the redundant timestamped copy — seeds don't use migration-style timestamp prefixes). `.gitlab-ci.yml` (`seed` stage + `.seed_apply` + `seed-apply-{dev,staging}`), `Console/Command/Seed/ApplyCommand`, `sql/seeds/`, `tests/SeedFileIdempotencyTest`. |
+| 2.8 | 2026-07-17 | Christopher W. Olsen | **Seeds now run automatically + idempotency is enforced (§6).** A new `seed` pipeline stage runs `seed:apply --all` after `migrate-apply` on **dev + staging only** — staging shares prod's DB cluster, so seeding staging seeds prod (no prod seed job). Realizes the previously-aspirational "CI runs all seeds as a routine sync." `seed:apply` gains an `--all` flag (apply every `sql/seeds/*.sql`, no-fail-fast) alongside the single-`<descriptor>` form. New `Ubix\Tests\SeedFileIdempotencyTest` (a `code:review`/phpunit gate) fails any seed whose `INSERT INTO` lacks `ON DUPLICATE KEY UPDATE` — a non-idempotent seed would duplicate-key-error on its second (every-deploy) apply. Fixed + de-duplicated the flat50 seed (`add_1461418_to_flat50`: `Seed:` header now matches the filename, `Database: TENANTS`; removed the redundant timestamped copy — seeds don't use migration-style timestamp prefixes). `.gitlab-ci.yml` (`seed` stage + `.seed_apply` + `seed-apply-{dev,staging}`), `Console/Command/Seed/ApplyCommand`, `sql/seeds/`, `tests/SeedFileIdempotencyTest`. |
 | 2.9 | 2026-07-17 | Christopher W. Olsen | **Seed Slack notifications (§6).** `seed:apply --all` now posts a `#databases` summary after each dev/staging sync via the new `SeedNotificationService` (mirrors `MigrationNotificationService`; same `:trident:` branding, Slack failures swallowed): a success list of applied seeds, or a failure header naming the errored ones. Notifies on every sync — no-op suppression (post only on real row changes) is deferred because the `mysql`-CLI batch apply path doesn't expose a reliable affected-row count. Also switched the *migration* notification icon `:floppy_disk:` → `:trident:` for consistent branding across all pipeline Slack posts. `Service/Seed/SeedNotificationService`, `Console/Command/Seed/ApplyCommand`, `Service/Migration/MigrationNotificationService`. |
 | 2.10 | 2026-07-17 | Christopher W. Olsen | **Seed system v2 — apply-on-change, ordering, key-backed idempotency (§6 rewritten).** (1) **Apply-on-change:** the CI `seed` stage now applies only the seeds *changed in the push* (`git diff` → `seed:apply <descriptors>`), not `--all` every deploy — bounds a non-idempotent slip to the commit that changes it, and makes no-seed-change deploys silent no-ops. `--all` kept for fresh-env bootstrap; `seed:apply` takes variadic descriptors, applied in ascending-filename order. (2) **Ordering:** seeds adopt a numeric prefix (`NNN_`); existing two renamed (`010_pre_attribution_referrer_seed`, `020_internal_admin_2_0_page_registry`). Soft-FK note: prefer self-contained parent+children seeds; cross-file deps ordered by prefix. (3) **Key-backed idempotency:** `SeedFileIdempotencyTest` gains a check that any `ON DUPLICATE KEY UPDATE` / `INSERT IGNORE` seed's table has a UNIQUE/PRIMARY key covered by the inserted columns (parsing DDL from baseline + migrations) — catching the silent-duplicate trap (a guard with no backing key never fires). (4) Notifications now reflect real changes (only changed seeds apply), dropping the every-merge no-op post. `Console/Command/Seed/ApplyCommand`, `Service/Seed/SeedNotificationService`, `tests/SeedFileIdempotencyTest`, `.gitlab-ci.yml`, `sql/seeds/`. |
-| 2.11 | 2026-07-30 | Christopher W. Olsen | **§11.9 hot-table DDL guard.** Parser-enforced (IDs ≥ 20260730000000): `ALTER TABLE`/`CREATE INDEX` on a table not created in-file requires `RequiresDBA:` (out-of-band pt-osc path) or the new `AlterAck:` header (author vouches the table is small). Response to the 2026-07-29 replication-lag incident (inline ALTERs on multi-million-row BILLING tables). New `HotTableAlterDetectorService` + `MigrationFile.alterAckReason`; older migrations grandfathered. pt-osc runner integration chartered as SB-38 phase 2. |
+| 2.11 | 2026-07-30 | Christopher W. Olsen | **§11.9 hot-table DDL guard.** Parser-enforced (IDs ≥ 20260730000000): `ALTER TABLE`/`CREATE INDEX` on a table not created in-file requires `RequiresDBA:` (out-of-band pt-osc path) or the new `AlterAck:` header (author vouches the table is small). Response to the 2026-07-29 replication-lag incident (inline ALTERs on multi-million-row LEDGER tables). New `HotTableAlterDetectorService` + `MigrationFile.alterAckReason`; older migrations grandfathered. pt-osc runner integration chartered as SB-38 phase 2. |
 | 2.12 | 2026-07-30 | Christopher W. Olsen | **SB-38 phase 2 dropped — pt-osc stays out of the pipeline.** Runner-integrated pt-osc rejected: hours-long throttled copies inside CI jobs recreate the timeout → applied-but-unrecorded failure mode. §11.9 + §13 updated; pt-osc = MariaDB-team out-of-band tool + `migrate:reconcile`. §13 gains the two-phase apply record (`running`→`applied`) + `lock_wait_timeout` future-work item. |
 | 2.13 | 2026-07-30 | Christopher W. Olsen | **`test` tier applies `RequiresDBA` migrations inline (§10, §10.1, §11.8).** Surfaced by the first held migration (`20260728233256`): the unit-test DB provisioning run held too, leaving the test schema missing the columns real tiers gain at reconcile time — so DB-backed tests would target the wrong schema. The unit-test database is rebuilt from scratch with zero rows every run, so the hold's rationale (long online DDL on big hot tables) can never apply there. `UpCommand::requiresDbaGuard()` now takes the resolved `Env` and passes on `Env::TEST` only (mirrors the destructive guard's existing non-staging/prod relaxation, which already covered `test`); every real tier still aborts unconditionally (exit 4). Behavioral tests added (guard holds on dev/sandbox/staging/prod, passes on test). |
 | 2.14 | 2026-07-30 | Christopher W. Olsen | **§2.1 header grammar made explicit + parser hardened.** Only the seven known header keys start a header line; continuation lines may contain colons. Fixes silent truncation of multi-line `RequiresDBA:` reasons (Claude review catch on 20260728233256). |
 | 2.15 | 2026-07-30 | Christopher W. Olsen | **Expected holds converted to loud green success in the CI wrapper (§10, §10.1, §11.3, §11.3.1).** The v2.7 `allow_failure.exit_codes: [3,4]` model was never exercised until the first real `RequiresDBA` hold (2026-07-30) — and GitLab did not soften the jobs: `migrate-apply-dev` and `-staging` both hard-failed on exit 4, blocking pipelines for an expected, human-gated state. The `.migrate_apply` wrapper now converts exits 3/4 to exit 0 with a prominent HOLD banner (nothing was applied; the migration stays pending until the `-destructive` button or the DBA apply + `migrate:reconcile`), which is executor- and GitLab-semantics-proof; `allow_failure.exit_codes` stays on the jobs as defense-in-depth. Exit 1 (real apply error) still reds the pipeline. Runner exit codes unchanged (`UpCommandTest` contract intact). |
 | 2.16 | 2026-07-30 | Christopher W. Olsen | **Per-migration holds + per-database damming; deploys proceed on holds; merge-when-ready policy (§4, §10, §10.1, §11.3, §11.8, §12).** The first live `RequiresDBA` hold froze the whole migration queue: the runner aborted the entire run on the first held migration, so `20260730170532` (`SYSTEMS.Claude_Reviews`) never applied on dev — and the interim wrapper conversion also left the `needs:`-gated deploys firing with contradictory docs (Claude-review findings on `a39c7a0b`). Resolution: **(1)** `UpCommand` now *partitions* the pending set — held migrations (`RequiresDBA:` everywhere but test; unacknowledged `Destructive:` on staging/prod) are skipped while everything else applies in the same run; later migrations of the **same database** dam behind a hold (strict per-database ordering preserved; other databases flow — the scoped form of Flyway's `outOfOrder`); exit codes unchanged (4 wins over 3), wrapper still converts holds to a loud green job. **(2)** Deploys intentionally **proceed** on a hold — safe by §11.5 expand/contract; the §11.8 author rules make it stay safe (no dependent code merges un-flagged until reconcile; dependent follow-up migrations target the same database). **(3)** `RequiresDBA:` migrations land **merge-when-ready** (§11.8/§12) — merged only when the DBA apply is scheduled; `20260728233256` was pulled off `dev` and parked on `feature-mig-reland-transact-attempt-id` accordingly. **(4)** The dead `allow_failure.exit_codes` blocks (unreachable after wrapper conversion) were removed from the migrate-apply jobs and the stale deploy-gating comments/doc bullets corrected. |
-| 2.17 | 2026-08-18 | Christopher W. Olsen | **Backtick-quoted schema qualifiers are now rewritten under `DATABASE_PREFIX` (§2.1).** `MigrationApplyService::runBodyViaMariadbCli()` rewrote qualified references with a plain `str_replace('<db>.', '<prefix><db>.')`, which matched only the BARE form — a body written as `` ALTER TABLE `ntl_db`.`transact` `` (the conventional quoting, and what the pre-flight clash check already handled via `splitObjectRef()`) kept its unprefixed schema and ran against the real cluster's name. It broke the dev pipeline's test-DB pass on `20260817221748_add_bin_8_column_to_ntl_db_transaction_tables` with `ERROR 1146 ... Table 'ntl_db.transact' doesn't exist`, and bit precisely the `RequiresDBA:` class of file that v2.13 made apply inline on TEST. Replaced with a backtick-aware, identifier-anchored `preg_replace_callback` (new private `prefixQualifiedReferences()`); a table whose name merely ends with the database name (`archive_ntl_db.x`) is left alone. New DB-backed regression test applies a backtick-quoted `CREATE TABLE` and asserts it lands in the prefixed schema (verified to fail against the old rewrite). §2.1 gains the body-qualification rule: either quoting style is fine, cross-database references are NOT rewritten. |
+| 2.17 | 2026-08-18 | Christopher W. Olsen | **Backtick-quoted schema qualifiers are now rewritten under `DATABASE_PREFIX` (§2.1).** `MigrationApplyService::runBodyViaMariadbCli()` rewrote qualified references with a plain `str_replace('<db>.', '<prefix><db>.')`, which matched only the BARE form — a body written as `` ALTER TABLE `legacy_db`.`transact` `` (the conventional quoting, and what the pre-flight clash check already handled via `splitObjectRef()`) kept its unprefixed schema and ran against the real cluster's name. It broke the dev pipeline's test-DB pass on `20260817221748_add_bin_8_column_to_legacy_db_transaction_tables` with `ERROR 1146 ... Table 'legacy_db.transact' doesn't exist`, and bit precisely the `RequiresDBA:` class of file that v2.13 made apply inline on TEST. Replaced with a backtick-aware, identifier-anchored `preg_replace_callback` (new private `prefixQualifiedReferences()`); a table whose name merely ends with the database name (`archive_legacy_db.x`) is left alone. New DB-backed regression test applies a backtick-quoted `CREATE TABLE` and asserts it lands in the prefixed schema (verified to fail against the old rewrite). §2.1 gains the body-qualification rule: either quoting style is fine, cross-database references are NOT rewritten. |

@@ -1,7 +1,6 @@
 # Memcache Key Conventions
 
 **Status:** Approved
-**Audience:** VS Media Development Department
 **Last Updated:** 2026-07-30
 
 This document defines the naming convention for Memcache keys written by uBix Core services. It applies to every key uBix Core sets, regardless of which Memcache cluster the request lands on (current legacy cluster, or the new mcrouter-fronted cluster once cutover happens).
@@ -30,7 +29,7 @@ These conventions do NOT apply to:
 
 - **Self-documenting in ops tools.** `memcached-tool stats` / `mcrouter-stats` show the key prefix; `UBIX_*` is unambiguous about ownership.
 - **Searchable.** `grep UBIX_` across the codebase finds every uBix Core cache touch point.
-- **Visually distinct from legacy.** Legacy keys are inconsistent (`cdn_list_flirt4free`, `Platform_CDN_class_$platform`, `sess__<SESSID>`, etc.); the `UBIX_` prefix never overlaps.
+- **Visually distinct from legacy.** Legacy keys are inconsistent (`cdn_list_content_db`, `Platform_CDN_class_$platform`, `sess__<SESSID>`, etc.); the `UBIX_` prefix never overlaps.
 - **Avoids any future short-prefix collision** (`PN_`, `NP_`, etc. could mean other things — phone number, production network, npm package).
 
 ### 2.2 Format
@@ -153,7 +152,7 @@ A `:9999` slot stays in the modulo but is never connected to; keys hashing to it
   - `docs/surfaces/feature-flags/srs.md` REQ-FF-CACHE-* (future)
   - `docs/surfaces/abuse-prevention/technical-spec.md` REQ-RL-CACHE-* (future)
 - Legacy Memcache key inventory (DO NOT use as a template for new keys; documented for cutover-period awareness):
-  - `cdn_list_flirt4free` — `Platform/CDN.php` flat-file fallback cache, 24h TTL
+  - `cdn_list_content_db` — `Platform/CDN.php` flat-file fallback cache, 24h TTL
   - `Platform_CDN_class_<platform>` — `Platform/CDN.php` webservice-fallback cache
   - `sess__<SESSID>` (or `sess_<DOMAIN>_<SESSID>` in prod) — PHP session payload
   - `ARRAY_LIVE_MODELS_IS_FILTERED_<model_id>` — legacy live-cams override
