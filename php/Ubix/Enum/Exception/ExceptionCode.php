@@ -84,6 +84,9 @@ enum ExceptionCode: int
     case NO_MATCHES_FOUND_FOR_STATE_ISO31662          = 11145;
     case IMAGE_INVALID                                = 11147;
     case ASCII_ART_SPLIT_FAILED                       = 11155;
+    case MEDIA_OBJECT_NOT_FOUND                       = 11156;
+    case MEDIA_LOCAL_FILE_UNREADABLE                  = 11157;
+    case MEDIA_STORAGE_OPERATION_FAILED               = 11158;
     case ERROR_EXECUTING_PDO_QUERY                    = 13001;
     case USER_NOT_FOUND                               = 13019;
     case VALIDATION_FAILED                            = 29003;
