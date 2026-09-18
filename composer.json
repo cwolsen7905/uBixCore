@@ -58,7 +58,7 @@
 		"rector/rector": "^2.1"
 	},
 	"suggest": {
-		"aws/aws-sdk-php": "Required by Ubix\\Service\\Blob\\S3BlobService (S3 blob storage)",
+		"aws/aws-sdk-php": "Required by Ubix\\Service\\Media\\S3MediaStorageService (object storage) and the legacy Ubix\\Service\\Blob\\S3BlobService",
 		"filestack/filestack-php": "Required by Ubix\\Service\\Blob\\FilestackBlobService (Filestack blob storage)",
 		"m4tthumphrey/php-gitlab-api": "GitLab API client for CLI tooling that talks to GitLab"
 	},

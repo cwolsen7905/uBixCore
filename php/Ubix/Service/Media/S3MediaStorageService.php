@@ -36,7 +36,8 @@ use Ubix\Service\Media\MediaStorageServiceInterface as MediaStorageService;
  *
  * | Env var                            | Meaning                                                            | Source                                            |
  * |-------------------------------------|--------------------------------------------------------------------|----------------------------------------------------|
- * | `MEDIA_S3_ENDPOINT`                 | The S3-compatible endpoint URL                                     | plain per-environment config (k8s ConfigMap/`.env`) |
+ * | `MEDIA_S3_ENDPOINT`                 | The S3-compatible endpoint this process uses to reach the store     | plain per-environment config (k8s ConfigMap/`.env`) |
+ * | `MEDIA_S3_PUBLIC_ENDPOINT`          | The endpoint a **browser** can reach, used when signing URLs handed to one. Optional; falls back to `MEDIA_S3_ENDPOINT` when the store is reachable at one address from both sides (a plain AWS bucket) | plain per-environment config |
  * | `MEDIA_S3_REGION`                   | The bucket's region (MinIO accepts any non-empty value)             | plain per-environment config                        |
  * | `MEDIA_S3_BUCKET`                   | The bucket name                                                    | plain per-environment config                        |
  * | `MEDIA_S3_USE_PATH_STYLE_ENDPOINT`  | `'false'` to use virtual-hosted-style addressing; anything else (including unset) uses path-style | plain per-environment config |
@@ -88,13 +89,13 @@ final class S3MediaStorageService implements MediaStorageService
     {
         $objectKey = $this->generateObjectKey();
 
-        $command = $this->getClient()->getCommand('PutObject', [
+        $command = $this->getClient(browserFacing: true)->getCommand('PutObject', [
             'Bucket'      => $this->bucket(),
             'ContentType' => $contentType,
             'Key'         => $objectKey,
         ]);
 
-        $request = $this->getClient()->createPresignedRequest($command, '+' . $ttlSeconds . ' seconds');
+        $request = $this->getClient(browserFacing: true)->createPresignedRequest($command, '+' . $ttlSeconds . ' seconds');
 
         return new PresignedUpload(
             objectKey:              $objectKey,
@@ -179,12 +180,12 @@ final class S3MediaStorageService implements MediaStorageService
      */
     public function createSignedReadUrl(string $objectKey, int $ttlSeconds): SignedUrl
     {
-        $command = $this->getClient()->getCommand('GetObject', [
+        $command = $this->getClient(browserFacing: true)->getCommand('GetObject', [
             'Bucket' => $this->bucket(),
             'Key'    => $objectKey,
         ]);
 
-        $request = $this->getClient()->createPresignedRequest($command, '+' . $ttlSeconds . ' seconds');
+        $request = $this->getClient(browserFacing: true)->createPresignedRequest($command, '+' . $ttlSeconds . ' seconds');
 
         return new SignedUrl(
             url:                    (string) $request->getUri(),
@@ -257,11 +258,13 @@ final class S3MediaStorageService implements MediaStorageService
     /**
      * Get an S3Client, either the one injected at construction (tests only) or one built from `MEDIA_S3_*` environment configuration
      *
+     * @param bool $browserFacing Whether this client will sign a URL handed to somebody else's browser, in which case it must be built against the publicly reachable endpoint rather than the one this process uses
+     *
      * @throws DtoException If the S3Client fails to initialize
      *
      * @return S3Client The S3 client
      */
-    private function getClient(): S3Client
+    private function getClient(bool $browserFacing = false): S3Client
     {
         if ($this->s3Client !== null) {
             return $this->s3Client;
@@ -270,8 +273,21 @@ final class S3MediaStorageService implements MediaStorageService
         $accessKeyId     = (string) getenv('MEDIA_S3_ACCESS_KEY_ID');
         $secretAccessKey = (string) getenv('MEDIA_S3_SECRET_ACCESS_KEY');
         $region          = (string) getenv('MEDIA_S3_REGION');
-        $endpoint        = (string) getenv('MEDIA_S3_ENDPOINT');
         $usePathStyle    = getenv('MEDIA_S3_USE_PATH_STYLE_ENDPOINT') !== 'false';
+
+        // A presigned URL is handed to somebody else's browser, so it has to name
+        // an address that browser can reach. The endpoint this process uses to
+        // talk to the store often cannot be: a cluster-internal service name, a
+        // private address, a sidecar port. Where the two differ, a deployment
+        // sets MEDIA_S3_PUBLIC_ENDPOINT and gets both.
+        //
+        // This cannot be fixed by rewriting the host afterwards. SigV4 signs the
+        // Host header, so a URL signed against one endpoint and served on another
+        // fails signature validation -- the signing itself has to happen against
+        // the public address, which is why this is a separate client rather than
+        // a string replacement on the way out.
+        $publicEndpoint = (string) getenv('MEDIA_S3_PUBLIC_ENDPOINT');
+        $endpoint       = $browserFacing && $publicEndpoint !== '' ? $publicEndpoint : (string) getenv('MEDIA_S3_ENDPOINT');
 
         $singletonKey = md5(serialize([$accessKeyId, $secretAccessKey, $region, $endpoint, $usePathStyle]));
 
