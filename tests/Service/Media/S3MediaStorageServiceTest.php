@@ -26,7 +26,7 @@ final class S3MediaStorageServiceTest extends UbixConcreteClassOrEnumTestCase im
     private const ENV = [
         'MEDIA_S3_ACCESS_KEY_ID', 'MEDIA_S3_SECRET_ACCESS_KEY', 'MEDIA_S3_REGION',
         'MEDIA_S3_ENDPOINT', 'MEDIA_S3_BUCKET', 'MEDIA_S3_USE_PATH_STYLE_ENDPOINT',
-        'MEDIA_S3_PUBLIC_BASE_URL',
+        'MEDIA_S3_PUBLIC_BASE_URL', 'MEDIA_S3_PUBLIC_ENDPOINT',
     ];
 
     /**
@@ -135,6 +135,57 @@ final class S3MediaStorageServiceTest extends UbixConcreteClassOrEnumTestCase im
         $ticket = $service->createPresignedUpload('image/png', 60);
 
         $this->assertStringStartsWith('http://minio.kitg-dev.svc.cluster.local:9000/', $ticket->uploadUrl);
+    }
+
+    /**
+     * A URL handed to a browser is signed against the public endpoint, not the internal one
+     *
+     * @return void
+     */
+    public function testBrowserFacingUrlsUseThePublicEndpoint(): void
+    {
+        // The address this process reaches the store at, and the address a
+        // browser can reach, are routinely different: a cluster-internal service
+        // name resolves for the pod and for nobody else.
+        putenv('MEDIA_S3_ENDPOINT=http://minio.kitg-dev.svc.cluster.local:9000');
+        putenv('MEDIA_S3_PUBLIC_ENDPOINT=https://media.example.test');
+        putenv('MEDIA_S3_BUCKET=kitg-dev-media');
+        putenv('MEDIA_S3_REGION=us-east-1');
+        putenv('MEDIA_S3_USE_PATH_STYLE_ENDPOINT=true');
+
+        $service = new S3MediaStorageService($this->createStub(Logger::class));
+
+        $upload = $service->createPresignedUpload('image/png', 60);
+        $read   = $service->createSignedReadUrl('some-object-key', 60);
+
+        // Both are handed to a browser, so both must name the public address.
+        $this->assertStringStartsWith('https://media.example.test/', $upload->uploadUrl);
+        $this->assertStringStartsWith('https://media.example.test/', $read->url);
+
+        // And the signature has to be *against* that host, not rewritten onto it
+        // afterwards: SigV4 covers the Host header, so a URL signed internally and
+        // served publicly fails validation. Presence of the signature on a URL
+        // whose host is the public one is what proves signing happened there.
+        $this->assertStringContainsString('X-Amz-Signature=', $upload->uploadUrl);
+        $this->assertStringContainsString('X-Amz-Signature=', $read->url);
+    }
+
+    /**
+     * Without a public endpoint the internal one is used, so a single-address store needs no extra config
+     *
+     * @return void
+     */
+    public function testPublicEndpointFallsBackToTheInternalOne(): void
+    {
+        // A plain AWS bucket is reachable at one address from everywhere, which is
+        // the case this must not force anyone to configure twice.
+        putenv('MEDIA_S3_ENDPOINT=https://s3.example.test');
+        putenv('MEDIA_S3_BUCKET=kitg-dev-media');
+        putenv('MEDIA_S3_REGION=us-east-1');
+
+        $service = new S3MediaStorageService($this->createStub(Logger::class));
+
+        $this->assertStringStartsWith('https://s3.example.test/', $service->createPresignedUpload('image/png', 60)->uploadUrl);
     }
 
     /**
