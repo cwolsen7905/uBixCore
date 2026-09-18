@@ -72,26 +72,60 @@ final class ResetSchemaCommand extends Command
             return Command::FAILURE;
         }
 
-        foreach ($databases as $database) {
-            // Create database if it does not exist
-            $command = 'mysql --user=' . $mysqlUser . ' --password=' . $mysqlPassword . ' --port=' . $mysqlPort . ' --host=' . $mysqlHost . " -e 'CREATE DATABASE IF NOT EXISTS " . $database . "'";
-            $result  = $this->processService->executeAsSubprocess($command);
-            if ($result->exitCode !== 0) {
-                $output->writeln('<error>Command failed: ' . $command . '</error>');
-                $output->writeln('<error>Exit Code: ' . $result->exitCode . '</error>');
-                $output->writeln('<error>STDERR: ' . $result->stderrOutput . '</error>');
-                return Command::FAILURE;
-            }
+        //
+        //  Credentials go in a 0600 defaults file, never on the command line: argv is
+        //  world-readable through the process list, and this command echoes the command
+        //  it ran when one fails. Neither may ever carry the password.
+        //
+        $defaultsFile = $this->writeDefaultsFile(
+            is_string($mysqlUser) ? $mysqlUser : '',
+            is_string($mysqlPassword) ? $mysqlPassword : '',
+            is_string($mysqlHost) ? $mysqlHost : '',
+            is_string($mysqlPort) ? $mysqlPort : '',
+        );
+        if ($defaultsFile === null) {
+            $output->writeln('<error>Could not create a temporary credentials file.</error>');
 
-            $command = 'mysql --user=' . $mysqlUser . ' --password=' . $mysqlPassword . ' --port=' . $mysqlPort . ' --host=' . $mysqlHost . ' ' . $database . ' < ' . $this->projectRoot->getPath('sql', $database . '.sql');
-            $result  = $this->processService->executeAsSubprocess($command);
-            if ($result->exitCode !== 0) {
-                $output->writeln('<error>Command failed: ' . $command . '</error>');
-                $output->writeln('<error>Exit Code: ' . $result->exitCode . '</error>');
-                $output->writeln('<error>STDERR: ' . $result->stderrOutput . '</error>');
-                return Command::FAILURE;
+            return Command::FAILURE;
+        }
+
+        try {
+            $client = $this->clientBinary();
+
+            foreach ($databases as $database) {
+                // Create database if it does not exist
+                $command = sprintf(
+                    '%s --defaults-extra-file=%s -e %s',
+                    $client,
+                    escapeshellarg($defaultsFile),
+                    escapeshellarg('CREATE DATABASE IF NOT EXISTS ' . $database),
+                );
+                $result  = $this->processService->executeAsSubprocess($command);
+                if ($result->exitCode !== 0) {
+                    $output->writeln('<error>Command failed: ' . $command . '</error>');
+                    $output->writeln('<error>Exit Code: ' . $result->exitCode . '</error>');
+                    $output->writeln('<error>STDERR: ' . $result->stderrOutput . '</error>');
+                    return Command::FAILURE;
+                }
+
+                $command = sprintf(
+                    '%s --defaults-extra-file=%s %s < %s',
+                    $client,
+                    escapeshellarg($defaultsFile),
+                    escapeshellarg($database),
+                    escapeshellarg($this->projectRoot->getPath('sql', $database . '.sql')),
+                );
+                $result  = $this->processService->executeAsSubprocess($command);
+                if ($result->exitCode !== 0) {
+                    $output->writeln('<error>Command failed: ' . $command . '</error>');
+                    $output->writeln('<error>Exit Code: ' . $result->exitCode . '</error>');
+                    $output->writeln('<error>STDERR: ' . $result->stderrOutput . '</error>');
+                    return Command::FAILURE;
+                }
+                $output->writeln('<info>Successfully rebuilt schema: ' . $database . '</info>');
             }
-            $output->writeln('<info>Successfully rebuilt schema: ' . $database . '</info>');
+        } finally {
+            unlink($defaultsFile);
         }
 
         return Command::SUCCESS;
@@ -114,5 +148,57 @@ HELP,
             InputArgument::REQUIRED,
             'The environment to build',
         );
+    }
+
+    /**
+     * Writes the connection settings to a private file the client reads instead of argv.
+     *
+     * @param string $user     Database user
+     * @param string $password Database password
+     * @param string $host     Database host
+     * @param string $port     Database port
+     *
+     * @return ?string Path to the file, or null when it could not be created
+     */
+    private function writeDefaultsFile(string $user, string $password, string $host, string $port): ?string
+    {
+        $path = tempnam(sys_get_temp_dir(), 'ubix-client-');
+        if ($path === false) {
+            return null;
+        }
+
+        //  Narrow the permissions before anything sensitive is written.
+        chmod($path, 0600);
+
+        $settings = sprintf("[client]\nuser=%s\npassword=%s\nhost=%s\nport=%s\n", $user, $password, $host, $port);
+
+        if (file_put_contents($path, $settings) === false) {
+            unlink($path);
+
+            return null;
+        }
+
+        return $path;
+    }
+
+    /**
+     * Resolves the command-line client to call.
+     *
+     * MariaDB renamed the binary and its `mysql` shim prints a deprecation notice, while
+     * MySQL ships no `mariadb`. The framework names neither: hosts set MYSQL_CLIENT_BINARY,
+     * and failing that whichever of the two is on PATH wins.
+     *
+     * @return string The client binary name
+     */
+    private function clientBinary(): string
+    {
+        $configured = getenv('MYSQL_CLIENT_BINARY');
+        if (is_string($configured) && $configured !== '') {
+            return $configured;
+        }
+
+        $lookup = $this->processService->executeAsSubprocess('command -v mariadb');
+
+        return $lookup->exitCode === 0 ? 'mariadb' : 'mysql';
     }
 }
