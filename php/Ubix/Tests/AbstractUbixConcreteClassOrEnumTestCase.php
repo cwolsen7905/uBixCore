@@ -24,11 +24,10 @@ use Throwable;
 use Ubix\Collection\CollectionInterface as Collection;
 use Ubix\Controller\AbstractController as Controller;
 use Ubix\DataTransferObject\DtoInterface as Dto;
-use Ubix\Enum\MachineCodeReview\MachineCodeReviewTool;
-use Ubix\Enum\Migration\DestructiveStatementKind;
 use Ubix\Model\AbstractModel as Model;
 use Ubix\SimpleCache\AbstractSimpleCache;
 use Ubix\Tests\AbstractTestCase as TestCase;
+use UnitEnum;
 
 /**
  * Abstract class for a PHPUnit test case for every uBixCore concrete class and enumeration
@@ -307,6 +306,10 @@ abstract class AbstractUbixConcreteClassOrEnumTestCase extends TestCase
                     case 'string':
                         $value = $this->generateRandomString();
                         break;
+
+                    default:
+                        $value = $this->generateEnumCase(explode('|', $parameterType)[0]);
+                        break;
                 }
 
                 $constructorParameters[$parameter->getName()] = $value;
@@ -445,6 +448,26 @@ abstract class AbstractUbixConcreteClassOrEnumTestCase extends TestCase
     }
 
     /**
+     * The first case of a backed enum, for satisfying a typed constructor parameter
+     *
+     * Deliberately the first case rather than a random one: this check asserts the
+     * value round-trips through the constructor, and a deterministic value keeps a
+     * failure reproducible from the output alone.
+     *
+     * @param string $parameterType The constructor parameter's type name
+     *
+     * @return ?UnitEnum The first case, or null when the type is not an enum
+     */
+    private function generateEnumCase(string $parameterType): ?UnitEnum
+    {
+        if (!enum_exists($parameterType)) {
+            return null;
+        }
+
+        return $parameterType::cases()[0] ?? null;
+    }
+
+    /**
      * Generate a random string
      *
      * @return string A random string
@@ -521,12 +544,13 @@ abstract class AbstractUbixConcreteClassOrEnumTestCase extends TestCase
                         $value = $this->generateRandomString();
                         break;
 
-                    case MachineCodeReviewTool::class: // TEMPORARY: this is hacky, we need to do something about PHP-DI for PHPUnit
-                        $value = MachineCodeReviewTool::PHPUNIT;
-                        break;
-
-                    case DestructiveStatementKind::class: // TEMPORARY: this is hacky, we need to do something about PHP-DI for PHPUnit
-                        $value = DestructiveStatementKind::DROP_TABLE;
+                    default:
+                        // Any enum, not a list of the ones we happened to hit. The
+                        // two hard-coded cases that used to live here (and carried
+                        // a `TEMPORARY: this is hacky` note) were really this rule
+                        // written out twice; a host declaring a DTO with its own
+                        // enum could not satisfy the check at all.
+                        $value = $this->generateEnumCase(explode('|', $parameterType)[0]);
                         break;
                 }
 
