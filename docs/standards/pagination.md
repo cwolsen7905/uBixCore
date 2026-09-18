@@ -1,7 +1,6 @@
 # Pagination Standards
 
 **Status:** Approved
-**Audience:** VS Media Development Department
 **Last Updated:** 2026-06-25 (added §7 Performance & prefetching — client-side prefetch/cache first, shared-Memcache cache-aside second, no queue needed; renumbered Quick reference to §8)
 
 This document defines how uBix Core paginates list endpoints. uBix Core sanctions **exactly two** pagination patterns, each canonical for a specific problem shape. Anything else — hand-rolled `LIMIT`/`OFFSET`, ad-hoc cursors, returning unbounded arrays from a list endpoint — is non-conforming and is rejected by machine code review (§5).
@@ -21,7 +20,7 @@ Applies to every uBix Core API endpoint that returns a **collection** that can g
 | | **Offset pagination** (page-based) | **Cursor pagination** (keyset) |
 |---|---|---|
 | **Use when** | A bounded, browsable dataset where the user wants page numbers, jump-to-page, and a total count | An unbounded, append-only / continuously-growing feed consumed by infinite scroll, where totals and jump-to-page are meaningless |
-| **Canonical consumers** | Admin tables — Users, Affiliates, Performers, all M3 list surfaces | The home activity stream; fanclub post feeds |
+| **Canonical consumers** | Admin tables — Users, Affiliates, Accounts, all M3 list surfaces | The home activity stream; fanclub post feeds |
 | **UI** | Numbered pager + "Showing X–Y of Z" | "Load more" / infinite scroll |
 | **Strengths** | Total count; jump to any page | Stable under concurrent inserts; efficient at any depth |
 | **Trade-offs** | Deep offsets degrade (scan-and-discard); a row inserted mid-browse shifts pages | No total count; cannot jump to an arbitrary page |
@@ -115,7 +114,7 @@ What MCR does **not** decide: *which* pattern an endpoint should use (§2 decisi
 ## 6. Rollout
 
 - **Offset seam:** built (Phase 2) and **fully consumed by Admin Users** (Phase 2c, done) — DataTypes + `AbstractPaginatedSqlRepository::getPage` + the request/response payload bases, the `AdminUserAccount` repo/service/controller, the shared `DataTable` server-driven mode, and the URL-driven + cached + prefetched Users page (§7.1). The reference implementation for every future offset consumer.
-- **Existing endpoints migrated (Phase 4, done):** `Affiliate` and `Performer` search moved off their pre-standard `{ …, totalCount, currentPage, totalPages }` shape onto the canonical `{ items, limit, offset, total }` (§3), so there is one wire shape. Their structured multi-field filter forms were kept (DataTable server mode models a single search box; multi-filter surfaces keep a tailored form).
+- **Existing endpoints migrated (Phase 4, done):** `Affiliate` and `Account` search moved off their pre-standard `{ …, totalCount, currentPage, totalPages }` shape onto the canonical `{ items, limit, offset, total }` (§3), so there is one wire shape. Their structured multi-field filter forms were kept (DataTable server mode models a single search box; multi-filter surfaces keep a tailored form).
 - **Sniff (`DemandCanonicalPagination`), Phase 3, done:** the payload-base rules in §5 are now machine-enforced repo-wide (zero violations after the Phase 4 migration unblocked it). The raw-`LIMIT` rule remains deferred per §5.
 - **Cursor seam:** built when the home stream or fanclubs are ported to uBix Core-native (§4).
 

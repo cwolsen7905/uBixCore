@@ -23,10 +23,10 @@ Make the standard enforceable by shipping the runner. Until this lands, every re
 
 ## Open decisions to resolve in slice 1 (before code)
 
-1. **Per-DB connection strategy.** The runner has to apply migrations against `VSCASH`, `SYSTEMS`, `ntl_db`, etc. — different databases. The existing `Ubix\Service\Sql\MysqlPdoSqlService` is constructed with one DSN at boot. Three options:
+1. **Per-DB connection strategy.** The runner has to apply migrations against `SHOP`, `SYSTEMS`, `legacy_db`, etc. — different databases. The existing `Ubix\Service\Sql\MysqlPdoSqlService` is constructed with one DSN at boot. Three options:
     - **(a) Per-DB SqlService factory** — `SqlServiceFactory::for(string $database): SqlService` builds a fresh `MysqlPdoSqlService` against the target. Cleanest. Used by the runner once per migration. **Recommended.**
     - (b) Switch DB via `USE <db>` statement on the existing connection. Risky across DDL — InnoDB DDL doesn't always honour `USE` consistently. Skip.
-    - (c) Force every migration to qualify table names with the DB (`VSCASH.Foo`). The seed already does this. Works but means the runner connects to *some* DB; the choice is arbitrary. Half-fix.
+    - (c) Force every migration to qualify table names with the DB (`SHOP.Foo`). The seed already does this. Works but means the runner connects to *some* DB; the choice is arbitrary. Half-fix.
 2. **Where the credentials come from.** Existing CLI commands inherit the SQL connection from `MEMCACHE_SERVERS` / DB env vars in UbixCli's `Dependencies.php`. The factory needs to read those too; assume the DB user has rights across all schemas (it does on the shared cluster).
 3. **Lock against concurrent runners.** Two engineers running `migrate:up` at once would race. Cheapest fix: take a `GET_LOCK('ubix_migrations', 30)` advisory lock at the start of `up`, release at the end. Document that staging/prod CI is the only place this risks happening, and CI runs are serialised by the deploy pipeline anyway. **Defer to slice 2** — call out in code comment so a future test can prove it.
 
@@ -53,7 +53,7 @@ Each slice = one commit. Order matters: slices 1–4 unblock the runner being us
     ```
     | id                                              | database  | status   | applied_at          |
     | 00000000000000_init_schema_migrations           | SYSTEMS   | applied  | 2026-05-06 10:12:34 |
-    | 20260505143045_pre_attribution_referrer_tables  | VSCASH    | pending  | —                   |
+    | 20260505143045_pre_attribution_referrer_tables  | SHOP    | pending  | —                   |
     ```
     Supports `--database=<name>` filter.
 - `app/UbixCli/src/Dependencies.php` — bind the new services + repository.
@@ -121,7 +121,7 @@ Each slice = one commit. Order matters: slices 1–4 unblock the runner being us
 - `php/Ubix/Console/Command/Migrate/DiffCommand.php` — wraps the service; supports `--database=<name>` filter; exit code 1 if any drift found.
 - Tests: stub the dump output; assert clean run when input matches reference; assert non-zero + structured output when a column is added.
 
-**Verify:** add a random column via `mysql` directly → `migrate:diff --database=VSCASH` reports the drift.
+**Verify:** add a random column via `mysql` directly → `migrate:diff --database=SHOP` reports the drift.
 
 **Note:** v1 only supports `--mode=reference-dump` (compare against checked-in `sql/<DB>.sql`). The canonical `--mode=replay` is M2 work because it requires a scratch-DB lifecycle on the runner host.
 

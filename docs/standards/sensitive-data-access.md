@@ -4,7 +4,7 @@
 
 How uBix Core surfaces expose and record access to **PII / sensitive subject data** — customers, affiliates, broadcasters/models, and admin users. Access to this data is a **regulated control** (PCI-DSS §10, SOC 2, ISO 27001, GDPR accountability): *who* accessed *whose* data, *when*, and *why* must be gated and recorded. This standard makes that a uBix Core convention rather than a per-surface decision.
 
-**Applies to:** any uBix Core endpoint or surface that returns PII / lets an operator search or look up a person's record (customers, affiliates, performers/broadcasters, admin users). Its first implementation is the universal-search customer lookup (`GET /customers`).
+**Applies to:** any uBix Core endpoint or surface that returns PII / lets an operator search or look up a person's record (customers, affiliates, accounts/broadcasters, admin users). Its first implementation is the universal-search customer lookup (`GET /customers`).
 
 ## The rule
 
@@ -30,13 +30,13 @@ A uBix Core-owned **event table** (`database.md` §6.5), in `SYSTEMS` alongside 
 | `date_created` | `DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP` | The access event time. |
 
 - **Append-only / immutable** — rows are `INSERT`ed, never `UPDATE`d or `DELETE`d (except scheduled retention purge). No `date_last_updated` (documented §6.1 omission for an event table).
-- **One row per returned subject.** A lookup that returns N subjects writes N rows, so *"who accessed subject Y"* is a plain indexed query (`WHERE entity_type = ? AND subject_id = ?`) — the query the legacy `BILLING.Search_Tracking` CSV-blob design cannot answer.
+- **One row per returned subject.** A lookup that returns N subjects writes N rows, so *"who accessed subject Y"* is a plain indexed query (`WHERE entity_type = ? AND subject_id = ?`) — the query the legacy `LEDGER.Search_Tracking` CSV-blob design cannot answer.
 - **Indexes:** `idx_admin_id` (actor + time queries), `idx_entity_type_subject_id` (the subject query).
 - **BI export + retention.** As an event table it flows to the BI ClickHouse export, where long-term retention lives. The uBix Core-side table is a **1-year rolling window** (monthly purge, env-overridable) — chosen 2026-07-28; a future compliance requirement can lengthen it via the retention flag without a schema change. The **BI/DW approver signs off** that it's on the export schedule.
 
 ## Relationship to legacy audit trails
 
-Legacy customer search (`customers/search.php`) writes its own audit to `BILLING.Search_Tracking` — a **customer-only** table owned by the processing team, with a customer-shaped schema (CSV result blob, `mediumint` PK). That table is **left as-is** (no uBix Core migration on a legacy billing table; no dependency on the slowest-to-adopt team). uBix Core's own PII surfaces write to `Pii_Access_Audits` instead. During cutover, customer access therefore has two trails — the legacy *form* path (`Search_Tracking`) and the uBix Core path (`Pii_Access_Audits`) — which consolidates onto the uBix Core table if/when customer search goes native. Affiliate / broadcaster / model access had **no** trail before this standard; `Pii_Access_Audits` gives them one.
+Legacy customer search (`customers/search.php`) writes its own audit to `LEDGER.Search_Tracking` — a **customer-only** table owned by the processing team, with a customer-shaped schema (CSV result blob, `mediumint` PK). That table is **left as-is** (no uBix Core migration on a legacy ledger table; no dependency on the slowest-to-adopt team). uBix Core's own PII surfaces write to `Pii_Access_Audits` instead. During cutover, customer access therefore has two trails — the legacy *form* path (`Search_Tracking`) and the uBix Core path (`Pii_Access_Audits`) — which consolidates onto the uBix Core table if/when customer search goes native. Affiliate / broadcaster / model access had **no** trail before this standard; `Pii_Access_Audits` gives them one.
 
 ## Implementation seam
 

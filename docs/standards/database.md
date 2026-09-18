@@ -1,10 +1,9 @@
 # Database Standards
 
 **Status:** Approved
-**Audience:** VS Media Development Department
 **Last Updated:** 2026-05-08 (added §6.5 event-table archetype + §8 checklist row, codifying the BI ClickHouse export-friendly contract; first surface canonicalising this is FT spec v1.7 REQ-FT-EVENT-008)
 
-This document defines the database standards for all new schema work across uBix Core and related VS Media systems. It codifies the conventions already present in the existing schemas and introduces forward-looking rules that prepare us for referential integrity, predictable data shapes, and safer temporal data.
+This document defines the database standards for all new schema work across uBix Core and related the host organisation systems. It codifies the conventions already present in the existing schemas and introduces forward-looking rules that prepare us for referential integrity, predictable data shapes, and safer temporal data.
 
 ---
 
@@ -22,24 +21,24 @@ Legacy tables are grandfathered; they are **not** required to be retrofitted unl
 
 ## 2. Naming Conventions
 
-The conventions below reflect the dominant patterns observed across the 14 existing schema files (`VSCASH`, `BILLING`, `ADSERVER`, `MAILINGS`, `FLIRT_REWARDS`, `CHAT_SYSTEM`, `CHAT_SYSTEM_LOG`, `MESSAGING`, `STUDIOS`, `STUDIOS_STATS`, `VSCASH_STATS`, `SYSTEMS`, `ntl_db`, `flirt4free`).
+The conventions below reflect the dominant patterns observed across the 14 existing schema files (`SHOP`, `LEDGER`, `ADSERVER`, `MAILINGS`, `REWARDS`, `CHAT_SYSTEM`, `CHAT_SYSTEM_LOG`, `MESSAGING`, `TENANTS`, `TENANTS_STATS`, `SHOP_STATS`, `SYSTEMS`, `legacy_db`, `content_db`).
 
 ### 2.1 Database Names
 
 - **Convention:** `UPPER_CASE` or `UPPER_CASE_WITH_UNDERSCORES`
 - **Rationale:** Matches the existing naming for 12 of 14 databases in the monorepo.
 - **Examples:**
-  - `VSCASH`, `BILLING`, `ADSERVER`, `MESSAGING`, `STUDIOS`
-  - `CHAT_SYSTEM`, `CHAT_SYSTEM_LOG`, `FLIRT_REWARDS`, `VSCASH_STATS`, `STUDIOS_STATS`
-- **Legacy exceptions** (do not use as a template): `ntl_db`, `flirt4free`.
+  - `SHOP`, `LEDGER`, `ADSERVER`, `MESSAGING`, `TENANTS`
+  - `CHAT_SYSTEM`, `CHAT_SYSTEM_LOG`, `REWARDS`, `SHOP_STATS`, `TENANTS_STATS`
+- **Legacy exceptions** (do not use as a template): `legacy_db`, `content_db`.
 
 ### 2.2 Table Names
 
 - **Convention:** `PascalCase_With_Underscores` — each word capitalized, underscores between logical word groups. This is the dominant convention across the existing schema and is the **only** accepted style for new tables.
 - **Examples:**
-  - `Activity_Stream`, `Performer_Login`, `Blocked_Models`
+  - `Activity_Stream`, `Account_Login`, `Blocked_Models`
   - `Chat_Filter_IP_Blacklist`, `Edge_Server_Assignment`, `Delivery_Stats_Daily`
-- **Pluralization:** All new tables must be **plural**. A table holds a collection of rows, so the name reflects the collection (`Users`, `Affiliates`, `Blocked_Models`, `Error_Codes`). This matches the modern web-development standard (Rails, Laravel, Django) and the dominant lean of our existing entity tables. Legacy singular tables (`Configuration`, `Event_Log`, `Performer_Login`, `Activity_Stream`) are grandfathered and must not be used as a template for new work.
+- **Pluralization:** All new tables must be **plural**. A table holds a collection of rows, so the name reflects the collection (`Users`, `Affiliates`, `Blocked_Models`, `Error_Codes`). This matches the modern web-development standard (Rails, Laravel, Django) and the dominant lean of our existing entity tables. Legacy singular tables (`Configuration`, `Event_Log`, `Account_Login`, `Activity_Stream`) are grandfathered and must not be used as a template for new work.
 - **Do not:**
   - Use pure PascalCase without underscores (e.g. `AdminUsers`, `AdminLinks`). These exist in legacy schemas but must not be used for new tables — always separate words with underscores (`Admin_Users`, `Admin_Links`).
   - Start a new table name with a digit (e.g. `2011_Annual_Survey`). Legacy only.

@@ -125,12 +125,12 @@ final class AffiliateServiceTest extends AbstractUbixConcreteClassOrEnumTestCase
 
     public function setUp(): void
     {
-        $this->insertSeedData("INSERT INTO VSCASH.Affiliates ...");
+        $this->insertSeedData("INSERT INTO SHOP.Affiliates ...");
     }
 
     public function tearDown(): void
     {
-        $this->insertSeedData('TRUNCATE TABLE VSCASH.Affiliates');
+        $this->insertSeedData('TRUNCATE TABLE SHOP.Affiliates');
     }
 
     private function affiliateService(): AffiliateService
@@ -190,12 +190,12 @@ final class AffiliateSqlRepositoryTest extends AbstractUbixConcreteClassOrEnumTe
 
     public function setUp(): void
     {
-        $this->insertSeedData("INSERT INTO VSCASH.Affiliates (id, name, mp_code) VALUES (10000001, 'Seed Affiliate', 'SEED1')");
+        $this->insertSeedData("INSERT INTO SHOP.Affiliates (id, name, mp_code) VALUES (10000001, 'Seed Affiliate', 'SEED1')");
     }
 
     public function tearDown(): void
     {
-        $this->insertSeedData('TRUNCATE TABLE VSCASH.Affiliates');
+        $this->insertSeedData('TRUNCATE TABLE SHOP.Affiliates');
     }
 
     private function repository(): AffiliateSqlRepository
@@ -359,12 +359,12 @@ final class AffiliateControllerTest extends AbstractUbixConcreteClassOrEnumTestC
 
     public function setUp(): void
     {
-        $this->insertSeedData("INSERT INTO VSCASH.Affiliates ...");
+        $this->insertSeedData("INSERT INTO SHOP.Affiliates ...");
     }
 
     public function tearDown(): void
     {
-        $this->insertSeedData('TRUNCATE TABLE VSCASH.Affiliates');
+        $this->insertSeedData('TRUNCATE TABLE SHOP.Affiliates');
     }
 
     private function controller(): AffiliateController
@@ -485,12 +485,12 @@ final class ImportAffiliatesCommandTest extends AbstractUbixConcreteClassOrEnumT
 
     public function setUp(): void
     {
-        $this->insertSeedData("TRUNCATE TABLE VSCASH.Affiliates");
+        $this->insertSeedData("TRUNCATE TABLE SHOP.Affiliates");
     }
 
     public function tearDown(): void
     {
-        $this->insertSeedData('TRUNCATE TABLE VSCASH.Affiliates');
+        $this->insertSeedData('TRUNCATE TABLE SHOP.Affiliates');
     }
 }
 ```

@@ -2,7 +2,7 @@
 
 **Version:** 1.3
 **Date:** 2026-08-21
-**Status:** Active. The first worked example lived in `docs/projects/performer-app-redesign/`, which left with the product apps in OSS-10; the current worked example is Sowing.me's `docs/projects/sowing-me/design-system.md` in the KITG host repo.
+**Status:** Active. The first worked example lived in `docs/projects/account-app-redesign/`, which left with the product apps in OSS-10; the current worked example is Sowing.me's `docs/projects/sowing-me/design-system.md` in the KITG host repo.
 
 Design for uBix Core front-ends is authored in **Claude Design** (a design-system project on claude.ai/design) and consumed by **Claude Code** working in this monorepo. The two tools are operated by different people, see different files, and are each happy to generate the other's work if nobody stops them. This document is the boundary.
 
@@ -16,7 +16,7 @@ Three failure modes justify it, all cheap to prevent and expensive to unwind:
 
 1. **Silent re-authoring.** Claude Code fixes a token name or tweaks a variant during import. The next sync reverts it, or worse, doesn't — and the repo and the design system disagree with nobody noticing.
 2. **Boundary spill.** Claude Design, asked how to use its output, helpfully emits install steps, build config, or framework code. A well-meaning operator follows them, and code lands in the repo that never passed a uBix Core gate.
-3. **Shared vocabularies drifting.** Some visual names are load-bearing protocol values. PA's `font_class` (`gift_50`, `adminCritical`, `vsMonitor`, …) arrives on the wire from the Performer Endpoint; renaming one on either side breaks rendering with no error anywhere. See `docs/projects/performer-app-redesign/pep-protocol-recon.md` §4.
+3. **Shared vocabularies drifting.** Some visual names are load-bearing protocol values. PA's `font_class` (`gift_50`, `adminCritical`, `vsMonitor`, …) arrives on the wire from the Account Endpoint; renaming one on either side breaks rendering with no error anywhere. See `docs/projects/account-app-redesign/pep-protocol-recon.md` §4.
 
 ## 2. Direction of authority — extract before you author
 
@@ -85,7 +85,7 @@ The monorepo-wide register of these terms — and the per-layer spelling transfo
 
 **For a design system we are authoring:** tokens are authored as CSS custom properties in **Tailwind v4 `@theme` namespaces** — `--color-*`, `--font-*`, `--text-*`, `--spacing-*`, `--radius-*`, `--shadow-*` — with conventional scales (color steps 50–950, numeric spacing). This is what makes the import mechanical rather than a translation pass.
 
-**Where an existing system diverges, we map rather than rename.** This paragraph previously claimed the convention above "applies to every uBix Core design system" — it does not, and asserting it did not make it so. The organisation-wide `Flirt4Free Design System` names tokens as prefixed custom properties (`--f4f-*`) plus semantic aliases, and renaming them upstream would break every existing consumer for the convenience of one importer. So the rule is:
+**Where an existing system diverges, we map rather than rename.** This paragraph previously claimed the convention above "applies to every uBix Core design system" — it does not, and asserting it did not make it so. An organisation-wide design system may name tokens as prefixed custom properties (`--brand-*`) plus semantic aliases, and renaming them upstream would break every existing consumer for the convenience of one importer. So the rule is:
 
 - **A new system** follows the `@theme` convention. There is no reason not to, and it removes a translation step permanently.
 - **An existing system that does not** keeps its names. The **importing MR carries an explicit mapping table** from the system's token names to our `@theme` names, recorded in the consuming project's docs. This is §7's rule — map explicitly across a boundary rather than assuming two namespaces stay identical — applied one layer up, from single names to a whole namespace.
@@ -118,7 +118,7 @@ A project brief may **narrow** this contract but never loosen it; where a brief 
 
 | Version | Date | Change |
 |---|---|---|
-| 1.0 | 2026-07-31 | Initial standard. Extracted from the Performer App redesign handoff, which was the first Claude Design → Claude Code project. |
+| 1.0 | 2026-07-31 | Initial standard. Extracted from the Account App redesign handoff, which was the first Claude Design → Claude Code project. |
 | 1.1 | 2026-08-01 | Added §2 *Direction of authority — extract before you author*, after a brief framed as "build from the spec" produced a fresh page that dropped components an existing canonical design already had. Reconciled the ownership table's *Functional specs* row and the "must not invent" rule with §2 — both previously read as spec-over-design. |
-| 1.2 | 2026-08-21 | Corrected §8, which asserted the Tailwind `@theme` convention "applies to every uBix Core design system" — the organisation-wide `Flirt4Free Design System` does not use it, so the standard's only design-system-type instance contradicted it. §8 now governs systems we author, and requires an explicit **mapping table in the importing MR** where an existing system diverges — §7's rule applied to a whole namespace. Clarified §6.1: a regular-type project is invisible to *listing* but readable by **direct project ID**; what it loses is discoverability and canonical standing, not access. Both found while preparing the Internal Admin 2.0 hand-over — see `docs/audits/2026-08-design-system-review.md`. |
+| 1.2 | 2026-08-21 | Corrected §8, which asserted the Tailwind `@theme` convention "applies to every uBix Core design system" — an existing organisation-wide design system did not use it, so the standard's only design-system-type instance contradicted it. §8 now governs systems we author, and requires an explicit **mapping table in the importing MR** where an existing system diverges — §7's rule applied to a whole namespace. Clarified §6.1: a regular-type project is invisible to *listing* but readable by **direct project ID**; what it loses is discoverability and canonical standing, not access. Both found while preparing a design-system hand-over — see `docs/audits/2026-08-design-system-review.md`. |
 | 1.3 | 2026-08-21 | §10 gained the **token-name mapping table** as a recorded per-project obligation. v1.2 made that table mandatory in §8 but left §10 — the canonical list of what a consuming project's docs must record — unchanged, so a project working §10 as a checklist had no prompt to record it, and it is not covered by any existing entry: explicitly not a deviation (the diverging system is compliant), and not part of the brief. Caught by the local AI review against the v1.2 diff before it shipped. |

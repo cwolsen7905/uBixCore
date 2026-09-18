@@ -175,7 +175,7 @@ Every API that is meant to be reachable from **outside** our network is publishe
 | `FanClubApi` | `fanclub-api` | `example.com`¹ + `fanclub-api.trident.{…}` |
 | `AffiliateApi` | `affiliate-api` | `example.com`¹ + `affiliate-api.trident.{…}` |
 | `ModelSignupApi` | `modelsignup-api` | `example.com`¹ + `modelsignup-api.trident.{…}` |
-| `PerformerApplicationApi` | `performer-application-api` | `example.com` + `performer-application-api.trident.{…}` |
+| `AccountApplicationApi` | `account-application-api` | `example.com` + `account-application-api.trident.{…}` |
 | `StudioAdminApi` | `studio-admin-api` | `example.com` + `studio-admin-api.trident.{…}` |
 
 ¹ These three still front their prod deployment on a `example.com` host rather than `example.com`. The `trident` hosts were added alongside the existing host; the `.lan`-vs-`.prod` inconsistency is pre-existing and tracked separately — do not "fix" it as a drive-by.

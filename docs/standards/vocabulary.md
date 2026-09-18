@@ -9,7 +9,6 @@
 # Cross-Language Vocabulary Conventions
 
 **Status:** Proposed — pending Christopher W. Olsen's sign-off
-**Audience:** VS Media Development Department
 **Last Updated:** 2026-08-21
 
 This document is the single authority for **what a domain concept is called** as it crosses uBix Core's language boundaries — PHP, TypeScript/React, CSS, SQL, and the legacy wire protocols. It exists so that one concept has one name, and so that name's spelling in each layer is *derivable* rather than *negotiated per file*.
@@ -29,7 +28,7 @@ Naming conventions alone cannot solve the first question; a glossary alone canno
 
 - a PHP class, DataType, DTO, or service name (`php/Ubix/**`, `app/*Api/**`)
 - a database column or table (`sql/**`)
-- a wire field on a legacy protocol (chat-manager socket, PEP, Performer Endpoint)
+- a wire field on a legacy protocol (chat-manager socket, PEP, Account Endpoint)
 - a TypeScript/React identifier, prop, or exported type (`app/*Js/**` in a host, `ts/Ubix/**` here)
 - a CSS custom property / Tailwind `@theme` token, or a `data-*` state attribute
 - product copy, specs, and conversation
@@ -48,7 +47,7 @@ Not hypothetical. All three were verified in the tree on 2026-08-11.
 
 **1. One term, three spellings, no mapping recorded.** `screen_name` (DB column — `FanClubComment`, `FanClubPostUnlock`), `screenName` (PHP model getters / bound params), and `screenname` (JS — `roomView.ts`'s `LiveMessage` type and its three read sites). Each is locally idiomatic. Nothing declares them the same concept, so nothing catches a fourth.
 
-**2. Two apps forked the same row-kind vocabulary.** `app/PerformerApplicationJs`'s `RoomRowKind` is `'tip' | 'model' | 'whisper' | 'customer'`. `app/ProductJs`'s chat tokens are `--color-chat-{welcome,model,tip,admin,promo,guest,group}` + `--color-chat-lovense-{from,to}`. They agree on exactly **two** members (`model`, `tip`). There is no `--color-chat-whisper` and no `--color-chat-customer`; `admin`, `promo`, `guest`, `group`, `welcome`, and `lovense` have no `RoomRowKind`. Two surfaces of one product, already unable to share a component.
+**2. Two apps forked the same row-kind vocabulary.** `app/AccountApplicationJs`'s `RoomRowKind` is `'tip' | 'model' | 'whisper' | 'customer'`. `app/ProductJs`'s chat tokens are `--color-chat-{welcome,model,tip,admin,promo,guest,group}` + `--color-chat-lovense-{from,to}`. They agree on exactly **two** members (`model`, `tip`). There is no `--color-chat-whisper` and no `--color-chat-customer`; `admin`, `promo`, `guest`, `group`, `welcome`, and `lovense` have no `RoomRowKind`. Two surfaces of one product, already unable to share a component.
 
 **3. Classification by substring on a frozen wire value.** `roomView.ts:44` does `fontClass.includes('whisper')` against the PEP `font_class` field. Rename either side and rendering silently changes with no error anywhere — the hazard `docs/standards/design-system-handoff.md` §7 warns about, in production code.
 
@@ -129,7 +128,7 @@ Spellings below are **as-found in the tree on 2026-08-11**, including the incons
 ### 5.3 Known reconciliations (open)
 
 - **`screenname` / `screenName` / `screen_name`** — pick `screenname` as the term (it is already the `cspell.json` dictionary entry) and let §4 generate the per-layer spelling. The DB column is frozen; the JS and PHP spellings are not.
-- **`--color-chat-whisper` / `--color-chat-customer` do not exist** while `RoomRowKind` has both members — either the tokens are missing or the union has dead members. Resolve before any chat-row component is shared between ProductJs and PerformerApplicationJs.
+- **`--color-chat-whisper` / `--color-chat-customer` do not exist** while `RoomRowKind` has both members — either the tokens are missing or the union has dead members. Resolve before any chat-row component is shared between ProductJs and AccountApplicationJs.
 - **`RoomRowKind: 'customer'` vs the customer-type taxonomy** — `'customer'` is the PA row kind's catch-all fallback, not a tier. It reads as a peer of `guest`/`basic`/`premium`/`vip` and is not one. Rename or document.
 
 ### 5.4 Reserved-token synonyms
@@ -144,7 +143,7 @@ Some spellings are fixed by a legacy protocol or a shipped DB column and **canno
 
 | Frozen spelling | Owner | uBix Core-side term |
 |---|---|---|
-| `font_class` (values `gift_50`, `adminCritical`, `vsMonitor`, …) | PEP wire — see `docs/projects/performer-app-redesign/pep-protocol-recon.md` §4 | classified into `RoomRowKind` |
+| `font_class` (values `gift_50`, `adminCritical`, `vsMonitor`, …) | PEP wire — see `docs/projects/account-app-redesign/pep-protocol-recon.md` §4 | classified into `RoomRowKind` |
 | `<user type="4\|6\|7\|8">` | chat-manager socket — `chat-manager-protocol.md` §6 owns this taxonomy | `basic` / `premium` / `vip` / `guest` |
 | `screen_name` | shipped DB columns | `screenname` |
 
@@ -243,7 +242,7 @@ This document is the authority for cross-language terminology. The following are
 | `docs/surfaces/chat-room/chat-manager-protocol.md` §6 | the customer-type taxonomy (`4`/`6`/`7`/`8` → basic/premium/vip/guest) |
 | `docs/architecture/monorepo.md` § Domain vocabulary mapping | reserved-class-name-token synonyms (`live model` → `LiveCam`) |
 | `docs/standards/design-system-handoff.md` §7–§8 | the design↔code boundary, and the Tailwind `@theme` token namespaces **for systems we author** — an existing system that names tokens otherwise is mapped in the importing MR, not renamed (§8, v1.2) |
-| `docs/projects/performer-app-redesign/pep-protocol-recon.md` §4 | the PEP `font_class` value space |
+| `docs/projects/account-app-redesign/pep-protocol-recon.md` §4 | the PEP `font_class` value space |
 | `cspell.json` / `peck.json` | accepted *spellings* (a term's presence there is not authority for its *use*) |
 
 Where this document and a narrower one disagree, **the narrower one wins within its scope** — and the disagreement is itself a finding to reconcile here.
@@ -264,5 +263,5 @@ Where this document and a narrower one disagree, **the narrower one wins within 
 
 | Version | Date | Change |
 |---|---|---|
-| 1.0 | 2026-08-11 | Initial standard. Written after the customer-facing chat-room port surfaced derived style keys (`whisperDeco`, `whisperOffBg`, `whisperOffFor`) with no authority for either the term or its per-layer spelling. Consolidates three pre-existing partial answers (`monorepo.md` § Domain vocabulary mapping, `design-system-handoff.md` §7, the `cspell`/`peck` dictionaries) and records three verified live divergences: the `screenname`/`screenName`/`screen_name` split, the forked `RoomRowKind`-vs-`--color-chat-*` row-kind vocabularies across ProductJs and PerformerApplicationJs, and `fontClass.includes('whisper')` classifying on a frozen wire value. |
+| 1.0 | 2026-08-11 | Initial standard. Written after the customer-facing chat-room port surfaced derived style keys (`whisperDeco`, `whisperOffBg`, `whisperOffFor`) with no authority for either the term or its per-layer spelling. Consolidates three pre-existing partial answers (`monorepo.md` § Domain vocabulary mapping, `design-system-handoff.md` §7, the `cspell`/`peck` dictionaries) and records three verified live divergences: the `screenname`/`screenName`/`screen_name` split, the forked `RoomRowKind`-vs-`--color-chat-*` row-kind vocabularies across ProductJs and AccountApplicationJs, and `fontClass.includes('whisper')` classifying on a frozen wire value. |
 | 1.1 | 2026-08-21 | §10's reference-table row for `design-system-handoff.md` corrected: it cited the Tailwind `@theme` token namespaces as the convention for design systems generally, which that standard's own §8 stopped claiming at v1.2 — the namespaces govern systems **we author**, and an existing system that names tokens otherwise is mapped in the importing merge request rather than renamed. No change to this document's own rules, terms or transforms; the row was quoting another standard's claim, and the claim moved. |

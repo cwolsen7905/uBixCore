@@ -35,8 +35,8 @@ The conversation that produced this plan landed on these choices. Captured here 
 1. **Single MariaDB pod, two namespaces.** Not two pods. The prefix layer is what isolates dev from test, not separate infrastructure. CI may use a dedicated sidecar pod via `TEST_MYSQL_WRITE_*` env vars — the prefix logic is harmless on a clean pod.
 2. **`PHPUNIT_RUNNING=1` is the trigger.** Already set by the existing PHPUnit harness; already detected by `MigrationPdoSqlService`. The new prefix logic keys off the same signal.
 3. **`TEST_MYSQL_WRITE_*` env vars stay independent.** They point to whatever pod tests should connect to; dev still uses `MYSQL_WRITE_*`. In local dev they're typically the same pod; in CI they diverge.
-4. **Rewriting happens transparently inside `SqlService`.** Application code (controllers, services, repos) never sees `TEST_VSCASH`; the rewrite is invisible. Shell-out paths (`MigrationApplyService`, `DestructiveBackupService`, `SchemaDiffService`, `ResetSchemaCommand`) call the prefixer explicitly because they bypass PDO.
-5. **Rewrite covers BOTH table references and string literals.** `WHERE table_schema = 'VSCASH'` (in `INFORMATION_SCHEMA` queries) gets the `'TEST_VSCASH'` rewrite too, so `migrate:status` pre-flight against the test set works correctly.
+4. **Rewriting happens transparently inside `SqlService`.** Application code (controllers, services, repos) never sees `TEST_SHOP`; the rewrite is invisible. Shell-out paths (`MigrationApplyService`, `DestructiveBackupService`, `SchemaDiffService`, `ResetSchemaCommand`) call the prefixer explicitly because they bypass PDO.
+5. **Rewrite covers BOTH table references and string literals.** `WHERE table_schema = 'SHOP'` (in `INFORMATION_SCHEMA` queries) gets the `'TEST_SHOP'` rewrite too, so `migrate:status` pre-flight against the test set works correctly.
 6. **`UbixDatabaseCatalogue` is single source of truth for the DB list.** Globs `sql/*.sql`. Replaces the inline glob in `ResetSchemaCommand` and feeds the prefixer.
 7. **Bootstrap syncs once per PHPUnit process.** Not per test. Status check is ~100ms; `migrate:up --yes` only fires when something's pending.
 
@@ -45,7 +45,7 @@ The conversation that produced this plan landed on these choices. Captured here 
 ## Out of scope (deferred)
 
 - **Separate scratch cluster for `migrate:diff` in production CI.** Under this plan the test pod IS the scratch cluster. CI's dedicated MariaDB sidecar fits the same shape — the `TEST_MYSQL_WRITE_*` env vars get pointed at it. A literal "spin up a fresh pod just for the diff job" pattern is unnecessary.
-- **Per-feature-branch DB namespacing** (e.g., `BRANCH_foo_VSCASH`). The prefixer architecture supports it cheaply — different env-var-driven prefix string — but no concrete demand yet. Note it as future leverage.
+- **Per-feature-branch DB namespacing** (e.g., `BRANCH_foo_SHOP`). The prefixer architecture supports it cheaply — different env-var-driven prefix string — but no concrete demand yet. Note it as future leverage.
 - **MySQL-side schema search-path equivalent.** PostgreSQL has `SET search_path`; MySQL doesn't. The prefix-in-SQL approach is the workaround. Not deferred so much as "out of architectural scope."
 
 ---
@@ -59,7 +59,7 @@ Each slice is a single atomic commit. Each one ships green-tests + green-lints; 
 Pure utility. One method: `getAll(): array<string>` — returns the list of Ubix-consumed database names by globbing `sql/*.sql` (excluding `migrations/` and `seeds/` subdirectories). Sorted, deduplicated. Lives at `php/Ubix/Service/Database/UbixDatabaseCatalogue.php`.
 
 **Behaviour:**
-- `getAll()` returns `['ADSERVER', 'ASIA', 'BI', 'BILLING', …]` based on the current `sql/` contents.
+- `getAll()` returns `['ADSERVER', 'ASIA', 'BI', 'LEDGER', …]` based on the current `sql/` contents.
 - Memoised per-instance — the catalogue doesn't change mid-process.
 
 **Refactor:** `ResetSchemaCommand::discoverDatabases()` is replaced by an injected `UbixDatabaseCatalogue` call. Same behaviour, single owner.
@@ -86,12 +86,12 @@ Returns: SQL with every Ubix DB name rewritten to `TEST_<DB>` when `$shouldPrefi
 
 **Edge cases that have to be tested:**
 
-- Column name happens to match a DB name (`SELECT VSCASH FROM Foo` — should NOT rewrite, because no trailing `.`).
-- DB name appears inside a string column comment (`COMMENT 'see VSCASH for details'` — should NOT rewrite under the table-ref pass; only the explicit-`'VSCASH'` string-literal pass would, and only if the operator is querying for that literal).
-- Multi-statement bodies (`CREATE TABLE VSCASH.Foo (…); ALTER TABLE SYSTEMS.Bar …;`).
-- Cross-DB references in a single migration body (`Database: VSCASH` header but body references `SYSTEMS.Schema_Migrations`).
+- Column name happens to match a DB name (`SELECT SHOP FROM Foo` — should NOT rewrite, because no trailing `.`).
+- DB name appears inside a string column comment (`COMMENT 'see SHOP for details'` — should NOT rewrite under the table-ref pass; only the explicit-`'SHOP'` string-literal pass would, and only if the operator is querying for that literal).
+- Multi-statement bodies (`CREATE TABLE SHOP.Foo (…); ALTER TABLE SYSTEMS.Bar …;`).
+- Cross-DB references in a single migration body (`Database: SHOP` header but body references `SYSTEMS.Schema_Migrations`).
 - `Schema_Migrations` references specifically — these MUST get prefixed when `$shouldPrefix=true`, otherwise the runner's tracker reads/writes hit the unprefixed table.
-- `INFORMATION_SCHEMA.TABLES WHERE table_schema = 'VSCASH'` — table-ref pass leaves `INFORMATION_SCHEMA` alone (it's not in the catalogue), string-literal pass rewrites `'VSCASH'` to `'TEST_VSCASH'`.
+- `INFORMATION_SCHEMA.TABLES WHERE table_schema = 'SHOP'` — table-ref pass leaves `INFORMATION_SCHEMA` alone (it's not in the catalogue), string-literal pass rewrites `'SHOP'` to `'TEST_SHOP'`.
 
 **No I/O, no PDO, no shell-out. Just string manipulation.** This is where 80% of the bug surface lives — generous behavioural test coverage is the cost of correctness.
 
@@ -109,7 +109,7 @@ Returns: SQL with every Ubix DB name rewritten to `TEST_<DB>` when `$shouldPrefi
 
 **Removable in the same commit:** the `if (stripos($sql, 'TRUNCATE') !== false && $this->writePdoConstructorParameters->username !== 'root')` hack in `AbstractPdoSqlService::query()`. Once tests target `TEST_*` DBs, they can `TRUNCATE` freely.
 
-**Test surface:** the existing PDO-service standards tests cover construction; new behavioural tests verify that `getRow('SELECT * FROM VSCASH.Foo')` in `PHPUNIT_RUNNING=1` mode actually queries `TEST_VSCASH.Foo`.
+**Test surface:** the existing PDO-service standards tests cover construction; new behavioural tests verify that `getRow('SELECT * FROM SHOP.Foo')` in `PHPUNIT_RUNNING=1` mode actually queries `TEST_SHOP.Foo`.
 
 **Why third:** turns on the prefix for every PDO query. After this slice, repos that hit Ubix DBs via the SqlService work correctly under tests — modulo the migration runner's shell-out paths which are still pending.
 
@@ -140,7 +140,7 @@ Returns: SQL with every Ubix DB name rewritten to `TEST_<DB>` when `$shouldPrefi
 Both shell out via `mysqldump`. Both reference DB + table names in the shell command line. Both need prefixing in test mode.
 
 - `DestructiveBackupService::snapshot()` — the `mysqldump <DB> <table1> <table2> …` invocation gets the prefixed `<DB>` name. Test mode produces backups under `/var/ubix-migration-backups/<id>/test-<timestamp>.sql.gz` (the `<env>` segment becomes `test` when `PHPUNIT_RUNNING=1` — separate concern from the prefix, but worth tying together).
-- `SchemaDiffService::diffAll()` — the `mysqldump --no-data <DB>` invocations get the prefix. Diff results are reported against the canonical name (`SchemaDiffResult::$database = 'VSCASH'` not `'TEST_VSCASH'`) so the operator-facing output doesn't leak the implementation detail.
+- `SchemaDiffService::diffAll()` — the `mysqldump --no-data <DB>` invocations get the prefix. Diff results are reported against the canonical name (`SchemaDiffResult::$database = 'SHOP'` not `'TEST_SHOP'`) so the operator-facing output doesn't leak the implementation detail.
 
 **Test surface:** behavioural test per service verifying the shell-out command line gets the prefix.
 
@@ -153,7 +153,7 @@ Both shell out via `mysqldump`. Both reference DB + table names in the shell com
 Under `PHPUNIT_RUNNING=1`, `ResetSchemaCommand`:
 
 - Auto-discovered DBs from the catalogue stay the canonical names; the prefix is added when constructing the per-DB `DROP DATABASE` / `CREATE DATABASE` / `mysql <DB> < sql/<DB>.sql` shell-outs.
-- **The dump body itself needs prefixing** before being piped into mysql. `sql/VSCASH.sql` contains `CREATE TABLE VSCASH.Foo …`; in test mode the prefixer rewrites this to `CREATE TABLE TEST_VSCASH.Foo …` so the import lands in the right namespace.
+- **The dump body itself needs prefixing** before being piped into mysql. `sql/SHOP.sql` contains `CREATE TABLE SHOP.Foo …`; in test mode the prefixer rewrites this to `CREATE TABLE TEST_SHOP.Foo …` so the import lands in the right namespace.
 - The inline `migrate:up --yes` call at the end also runs under `PHPUNIT_RUNNING=1` and prefixes everything — the migration bodies, the tracker writes, the works.
 
 **Also adds a `--test` operator flag** for manual invocation outside PHPUnit. Sets `PHPUNIT_RUNNING=1` internally for the duration of the command. Equivalent to `PHPUNIT_RUNNING=1 php bin/ubix database:resetSchema --target=sandbox --drop-database`.
@@ -198,7 +198,7 @@ New service: `LocalTestSchemaSyncService::sync(Output): bool`.
 
 **Per-process, not per-test.** PHPUnit boots once, syncs once, then every test class runs against the now-current `TEST_*` namespace. ~100ms when nothing's pending.
 
-**Test surface:** existing PHPUnit suite continues to pass. Manual smoke: drop a TEST_VSCASH table, run `vendor/bin/phpunit`, watch bootstrap reapply the migration.
+**Test surface:** existing PHPUnit suite continues to pass. Manual smoke: drop a TEST_SHOP table, run `vendor/bin/phpunit`, watch bootstrap reapply the migration.
 
 **Why eighth:** generalises slice 7's safety net to every PHPUnit invocation, not just `code:review`. Bare `vendor/bin/phpunit` is now also self-healing.
 
@@ -211,8 +211,8 @@ Under the test-DB-prefix design, replay-mode is structurally simple:
 1. Operator runs `migrate:diff --target=prod --mode=replay`.
 2. Command first calls `LocalTestSchemaSyncService::sync()` to ensure the test DB is current. Aborts if sync fails.
 3. For each catalogued DB:
-   - `mysqldump --no-data` from the target cluster (the canonical name, e.g. `VSCASH`).
-   - `mysqldump --no-data` from the test pod (the prefixed name, `TEST_VSCASH`). Normalise the dump to strip the `TEST_` prefix from any embedded references so the line-diff matches.
+   - `mysqldump --no-data` from the target cluster (the canonical name, e.g. `SHOP`).
+   - `mysqldump --no-data` from the test pod (the prefixed name, `TEST_SHOP`). Normalise the dump to strip the `TEST_` prefix from any embedded references so the line-diff matches.
    - Apply the existing `SchemaDiffService` normaliser to both sides (banner stripping, AUTO_INCREMENT counters, conditional SET block).
    - Line-diff. Report drift as `extraInLive[]` / `missingFromLive[]` per the existing `SchemaDiffResult` shape.
 4. Exit non-zero if any DB has drift.
@@ -249,13 +249,13 @@ Pure documentation slice. Code is feature-complete after slice 9.
 
 ### Medium
 
-- **Cross-DB migrations.** A migration whose body references both `VSCASH.Foo` and `SYSTEMS.Bar` needs both prefixed. The prefixer iterates the catalogue so this works automatically — but it's worth a behavioural test specifically for cross-DB bodies.
-- **Existing test data.** Existing PHPUnit fixtures may depend on the unprefixed `VSCASH` etc. After slices 3-6 land, those fixtures break. Mitigation: run the full PHPUnit suite at each slice boundary; fix fixtures as they surface. Likely a half-day of cleanup spread across slices 3-8.
-- **String literal false positives.** A test setup that inserts the literal string `'VSCASH'` into a column for some reason would get rewritten to `'TEST_VSCASH'`. Probably no real cases, but worth grepping the test suite for `'VSCASH'` etc. before declaring slice 2 done.
+- **Cross-DB migrations.** A migration whose body references both `SHOP.Foo` and `SYSTEMS.Bar` needs both prefixed. The prefixer iterates the catalogue so this works automatically — but it's worth a behavioural test specifically for cross-DB bodies.
+- **Existing test data.** Existing PHPUnit fixtures may depend on the unprefixed `SHOP` etc. After slices 3-6 land, those fixtures break. Mitigation: run the full PHPUnit suite at each slice boundary; fix fixtures as they surface. Likely a half-day of cleanup spread across slices 3-8.
+- **String literal false positives.** A test setup that inserts the literal string `'SHOP'` into a column for some reason would get rewritten to `'TEST_SHOP'`. Probably no real cases, but worth grepping the test suite for `'SHOP'` etc. before declaring slice 2 done.
 
 ### Low
 
-- **Migration body literal collision.** A migration that intentionally references the unprefixed DB name in a string column comment (`COMMENT 'historic: VSCASH'`) wouldn't be a problem because the table-ref pass requires the `<DB>.` trailing dot. The string-literal pass only matches exact-quoted forms (`'VSCASH'`).
+- **Migration body literal collision.** A migration that intentionally references the unprefixed DB name in a string column comment (`COMMENT 'historic: SHOP'`) wouldn't be a problem because the table-ref pass requires the `<DB>.` trailing dot. The string-literal pass only matches exact-quoted forms (`'SHOP'`).
 - **CI parallelism.** If CI runs PHPUnit in parallel jobs sharing a MariaDB pod, two jobs would both target `TEST_*`. Mitigation: CI provisions a per-job sidecar (current pattern), so this isn't a real risk under the existing CI shape.
 
 ---

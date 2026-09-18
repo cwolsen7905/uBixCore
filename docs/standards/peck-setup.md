@@ -50,7 +50,7 @@ Example `peck.json`:
     "preset": "base",
     "ignore": {
         "words": [
-            "flirt4free",
+            "content_db",
             "ubix",
             "phpstan",
             "phpcs"
