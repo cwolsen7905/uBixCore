@@ -87,11 +87,4 @@ enum ExceptionCode: int
     case ERROR_EXECUTING_PDO_QUERY                    = 13001;
     case USER_NOT_FOUND                               = 13019;
     case VALIDATION_FAILED                            = 29003;
-
-    //
-    //  Host-application codes still defined here for compatibility. Product-specific codes
-    //  belong in the host's own enum; these move out in a coordinated change.
-    //
-    case CREATOR_ALREADY_EXISTS = 29001;
-    case CREATOR_SLUG_TAKEN     = 29002;
 }
