@@ -6,9 +6,16 @@ namespace Ubix\Tests;
 
 use DI\Container;
 use Dotenv\Dotenv;
+use GuzzleHttp\Client as GuzzleClient;
+use Monolog\Handler\StreamHandler;
+use Monolog\Level;
+use Monolog\Logger as MonologLogger;
 use PHPUnit\Framework\TestCase;
 use RuntimeException;
+use Ubix\Service\JsonService;
 use Ubix\Service\Sql\SqlServiceInterface as SqlService;
+use Ubix\Service\Vault\VaultCredentialResolverService;
+use Ubix\Service\Vault\VaultService;
 
 /**
  * Abstract class for a PHPUnit test case with added Container singleton functionality
@@ -85,6 +92,8 @@ abstract class AbstractTestCase extends TestCase
                 Dotenv::createUnsafeImmutable($this->getProjectRoot())->load();
             }
 
+            $this->hydrateTestDatabaseFromVault();
+
             // Map The Databases
             putenv('MYSQL_READ_HOST=' . getenv('TEST_MYSQL_WRITE_HOST'));
             putenv('MYSQL_WRITE_HOST=' . getenv('TEST_MYSQL_WRITE_HOST'));
@@ -124,5 +133,37 @@ abstract class AbstractTestCase extends TestCase
             throw new RuntimeException('TRUNCATE statements are only allowed when PHPUNIT_RUNNING is set to 1 in the environment');
         }
         $this->getSqlService()->query($sql, $parameters);
+    }
+
+    /**
+     * Resolve the test database connection from uBix Vault, when one is configured
+     *
+     * A no-op unless both `VAULT_ADDR` and `VAULT_TEST_DB_KV_PATH` are set, so a
+     * host with no Vault keeps using its git-ignored `.env`. When they are set, the
+     * suite needs **no database credentials in a file at all** — which is the point:
+     * a password in a plaintext `.env` is copied between machines, survives in
+     * backups, and is rotated only by someone remembering to.
+     *
+     * Runs after Dotenv so Vault wins over any stale value a `.env` still carries.
+     *
+     * @return void
+     */
+    private function hydrateTestDatabaseFromVault(): void
+    {
+        $vaultAddress = getenv('VAULT_ADDR');
+
+        if (!is_string($vaultAddress) || trim($vaultAddress) === '' || getenv('VAULT_TEST_DB_KV_PATH') === false) {
+            return;
+        }
+
+        $logger = new MonologLogger('vault-test-db');
+        $logger->pushHandler(new StreamHandler('php://stderr', Level::Warning));
+
+        $resolver = new VaultCredentialResolverService(
+            $logger,
+            new VaultService($logger, new GuzzleClient(), new JsonService($logger)),
+        );
+
+        $resolver->hydrateTestDatabase(trim($vaultAddress));
     }
 }
