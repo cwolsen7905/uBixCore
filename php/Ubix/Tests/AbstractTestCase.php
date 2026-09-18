@@ -6,7 +6,7 @@ namespace Ubix\Tests;
 
 use DI\Container;
 use Dotenv\Dotenv;
-use GuzzleHttp\Client as GuzzleClient;
+use GuzzleHttp\Client;
 use Monolog\Handler\StreamHandler;
 use Monolog\Level;
 use Monolog\Logger as MonologLogger;
@@ -161,7 +161,7 @@ abstract class AbstractTestCase extends TestCase
 
         $resolver = new VaultCredentialResolverService(
             $logger,
-            new VaultService($logger, new GuzzleClient(), new JsonService($logger)),
+            new VaultService($logger, new Client(), new JsonService($logger)),
         );
 
         $resolver->hydrateTestDatabase(trim($vaultAddress));

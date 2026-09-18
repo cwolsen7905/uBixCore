@@ -192,6 +192,30 @@ final class MigrationNotificationServiceTest extends UbixConcreteClassOrEnumTest
     }
 
     /**
+     * Guarantee the endpoint this service checks before it posts anything
+     *
+     * `phpunit.xml` sets `SLACK_API_ENDPOINT`, but only through `putenv()` — and
+     * `AbstractTestCase::getContainer()` later loads the host's `.env` through
+     * Dotenv, whose immutability check reads `$_ENV`/`$_SERVER` and so does not
+     * see it. A `.env` carrying `SLACK_API_ENDPOINT=''` (as the shipped
+     * `.env.example` does) therefore overwrites it with empty the moment any
+     * earlier test builds the container, and every test below silently takes the
+     * service's "no endpoint configured, skip" path instead of posting.
+     *
+     * That made these cases pass or fail purely on execution order: green under a
+     * full `vendor/bin/phpunit` run, red under `code:review`, which runs a
+     * narrowed file list. Setting the value here makes them independent of both.
+     *
+     * @return void
+     */
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        putenv('SLACK_API_ENDPOINT=' . self::API_ENDPOINT);
+    }
+
+    /**
      * Build an HTTP client stub that records each outbound request body and
      * returns a successful Slack response.
      *
