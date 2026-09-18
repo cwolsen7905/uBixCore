@@ -310,8 +310,8 @@ uBix Core uses **CalVer** (`YYYY.MM.MICRO`) — see the [Versioning section of t
 - [branching-and-git-workflow.md](../standards/branching-and-git-workflow.md) — branch topology, land paths, concurrent-agent rules.
 - [js-code-review.md](../standards/js-code-review.md) — root-level JS review suite (Knip, CSpell, Prettier).
 - [peck-setup.md](../standards/peck-setup.md) — PHP spell checker setup.
-- [feature-test-system.md](feature-test-system.md) — planning-phase proposal for the Feature Tests system rewrite.
+- [experiment-bucketing.md](experiment-bucketing.md) — schema pattern for A/B bucketing and feature flags.
 
 ## Changes to this document
 
-Updates to repository structure, app-naming conventions, branch model, or release process should be reflected here in the same commit that makes the change. If a change is contentious or exploratory, consider a planning-phase sibling doc (see `feature-test-system.md` or `hover-preview-latency.md` for the pattern) rather than editing this one in place.
+Updates to repository structure, app-naming conventions, branch model, or release process should be reflected here in the same commit that makes the change. If a change is contentious or exploratory, consider a planning-phase sibling doc (see `hover-preview-latency.md` for the pattern) rather than editing this one in place.

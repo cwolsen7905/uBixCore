@@ -15,7 +15,7 @@ Read these to understand how the platform is built. Stable; rarely change.
 - [`complete-py-guide.md`](architecture/complete-py-guide.md) — full Python `*Py` guide (the `py/Ubix` shared framework + `@ubixsys/ubixcore` namespace, FastAPI factory, app structure, packaging, Redis seam)
 - [`models-and-datatypes.md`](architecture/models-and-datatypes.md) — DataType + Model pattern reference
 - [`monorepo.md`](architecture/monorepo.md) — repository shape, npm workspaces, git workflow, release process
-- [`feature-test-system.md`](architecture/feature-test-system.md) — Feature Tests system planning doc
+- [`experiment-bucketing.md`](architecture/experiment-bucketing.md) — A/B bucketing + feature-flag schema pattern (reference, not shipped)
 
 ### `standards/` — Enforced rules
 
