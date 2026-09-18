@@ -15,17 +15,16 @@ are not, and the larger one is far cheaper than expected.
 
 ### A. Employer production schema — reachable, but not from `main`
 
-Fourteen schema dumps totalling **1.85 MB**, introduced in `5d6c1cd3`:
+Fourteen `sql/*.sql` schema dumps totalling **1.85 MB**, introduced in `5d6c1cd3`, plus
+the domain classes that went with them and the standards docs written for that
+organisation.
 
-```
-ADSERVER  BILLING  CHAT_SYSTEM  CHAT_SYSTEM_LOG  FLIRT_REWARDS  MAILINGS
-MESSAGING  STUDIOS  STUDIOS_STATS  SYSTEMS  VSCASH  VSCASH_STATS
-flirt4free  ntl_db
-```
+The names are deliberately not written out here — this document lives on `main`, and
+listing them would reintroduce exactly what the exercise removes. To see them:
 
-…plus their domain classes (`Performer`, `PlatformUser`, `AffiliateSqlRepository`,
-`ProspectService`, `AccountAuthenticationService`) and the standards docs written for
-that organisation.
+```sh
+git ls-tree -r --name-only 5d6c1cd3 -- sql/
+```
 
 **They are not in `main`'s history, and not in any tag from `v0.2.1` onward.** The OSS
 split already removed them. They survive only on these refs:
@@ -161,8 +160,8 @@ untracked, so copy it aside first if this sandbox's copy matters.
 
 ## Still outstanding, not covered here
 
-- `docs/architecture/feature-test-system.md` is on `main` today: verbatim internal prose
-  from the employer describing their own system. Not framework documentation. It needs a
-  delete-or-rewrite decision, and it is the last such file in the working tree.
+- Working trees are done. The last such file was rewritten as
+  `docs/architecture/experiment-bucketing.md` — the schema pattern kept, everything
+  identifying dropped. Nothing in any repo's default branch carries that content now.
 - The CI test database password is in plaintext in job logs 12236, 12239, 12241 and
   12242. Rotate it and delete those jobs' logs; a history rewrite does not touch CI logs.
