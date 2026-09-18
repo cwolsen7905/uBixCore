@@ -40,6 +40,23 @@ final class VaultCredentialResolverService
     ];
 
     /**
+     * Map of Vault KV keys -> the `TEST_MYSQL_WRITE_*` variable each populates.
+     *
+     * The unit-test connection is one credential pair, not a read/write split, so
+     * the secret is flat: the whole connection lives in Vault rather than only its
+     * password. A test database's host and name are not sensitive, but splitting
+     * them across Vault and a committed file is how a `.env` ends up holding the
+     * password anyway "just to keep them together".
+     */
+    private const TEST_KV_KEY_TO_ENV = [
+        'database' => 'TEST_MYSQL_WRITE_DATABASE',
+        'host'     => 'TEST_MYSQL_WRITE_HOST',
+        'password' => 'TEST_MYSQL_WRITE_PASSWORD',
+        'port'     => 'TEST_MYSQL_WRITE_PORT',
+        'username' => 'TEST_MYSQL_WRITE_USERNAME',
+    ];
+
+    /**
      * Constructor
      *
      * @param Logger       $logger       Logger
@@ -79,6 +96,59 @@ final class VaultCredentialResolverService
         ]);
 
         $this->hydrateAppSecrets($vaultAddress, $token);
+    }
+
+    /**
+     * Resolve the unit-test database connection from Vault into the environment
+     *
+     * Opt-in via `VAULT_TEST_DB_KV_PATH`, and a no-op without it — a host with no
+     * Vault available keeps using its git-ignored `.env`, exactly as the runtime
+     * credentials do.
+     *
+     * This exists so a developer machine does not need a database password in a
+     * plaintext file at all. The remaining local secret is one Vault token, which
+     * is revocable, scoped and expiring, where a copied `.env` password is none of
+     * those things and is only ever rotated by remembering to.
+     *
+     * @param string $vaultAddress Base address of the Vault server
+     *
+     * @throws RuntimeException When the configured secret yields none of the expected keys
+     *
+     * @return void
+     */
+    public function hydrateTestDatabase(string $vaultAddress): void
+    {
+        $path = $this->readEnv('VAULT_TEST_DB_KV_PATH');
+
+        if ($path === '') {
+            return;
+        }
+
+        $secret   = $this->vaultService->readKvV2Secret($vaultAddress, $this->resolveToken($vaultAddress), $path);
+        $resolved = [];
+
+        foreach (self::TEST_KV_KEY_TO_ENV as $kvKey => $envName) {
+            if (isset($secret[$kvKey]) && $secret[$kvKey] !== '') {
+                $resolved[$envName] = (string) $secret[$kvKey];
+            }
+        }
+
+        if ($resolved === []) {
+            // Fail closed: a configured path that yields nothing means the secret is
+            // wrong, and falling back to whatever the environment already held would
+            // silently point the suite at another database.
+            throw new RuntimeException(
+                'uBix Vault KV secret `' . $path . '` (VAULT_TEST_DB_KV_PATH) had none of the expected keys (' . implode(', ', array_keys(self::TEST_KV_KEY_TO_ENV)) . ').',
+            );
+        }
+
+        foreach ($resolved as $envName => $value) {
+            putenv($envName . '=' . $value);
+        }
+
+        $this->logger->info('Hydrated test database connection from uBix Vault', [
+            'vars' => array_keys($resolved), // Names only — never the values.
+        ]);
     }
 
     /**

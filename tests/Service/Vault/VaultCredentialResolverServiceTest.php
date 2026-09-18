@@ -25,7 +25,10 @@ final class VaultCredentialResolverServiceTest extends UbixConcreteClassOrEnumTe
 {
     private const ENV = [
         'VAULT_TOKEN', 'VAULT_DB_KV_PATH', 'VAULT_APP_KV_PATH', 'VAULT_DB_STRATEGY',
+        'VAULT_TEST_DB_KV_PATH',
         'MYSQL_READ_USERNAME', 'MYSQL_READ_PASSWORD', 'MYSQL_WRITE_USERNAME', 'MYSQL_WRITE_PASSWORD',
+        'TEST_MYSQL_WRITE_HOST', 'TEST_MYSQL_WRITE_PORT', 'TEST_MYSQL_WRITE_DATABASE',
+        'TEST_MYSQL_WRITE_USERNAME', 'TEST_MYSQL_WRITE_PASSWORD',
         'API_BEARER_TOKENS', 'lower_case_key', 'VAULT_ADDR_OVERRIDE',
     ];
 
@@ -97,6 +100,84 @@ final class VaultCredentialResolverServiceTest extends UbixConcreteClassOrEnumTe
             $this->kv(['read_username' => 'r', 'read_password' => 'rp', 'write_username' => 'w', 'write_password' => 'wp']),
             $this->kv(['lower_case_only' => 'x']),
         ])->hydrateEnvironment('https://vault.test');
+    }
+
+    /**
+     * The test-database hydration is opt-in and silent without its path
+     *
+     * @return void
+     */
+    public function testTestDatabaseHydrationIsOptIn(): void
+    {
+        putenv('VAULT_TOKEN=test-token');
+
+        // No VAULT_TEST_DB_KV_PATH: no HTTP call is queued, so reaching one would
+        // fail the mock handler rather than pass quietly.
+        $this->resolver([])->hydrateTestDatabase('https://vault.test');
+
+        $this->assertFalse(getenv('TEST_MYSQL_WRITE_HOST'));
+    }
+
+    /**
+     * The whole test connection comes from Vault, so no file needs the password
+     *
+     * @return void
+     */
+    public function testTestDatabaseConnectionIsHydratedFromVault(): void
+    {
+        putenv('VAULT_TOKEN=test-token');
+        putenv('VAULT_TEST_DB_KV_PATH=ubixcore/test-db');
+
+        $this->resolver([
+            $this->kv([
+                'database' => 'ubixcore_test',
+                'host'     => 'db.internal',
+                'password' => 'secret',
+                'port'     => '30306',
+                'username' => 'ubixcore_test',
+            ]),
+        ])->hydrateTestDatabase('https://vault.test');
+
+        $this->assertSame('db.internal', getenv('TEST_MYSQL_WRITE_HOST'));
+        $this->assertSame('30306', getenv('TEST_MYSQL_WRITE_PORT'));
+        $this->assertSame('ubixcore_test', getenv('TEST_MYSQL_WRITE_DATABASE'));
+        $this->assertSame('ubixcore_test', getenv('TEST_MYSQL_WRITE_USERNAME'));
+        $this->assertSame('secret', getenv('TEST_MYSQL_WRITE_PASSWORD'));
+    }
+
+    /**
+     * Vault wins over a stale value the environment already carried
+     *
+     * @return void
+     */
+    public function testVaultOverridesAnExistingEnvironmentValue(): void
+    {
+        putenv('VAULT_TOKEN=test-token');
+        putenv('VAULT_TEST_DB_KV_PATH=ubixcore/test-db');
+        putenv('TEST_MYSQL_WRITE_HOST=127.0.0.1');
+
+        $this->resolver([$this->kv(['host' => 'db.internal', 'password' => 'secret'])])
+            ->hydrateTestDatabase('https://vault.test');
+
+        // The retired sandbox host is exactly the stale value this replaces.
+        $this->assertSame('db.internal', getenv('TEST_MYSQL_WRITE_HOST'));
+    }
+
+    /**
+     * A configured test-db path that yields nothing usable fails closed
+     *
+     * @return void
+     */
+    public function testFailsClosedWhenTestDatabaseSecretIsEmpty(): void
+    {
+        putenv('VAULT_TOKEN=test-token');
+        putenv('VAULT_TEST_DB_KV_PATH=ubixcore/test-db');
+
+        $this->expectException(RuntimeException::class);
+
+        // Falling back to whatever the environment held would point the suite at
+        // another database without saying so.
+        $this->resolver([$this->kv(['unexpected' => 'x'])])->hydrateTestDatabase('https://vault.test');
     }
 
     /**

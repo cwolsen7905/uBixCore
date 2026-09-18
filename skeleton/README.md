@@ -50,6 +50,7 @@ VAULT_ADDR=https://vault.example.com     # turns the hook on
 VAULT_TOKEN=...                          # local dev / CI - or, in Kubernetes:
 VAULT_K8S_ROLE=acme-api                  # service-account auth, no token on disk
 VAULT_DB_KV_PATH=app/db                  # KV v2 secret holding read_/write_username + _password
+VAULT_TEST_DB_KV_PATH=app/test-db        # KV v2 secret holding the unit-test connection
 ```
 
 The secret's keys `read_username`, `read_password`, `write_username`,
@@ -57,6 +58,15 @@ The secret's keys `read_username`, `read_password`, `write_username`,
 and API keys follow the same pattern: store them in Vault, read them in the
 pipeline with a read-only token, and keep `.env` empty of anything you would
 not paste into a chat.
+
+`VAULT_TEST_DB_KV_PATH` does the same for the PHPUnit connection, and its secret
+carries the **whole** connection — `host`, `port`, `database`, `username`,
+`password` — not just the credentials. A test database's host and name are not
+sensitive, but splitting them across Vault and a file is how the password ends up
+back in the file "to keep them together". With it set, `vendor/bin/phpunit` needs
+no `TEST_MYSQL_*` values on disk at all; without it, the `.env` fallback still
+works for a machine with no Vault access. Vault is read after `.env` and wins, so
+a stale local value cannot quietly outrank it.
 
 ## CI/CD
 
