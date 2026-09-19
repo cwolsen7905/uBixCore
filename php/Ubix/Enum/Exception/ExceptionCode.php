@@ -87,6 +87,9 @@ enum ExceptionCode: int
     case MEDIA_OBJECT_NOT_FOUND                       = 11156;
     case MEDIA_LOCAL_FILE_UNREADABLE                  = 11157;
     case MEDIA_STORAGE_OPERATION_FAILED               = 11158;
+    case PAYMENT_WEBHOOK_SIGNATURE_INVALID            = 11159;
+    case PAYMENT_PROVIDER_OPERATION_FAILED            = 11160;
+    case PAYMENT_SUBSCRIPTION_NOT_FOUND               = 11161;
     case ERROR_EXECUTING_PDO_QUERY                    = 13001;
     case USER_NOT_FOUND                               = 13019;
     case VALIDATION_FAILED                            = 29003;
