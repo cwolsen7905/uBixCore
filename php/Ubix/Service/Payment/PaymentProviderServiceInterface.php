@@ -138,4 +138,23 @@ interface PaymentProviderServiceInterface
      * @return RefundResult The accepted refund, with a positive amount; a host applies its own ledger sign convention
      */
     public function refundPayment(string $providerPaymentReference, ?int $amountMinorUnits): RefundResult;
+
+    /**
+     * The payment reference an invoice was settled by, if the provider has one
+     *
+     * A recurring charge arrives as an invoice, but a refund of it arrives
+     * naming the underlying payment. Some providers' invoice payloads carry no
+     * link between the two -- Stripe's, since its 2025-03-31 API release,
+     * carries neither the payment intent nor the charge -- so a host that
+     * records the invoice has no way to match the later refund back to it.
+     * Asking once, when the invoice is paid, lets the host record the payment
+     * reference the refund will actually name.
+     *
+     * @param string $invoiceId The provider's invoice id
+     *
+     * @throws \Ubix\Exception\DtoException If the provider is unreachable
+     *
+     * @return ?string The provider's payment reference, or null when the invoice was settled some other way (credit balance, zero amount)
+     */
+    public function getPaymentReferenceForInvoice(string $invoiceId): ?string;
 }

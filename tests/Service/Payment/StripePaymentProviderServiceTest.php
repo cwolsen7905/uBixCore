@@ -220,6 +220,42 @@ final class StripePaymentProviderServiceTest extends UbixConcreteClassOrEnumTest
     }
 
     /**
+     * The settling payment's intent is returned, skipping failed attempts
+     *
+     * A refund names the payment intent, and a Basil invoice carries none —
+     * so this is the only way to link a refund back to a subscription charge.
+     *
+     * @return void
+     */
+    public function testTheSettlingPaymentIntentIsReturnedForAnInvoice(): void
+    {
+        $this->cannedHttpClient([
+            'data'   => [
+                ['object' => 'invoice_payment', 'status' => 'canceled', 'payment' => ['type' => 'payment_intent', 'payment_intent' => 'pi_failed_attempt']],
+                ['object' => 'invoice_payment', 'status' => 'paid', 'payment' => ['type' => 'payment_intent', 'payment_intent' => 'pi_settled']],
+            ],
+            'object' => 'list',
+        ]);
+
+        $this->assertSame('pi_settled', $this->provider()->getPaymentReferenceForInvoice('in_1'));
+    }
+
+    /**
+     * An invoice settled without a card payment yields null, not an error
+     *
+     * A zero-amount invoice, or one paid from credit balance, has no payment
+     * to name — and nothing to refund.
+     *
+     * @return void
+     */
+    public function testAnInvoiceWithNoCardPaymentYieldsNull(): void
+    {
+        $this->cannedHttpClient(['object' => 'list', 'data' => []]);
+
+        $this->assertNull($this->provider()->getPaymentReferenceForInvoice('in_zero'));
+    }
+
+    /**
      * A non-positive amount is refused before anything reaches the network
      *
      * @return void
