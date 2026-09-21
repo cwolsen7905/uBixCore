@@ -44,7 +44,7 @@ use Ubix\DataTransferObject\Payment\VerifiedWebhookEvent;
  * who may see it afterwards. Entitlement, ledgers, fees, commission splits and
  * payouts to sellers are all host concerns that live above this seam.
  */
-interface PaymentProviderInterface
+interface PaymentProviderServiceInterface
 {
     /**
      * Create a provider-hosted page for collecting one non-recurring payment
@@ -109,7 +109,7 @@ interface PaymentProviderInterface
      *
      * @return ProviderSubscription The provider's view, with its own unmapped status string
      */
-    public function fetchSubscription(string $providerSubscriptionId): ProviderSubscription;
+    public function getSubscription(string $providerSubscriptionId): ProviderSubscription;
 
     /**
      * Stop a recurring payment from charging again

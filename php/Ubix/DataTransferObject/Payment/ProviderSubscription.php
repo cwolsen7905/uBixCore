@@ -9,8 +9,8 @@ use Ubix\DataTransferObject\DtoInterface as Dto;
 /**
  * Data transfer object for the provider's own view of a recurring payment
  *
- * Returned by {@see \Ubix\Service\Payment\PaymentProviderInterface::fetchSubscription()}
- * and {@see \Ubix\Service\Payment\PaymentProviderInterface::cancelSubscription()}.
+ * Returned by {@see \Ubix\Service\Payment\PaymentProviderServiceInterface::getSubscription()}
+ * and {@see \Ubix\Service\Payment\PaymentProviderServiceInterface::cancelSubscription()}.
  *
  * `$status` is deliberately a plain string in the *provider's* vocabulary
  * rather than an enum of this framework's choosing. The provider is the system

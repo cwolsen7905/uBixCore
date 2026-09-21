@@ -9,7 +9,7 @@ use Ubix\DataTransferObject\DtoInterface as Dto;
 /**
  * Data transfer object for a refund the provider has accepted
  *
- * Returned by {@see \Ubix\Service\Payment\PaymentProviderInterface::refundPayment()}.
+ * Returned by {@see \Ubix\Service\Payment\PaymentProviderServiceInterface::refundPayment()}.
  *
  * `$amountMinorUnits` is positive here -- it is the size of the refund, not a
  * signed ledger movement. A host that records refunds as negative rows against

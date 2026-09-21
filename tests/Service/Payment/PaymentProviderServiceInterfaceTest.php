@@ -8,10 +8,10 @@ use PHPUnit\Framework\TestCase;
 use ReflectionClass;
 use ReflectionMethod;
 use ReflectionNamedType;
-use Ubix\Service\Payment\PaymentProviderInterface as PaymentProvider;
+use Ubix\Service\Payment\PaymentProviderServiceInterface as PaymentProviderService;
 
 /**
- * PHPUnit test case for \Ubix\Service\Payment\PaymentProviderInterface
+ * PHPUnit test case for \Ubix\Service\Payment\PaymentProviderServiceInterface
  *
  * An interface has no behaviour to test, but this one makes two claims in its
  * docblock that are load-bearing rather than stylistic, and both are checkable
@@ -20,7 +20,7 @@ use Ubix\Service\Payment\PaymentProviderInterface as PaymentProvider;
  *
  * @coversNothing
  */
-final class PaymentProviderInterfaceTest extends TestCase
+final class PaymentProviderServiceInterfaceTest extends TestCase
 {
     /**
      * Test that no amount anywhere on the seam is a float
@@ -108,7 +108,7 @@ final class PaymentProviderInterfaceTest extends TestCase
      */
     public function testWebhookVerificationReturnsTheVerifiedType(): void
     {
-        $returnType = (new ReflectionMethod(PaymentProvider::class, 'verifyWebhook'))->getReturnType();
+        $returnType = (new ReflectionMethod(PaymentProviderService::class, 'verifyWebhook'))->getReturnType();
 
         $this->assertInstanceOf(ReflectionNamedType::class, $returnType);
         $this->assertSame(
@@ -124,6 +124,6 @@ final class PaymentProviderInterfaceTest extends TestCase
      */
     private function methods(): array
     {
-        return (new ReflectionClass(PaymentProvider::class))->getMethods();
+        return (new ReflectionClass(PaymentProviderService::class))->getMethods();
     }
 }

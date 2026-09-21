@@ -9,7 +9,7 @@ use Ubix\DataTransferObject\DtoInterface as Dto;
 /**
  * Data transfer object describing a recurring payment to set up
  *
- * Passed to {@see \Ubix\Service\Payment\PaymentProviderInterface::createSubscriptionCheckout()}.
+ * Passed to {@see \Ubix\Service\Payment\PaymentProviderServiceInterface::createSubscriptionCheckout()}.
  *
  * This is deliberately a separate DTO from {@see OneOffCheckoutRequest} rather
  * than the same one carrying an optional interval. The two have different
