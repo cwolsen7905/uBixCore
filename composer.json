@@ -56,10 +56,12 @@
 		"squizlabs/php_codesniffer": "^3.13",
 		"slevomat/coding-standard": "^8.19",
 		"rector/rector": "^2.1",
-		"stripe/stripe-php": "^17.0"
+		"stripe/stripe-php": "^17.0",
+		"firebase/php-jwt": "^7.2"
 	},
 	"suggest": {
 		"aws/aws-sdk-php": "Required by Ubix\\Service\\Media\\S3MediaStorageService (object storage) and the legacy Ubix\\Service\\Blob\\S3BlobService",
+		"firebase/php-jwt": "Required by Ubix\\Service\\Identity\\OidcIdTokenVerifierService (Continue with Google / Apple: ID-token verification against the provider JWKS)",
 		"filestack/filestack-php": "Required by Ubix\\Service\\Blob\\FilestackBlobService (Filestack blob storage)",
 		"m4tthumphrey/php-gitlab-api": "GitLab API client for CLI tooling that talks to GitLab",
 		"stripe/stripe-php": "Required by Ubix\\Service\\Payment\\StripePaymentProvider (hosted checkout, billing and webhook signature verification)"
