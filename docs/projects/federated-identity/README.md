@@ -1,6 +1,6 @@
 # Federated Identity — Project
 
-**Status:** Build — plan drafted 2026-09-21; FED-01 (seam) + FED-02 (Google) in !169, tag v0.13.0 on merge. Next FED-03 (Apple).
+**Status:** Build — plan drafted 2026-09-21; FED-01 (seam) + FED-02 (Google) in !169, tag v0.13.0 on merge. Next FED-03 (Facebook); Apple (FED-04) deferred with kitg's launch set.
 
 A vendor-agnostic **sign-in seam**: let a host accept "Continue with Google / Apple /
 Facebook" and passwordless email codes without importing a provider SDK anywhere but
