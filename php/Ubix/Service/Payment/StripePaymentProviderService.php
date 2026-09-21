@@ -253,6 +253,46 @@ final class StripePaymentProviderService implements PaymentProviderService
     }
 
     /**
+     * {@inheritDoc}
+     *
+     * @throws DtoException When the provider refuses the lookup or is unreachable
+     */
+    public function getPaymentReferenceForInvoice(string $invoiceId): ?string
+    {
+        try {
+            $payments = $this->client()->invoicePayments->all(['invoice' => $invoiceId, 'limit' => 10]);
+        } catch (Throwable $e) {
+            $this->logger->error('Stripe refused an invoice payment lookup', ['error' => $e->getMessage()]);
+
+            throw new DtoException(
+                'Could not look up how that invoice was paid',
+                ExceptionCode::PAYMENT_PROVIDER_OPERATION_FAILED->value,
+                previous: $e,
+            );
+        }
+
+        // An invoice can carry several payment attempts. The one that settled
+        // it is `paid`; earlier failed attempts are not what a refund names.
+        foreach ($payments->data as $invoicePayment) {
+            if (($invoicePayment->status ?? null) !== 'paid') {
+                continue;
+            }
+
+            $payment = $invoicePayment->payment ?? null;
+            if (!is_object($payment)) {
+                continue;
+            }
+
+            $reference = $payment->payment_intent ?? $payment->charge ?? null;
+            if (is_string($reference) && $reference !== '') {
+                return $reference;
+            }
+        }
+
+        return null;
+    }
+
+    /**
      * Create a hosted Checkout Session in either mode
      *
      * @param string                                        $mode        Either `payment` or `subscription`
