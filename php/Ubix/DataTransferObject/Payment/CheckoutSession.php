@@ -9,8 +9,8 @@ use Ubix\DataTransferObject\DtoInterface as Dto;
 /**
  * Data transfer object for a hosted checkout session a payer can be sent to
  *
- * Returned by {@see \Ubix\Service\Payment\PaymentProviderInterface::createOneOffCheckout()}
- * and {@see \Ubix\Service\Payment\PaymentProviderInterface::createSubscriptionCheckout()}.
+ * Returned by {@see \Ubix\Service\Payment\PaymentProviderServiceInterface::createOneOffCheckout()}
+ * and {@see \Ubix\Service\Payment\PaymentProviderServiceInterface::createSubscriptionCheckout()}.
  *
  * The URL points at the provider's own hosted payment page, never at the host's
  * application. That is the entire point of this DTO's shape: if a host only ever

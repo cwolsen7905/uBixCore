@@ -9,7 +9,7 @@ use Ubix\DataTransferObject\DtoInterface as Dto;
 /**
  * Data transfer object for a webhook whose signature has already been verified
  *
- * Returned by {@see \Ubix\Service\Payment\PaymentProviderInterface::verifyWebhook()}.
+ * Returned by {@see \Ubix\Service\Payment\PaymentProviderServiceInterface::verifyWebhook()}.
  *
  * **The existence of this DTO is the security control.** A webhook endpoint is
  * an unauthenticated, publicly-reachable URL that tells a host money moved, so
