@@ -1,6 +1,6 @@
 # Federated Identity — Plan
 
-**Status:** Draft v0.1 · 2026-09-21 · Owner: Christopher W. Olsen
+**Status:** Draft v0.1 · 2026-09-21 · FED-01/02 in !169 · Owner: Christopher W. Olsen
 **First consumer:** kitg / Sowing.me — `docs/surfaces/authentication/{srs,technical-spec,architecture}.md` and platform ADR-009 in that repo.
 
 ## 1. The boundary
@@ -31,21 +31,20 @@ interface, DTOs, one class per vendor, the vendor library in `suggest`.
 
 | Type | Path | Role |
 |---|---|---|
-| `IdentityProviderServiceInterface` | `php/Ubix/Service/Identity/` | `beginAuthorization(BeginAuthorizationRequest): AuthorizationRedirect` and `completeAuthorization(CallbackParameters, PendingAuthorization): VerifiedIdentity` |
+| `IdentityProviderServiceInterface` | `php/Ubix/Service/Identity/` | `beginAuthorization(BeginAuthorizationRequest): PendingAuthorization` and `completeAuthorization(CallbackParameters, PendingAuthorization): VerifiedIdentity` |
 | `IdentityProvider` (enum) | `php/Ubix/Enum/Identity/` | `GOOGLE`, `APPLE`, `FACEBOOK` — provider names are not product vocabulary |
 | `BeginAuthorizationRequest` | `php/Ubix/DataTransferObject/Identity/` | registered redirect URI, validated `returnTo`, optional `loginHint`, optional opaque `hostContext` |
-| `AuthorizationRedirect` | same | the provider URL + the `PendingAuthorization` to store |
-| `PendingAuthorization` | same | provider, `state`, `nonce`, PKCE `codeVerifier`, redirect URI, `returnTo`, `hostContext`, created-at |
+| `PendingAuthorization` | same | provider, the `authorizationUrl` to redirect to, `state`, `nonce`, PKCE `codeVerifier`, redirect URI, `returnTo`, `hostContext`, created-at |
 | `CallbackParameters` | same | `code`, `state`, `error`, and Apple's `user` form field — built from GET query **or** POST body |
 | `VerifiedIdentity` | same | provider, `subject`, `email?`, `emailVerified`, `emailIsPrivateRelay`, `givenName?`, `familyName?`, `hostedDomain?` |
 
-`VerifiedIdentity` has no public constructor path from raw input: only a provider
-implementation creates one, after verification — the same reasoning as the payment seam's
-`VerifiedWebhookEvent`. A host that holds one knows it was verified.
+`VerifiedIdentity` is a separate type so a host handler taking one cannot be handed claims
+straight off a request — the same reasoning as the payment seam's `VerifiedWebhookEvent`.
+Only provider implementations build one, after verification.
 
 ### 2.2 Flow state — and why Apple forces it out of the session
 
-`AuthorizationFlowStore` keeps a `PendingAuthorization` in PSR-16 cache (10-minute TTL,
+`AuthorizationFlowService` keeps a `PendingAuthorization` in PSR-16 cache (10-minute TTL,
 keys per `docs/standards/memcache-keys.md`) under a random 32-byte handle, and **takes it
 exactly once** (delete on read). The handle travels in its own cookie:
 
@@ -74,7 +73,7 @@ fallback.
 
 ### 2.3 OIDC ID-token verification
 
-`OidcIdTokenVerifier`, used by Google and Apple:
+`OidcIdTokenVerifierService`, used by Google and Apple:
 
 - keys from the provider JWKS via `firebase/php-jwt`'s `CachedKeySet` (PSR-6 cache +
   the existing PSR-18 client); an unknown `kid` refreshes the set at most once per minute;
@@ -120,7 +119,7 @@ decides what each one does.
 
 ### 2.7 Return-target validation
 
-`ReturnToValidator` accepts a same-origin relative path (`/x`, not `//x`, no `\`, no
+`ReturnToValidatorService` accepts a same-origin relative path (`/x`, not `//x`, no `\`, no
 scheme, no userinfo) or an absolute URL whose origin is in a configured allow-list —
 reusing the origin list a host already gives `CorsMiddleware`. Everything else falls back
 to the host's default. An OAuth callback that redirects wherever `returnTo` says is an
@@ -159,8 +158,8 @@ a host adds one — its protection is `state` + the flow cookie + `nonce`.
 
 | ID | Slice | Tag |
 |---|---|---|
-| FED-01 | Seam: interface, enum, DTOs, `AuthorizationFlowStore` + cookie helper, `ReturnToValidator` | with FED-02 |
-| FED-02 | `OidcIdTokenVerifier` + `GoogleIdentityProviderService`; `firebase/php-jwt` in `suggest` | **v0.13.0** |
+| FED-01 | Seam: interface, enum, DTOs, `AuthorizationFlowService` + cookie helper, `ReturnToValidatorService` | with FED-02 |
+| FED-02 | `OidcIdTokenVerifierService` + `GoogleIdentityProviderService`; `firebase/php-jwt` in `suggest` | **v0.13.0** |
 | FED-03 | `AppleIdentityProviderService` (client-secret JWT, form_post callback) + `AppleServerNotificationVerifier` | v0.14.0 |
 | FED-04 | `FacebookIdentityProviderService` (`appsecret_proof`, `debug_token`) + `FacebookSignedRequestParser` | v0.15.0 |
 | FED-05 | `OneTimeCodeService` | may ride any of the above |
