@@ -23,10 +23,10 @@ A uBix Core-owned **event table** (`database.md` §6.5), in `SYSTEMS` alongside 
 | --- | --- | --- |
 | `id` | `BIGINT UNSIGNED AUTO_INCREMENT` | Event-table PK — no capacity ceiling. |
 | `admin_id` | `INT UNSIGNED NOT NULL` | The acting admin (always known — routes are permission-gated). Indexed. |
-| `entity_type` | `ENUM('customer','affiliate','broadcaster','model')` `NOT NULL` | The subject domain — a discrete, indexable column (never a JSON/CSV blob, per §6.5). |
+| `entity_type` | `VARCHAR(32) NOT NULL` | The subject domain — a discrete, indexable column (never a JSON/CSV blob, per §6.5). **Host-defined**, not a framework `ENUM`: the original `ENUM('customer','affiliate','broadcaster','model')` named one product's domains, which a framework table cannot. Each host documents its own values. |
 | `subject_id` | `INT UNSIGNED NOT NULL` | The accessed subject's id in its domain. Composite-indexed with `entity_type`. |
-| `search_term` | `VARCHAR` | The term/params that produced the access. |
-| `reason` | `VARCHAR` | Why (e.g. `universal-search-lookup`). |
+| `search_term` | `VARCHAR(255) NULL` | The term/params that produced the access. |
+| `reason` | `VARCHAR(100) NOT NULL` | Why (e.g. `universal-search-lookup`). |
 | `date_created` | `DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP` | The access event time. |
 
 - **Append-only / immutable** — rows are `INSERT`ed, never `UPDATE`d or `DELETE`d (except scheduled retention purge). No `date_last_updated` (documented §6.1 omission for an event table).
@@ -40,11 +40,13 @@ Legacy customer search (`customers/search.php`) writes its own audit to `LEDGER.
 
 ## Implementation seam
 
-A shared writer (`PiiAccessAudit` service in `php/Ubix/`) is the single insert path — surfaces call it after returning results; they do not hand-roll the INSERT. `entity_type` + `subject_id` use domain DataTypes. New PII surfaces reuse this seam rather than adding a parallel audit.
+`Ubix\Service\Audit\PiiAccessAuditService::record(PiiAccess)` is the single insert path, backed by `Ubix\Repository\PiiAccessAudit\PiiAccessAuditWriterInterface` (SQL realisation: `PiiAccessAuditSqlRepository`). Surfaces call it after producing a result; they do not hand-roll the INSERT. It refuses a record with no actor, entity type or reason, de-duplicates subjects, writes nothing for an empty result, and writes the rest as one multi-row statement. The writer is append-only by construction — it has no update or delete.
+
+A host binds the writer in its DI container (`PiiAccessAuditWriterInterface => autowire(PiiAccessAuditSqlRepository::class)`) and carries the table in its own `sql/migrations/`; the reference DDL is `sql/migrations/20260921000000_create_pii_access_audits.sql`. New PII surfaces reuse this seam rather than adding a parallel audit.
 
 ## Checklist for a new PII surface
 
 - [ ] Route is `permissionKey`-gated + `AdminFunctionAccessMiddleware` (not session-auth-only).
 - [ ] Every access that returns subject PII writes `Pii_Access_Audits` rows (one per subject) via the shared writer.
-- [ ] `entity_type` is one of the enum values; add a value only via an additive schema change.
+- [ ] `entity_type` is one of the host's documented values (at most 32 characters); a new value is a documentation change, not a schema one.
 - [ ] Retention window for the surface is documented; BI/DW sign-off obtained (event-table export).
