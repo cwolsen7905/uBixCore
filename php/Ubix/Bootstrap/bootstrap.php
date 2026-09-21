@@ -71,7 +71,14 @@ function environment(string $projectRoot): string
     }
 
     if (getenv('IS_SANDBOX') === 'true' || getenv('IS_DEV') === 'true') {
-        ini_set('display_errors', '1');
+        // `stderr`, not `1`. Displaying to stdout prints every notice INTO the
+        // response body, which on a JSON API corrupts the payload: kitg's dev
+        // checkout appended a PHP 8.5 curl_close() deprecation after its JSON,
+        // so the client's parse failed and reported a failed checkout that had
+        // in fact succeeded -- and leaked server file paths while doing it.
+        // stderr keeps every notice visible to a developer (the pod log, the
+        // terminal) and keeps the response exactly what production would send.
+        ini_set('display_errors', 'stderr');
         ini_set('display_startup_errors', '1');
         error_reporting(E_ALL);
 
