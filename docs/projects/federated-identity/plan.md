@@ -125,6 +125,31 @@ reusing the origin list a host already gives `CorsMiddleware`. Everything else f
 to the host's default. An OAuth callback that redirects wherever `returnTo` says is an
 open redirect with a login page in front of it.
 
+### 2.8 Rate limiting (FED-07)
+
+`RateLimiterService` in `php/Ubix/Service/RateLimit/` — generic, not identity-specific; it
+lands with this project because sign-in is the first thing that needs it (email-code
+requests per address and per IP, code attempts, confirmation resends).
+
+- `hit(scope, subject, limit, windowSeconds)` → `RateLimitResult` DTO: `allowed`,
+  `remaining`, `retryAfterSeconds`. Fixed window per `(scope, subject)`.
+- Keys follow the reservation already in `docs/standards/memcache-keys.md`:
+  `UBIX_RATE_LIMIT_<SCOPE>_<hash>` — the subject (an email, an IP) is SHA-256-hashed, so no
+  address sits in cache in the clear and key length is bounded.
+- Counting uses the backend's atomic increment where it has one (memcached). PSR-16 alone has
+  no atomic increment, so on a plain PSR-16 cache the limit is approximate under concurrent
+  requests; the docblock says so. For abuse limits "about 5 per hour" is the requirement,
+  not "exactly 5".
+- The host picks scopes and numbers; the framework ships no defaults that mean anything.
+
+### 2.9 Session rotation at sign-in (FED-08)
+
+`SessionService::startAuthenticatedSession(array $payload, string $key = 'user')`: rotate
+the session id (`session_regenerate_id(true)`) and **then** write the payload — the order is
+the whole point. Session fixation is the bug every app reintroduces by writing
+`$_SESSION['user']` directly: kitg did, on two of its three sign-in paths (kitg !151). One
+framework call makes the safe order the easy one; what goes in the payload stays the host's.
+
 ## 3. Flows
 
 ```
@@ -164,6 +189,8 @@ a host adds one — its protection is `state` + the flow cookie + `nonce`.
 | FED-04 | `FacebookIdentityProviderService` (`appsecret_proof`, `debug_token`) + `FacebookSignedRequestParser` | v0.15.0 |
 | FED-05 | `OneTimeCodeService` | may ride any of the above |
 | FED-06 | `docs/architecture/complete-php-guide.md` section: wiring a provider in `Dependencies.php`, the callback route, the cookie | with the last code slice |
+| FED-07 | `RateLimiterService` + `RateLimitResult` (§2.8) | with FED-05 — code requests are its first user |
+| FED-08 | `SessionService::startAuthenticatedSession()` (§2.9) | any; small, can go first |
 
 All additive, so each is a MINOR tag. Tests use locally generated keys and signed fixture
 tokens — no network, no real provider — plus one negative test per §4 rule (wrong `aud`,
@@ -180,4 +207,4 @@ expired, bad `nonce`, `alg: none`, replayed flow handle, foreign-app Facebook to
 ## Document control
 | Version | Date | Change |
 |---|---|---|
-| 0.1 | 2026-09-21 | Initial plan, written alongside kitg's authentication spec revision and ADR-009. `hostContext` added the same day: kitg's TDS showed that connect-from-settings cannot read the host session on Apple's callback. |
+| 0.1 | 2026-09-21 | FED-07 (rate limiter) and FED-08 (session rotation helper) added the same day: both generic, both needed by kitg's sign-in, neither existed. Initial plan, written alongside kitg's authentication spec revision and ADR-009. `hostContext` added the same day: kitg's TDS showed that connect-from-settings cannot read the host session on Apple's callback. |

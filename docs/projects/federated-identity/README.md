@@ -26,3 +26,4 @@ browser just proved it holds Google account `sub=…`, with these verified claim
 | No OAuth client library | Protocol code is ours, over the existing PSR-18 client | three providers do not justify `league/oauth2-client` plus three provider packages |
 | Provider tokens | Not returned to the host by default | sign-in needs the verified identity, not an access token; a host that must call the provider later opts in explicitly |
 | Account linking | **Out of scope, permanently** | whose account an identity joins is product policy |
+| Rate limiter, session rotation | **In** (FED-07, FED-08) | generic plumbing sign-in needs first; every host benefits, and kitg shipped the session-fixation bug that FED-08 makes hard to write |
