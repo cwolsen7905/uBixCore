@@ -33,9 +33,9 @@ interface, DTOs, one class per vendor, the vendor library in `suggest`.
 |---|---|---|
 | `IdentityProviderServiceInterface` | `php/Ubix/Service/Identity/` | `beginAuthorization(BeginAuthorizationRequest): AuthorizationRedirect` and `completeAuthorization(CallbackParameters, PendingAuthorization): VerifiedIdentity` |
 | `IdentityProvider` (enum) | `php/Ubix/Enum/Identity/` | `GOOGLE`, `APPLE`, `FACEBOOK` — provider names are not product vocabulary |
-| `BeginAuthorizationRequest` | `php/Ubix/DataTransferObject/Identity/` | registered redirect URI, validated `returnTo`, optional `loginHint` |
+| `BeginAuthorizationRequest` | `php/Ubix/DataTransferObject/Identity/` | registered redirect URI, validated `returnTo`, optional `loginHint`, optional opaque `hostContext` |
 | `AuthorizationRedirect` | same | the provider URL + the `PendingAuthorization` to store |
-| `PendingAuthorization` | same | provider, `state`, `nonce`, PKCE `codeVerifier`, redirect URI, `returnTo`, created-at |
+| `PendingAuthorization` | same | provider, `state`, `nonce`, PKCE `codeVerifier`, redirect URI, `returnTo`, `hostContext`, created-at |
 | `CallbackParameters` | same | `code`, `state`, `error`, and Apple's `user` form field — built from GET query **or** POST body |
 | `VerifiedIdentity` | same | provider, `subject`, `email?`, `emailVerified`, `emailIsPrivateRelay`, `givenName?`, `familyName?`, `hostedDomain?` |
 
@@ -60,6 +60,13 @@ cross-site POST, and host session cookies are Lax (kitg authentication FR-60). A
 stored in the session is therefore invisible on Apple's callback, and the usual "fix" of
 relaxing the session cookie to `None` weakens every other request. A separate,
 single-purpose, ten-minute cookie is the narrow version.
+
+**The host's session is not visible on the callback either** — the same cross-site POST
+that drops the flow cookie's Lax cousin drops the host's session cookie. So anything the
+host needs to know on return ("this flow connects a provider to signed-in user 42", "this
+flow proves an account for a pending link") travels as `hostContext`: an opaque string
+(≤ 1 KiB) the framework stores with the flow and hands back verbatim, never parses and never
+sends to the provider. It is trustworthy because it never left the server.
 
 The callback is accepted only if the cookie's handle resolves **and** the returned `state`
 equals the stored one (constant-time compare). Either missing is a failed sign-in, never a
@@ -174,4 +181,4 @@ expired, bad `nonce`, `alg: none`, replayed flow handle, foreign-app Facebook to
 ## Document control
 | Version | Date | Change |
 |---|---|---|
-| 0.1 | 2026-09-21 | Initial plan, written alongside kitg's authentication spec revision and ADR-009. |
+| 0.1 | 2026-09-21 | Initial plan, written alongside kitg's authentication spec revision and ADR-009. `hostContext` added the same day: kitg's TDS showed that connect-from-settings cannot read the host session on Apple's callback. |
