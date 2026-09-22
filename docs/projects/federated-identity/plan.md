@@ -184,13 +184,13 @@ a host adds one — its protection is `state` + the flow cookie + `nonce`.
 | ID | Slice | Tag |
 |---|---|---|
 | FED-01 | Seam: interface, enum, DTOs, `AuthorizationFlowService` + cookie helper, `ReturnToValidatorService` | with FED-02 |
-| FED-02 | `OidcIdTokenVerifierService` + `GoogleIdentityProviderService`; `firebase/php-jwt` in `suggest` | **v0.13.0** |
+| FED-02 | `OidcIdTokenVerifierService` + `GoogleIdentityProviderService`; `firebase/php-jwt` in `suggest` | **v0.14.0** (v0.13.0 went to TOTP, !170) |
 | FED-03 | `FacebookIdentityProviderService` (`appsecret_proof`, `debug_token`) + `FacebookSignedRequestParser` | v0.14.0 |
 | FED-04 | `AppleIdentityProviderService` (client-secret JWT, form_post callback) + `AppleServerNotificationVerifier`; accepts the native bundle id as a second audience | **deferred** — kitg launches without Apple (2026-09-21) and revisits it with a native iOS app |
 | FED-05 | `OneTimeCodeService` | may ride any of the above |
 | FED-06 | `docs/architecture/complete-php-guide.md` section: wiring a provider in `Dependencies.php`, the callback route, the cookie | with the last code slice |
-| FED-07 | `RateLimiterService` + `RateLimitResult` (§2.8) | with FED-05 — code requests are its first user |
-| FED-08 | `SessionService::startAuthenticatedSession()` (§2.9) | any; small, can go first |
+| FED-07 | `RateLimiterService` + `RateLimitResult` (§2.8) | **!171**, with FED-08 — first user is kitg's identifier-first lookup |
+| FED-08 | `SessionService::startAuthenticatedSession()` (§2.9), plus the session-cookie fix it surfaced (HttpOnly, SameSite=Lax) | **!171** |
 
 All additive, so each is a MINOR tag. Tests use locally generated keys and signed fixture
 tokens — no network, no real provider — plus one negative test per §4 rule (wrong `aud`,
