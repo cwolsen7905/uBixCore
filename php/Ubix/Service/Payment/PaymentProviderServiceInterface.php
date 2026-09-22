@@ -4,9 +4,15 @@ declare(strict_types=1);
 
 namespace Ubix\Service\Payment;
 
+use Ubix\DataTransferObject\Payment\CardSummary;
 use Ubix\DataTransferObject\Payment\CheckoutSession;
+use Ubix\DataTransferObject\Payment\CustomerRequest;
 use Ubix\DataTransferObject\Payment\OneOffCheckoutRequest;
+use Ubix\DataTransferObject\Payment\PaymentIntentRequest;
+use Ubix\DataTransferObject\Payment\PendingPayment;
+use Ubix\DataTransferObject\Payment\PendingSubscriptionRequest;
 use Ubix\DataTransferObject\Payment\ProviderSubscription;
+use Ubix\DataTransferObject\Payment\RecurringPriceRequest;
 use Ubix\DataTransferObject\Payment\RefundResult;
 use Ubix\DataTransferObject\Payment\SubscriptionCheckoutRequest;
 use Ubix\DataTransferObject\Payment\VerifiedWebhookEvent;
@@ -157,4 +163,80 @@ interface PaymentProviderServiceInterface
      * @return ?string The provider's payment reference, or null when the invoice was settled some other way (credit balance, zero amount)
      */
     public function getPaymentReferenceForInvoice(string $invoiceId): ?string;
+
+    /*
+     * In-app billing: the payer never leaves the host's pages. The host shows
+     * the provider's embedded payment form (Stripe's Payment Element), which
+     * collects card details inside the provider's own frames, so card numbers
+     * still never reach the host. These calls create what that form confirms.
+     */
+
+    /**
+     * Create a payer on the provider, to own saved cards and subscriptions
+     *
+     * @param CustomerRequest $request Who the payer is
+     *
+     * @return string The provider's customer id
+     */
+    public function createCustomer(CustomerRequest $request): string;
+
+    /**
+     * Create a recurring price, once, for reuse by every subscription at it
+     *
+     * @param RecurringPriceRequest $request The amount, period and product name
+     *
+     * @return string The provider's price id
+     */
+    public function createRecurringPrice(RecurringPriceRequest $request): string;
+
+    /**
+     * Create a subscription that waits for its first payment, confirmed in the page
+     *
+     * The subscription exists on the provider immediately but is not active
+     * until the payer confirms the first invoice with the returned secret;
+     * the provider expires it if that never happens. Activation arrives, as
+     * ever, by webhook.
+     *
+     * @param PendingSubscriptionRequest $request The customer, price and metadata
+     *
+     * @return PendingPayment The subscription id and the first invoice's confirmation secret
+     */
+    public function createPendingSubscription(PendingSubscriptionRequest $request): PendingPayment;
+
+    /**
+     * Create a one-off payment to confirm in the page
+     *
+     * @param PaymentIntentRequest $request The amount, description and metadata
+     *
+     * @return PendingPayment The payment id and its confirmation secret
+     */
+    public function createPaymentIntent(PaymentIntentRequest $request): PendingPayment;
+
+    /**
+     * Start saving a card for later payments, confirmed in the page
+     *
+     * @param string $customerReference The provider's customer id
+     *
+     * @return PendingPayment The setup id and its confirmation secret
+     */
+    public function createSetupIntent(string $customerReference): PendingPayment;
+
+    /**
+     * Make a saved card the one future invoices charge
+     *
+     * @param string $customerReference      The provider's customer id
+     * @param string $paymentMethodReference The provider's payment method id
+     *
+     * @return void
+     */
+    public function setDefaultPaymentMethod(string $customerReference, string $paymentMethodReference): void;
+
+    /**
+     * The card future invoices will charge, as much as a payer needs to recognise it
+     *
+     * @param string $customerReference The provider's customer id
+     *
+     * @return ?CardSummary Brand, last four and expiry; null when there is no default card
+     */
+    public function getDefaultCardSummary(string $customerReference): ?CardSummary;
 }
