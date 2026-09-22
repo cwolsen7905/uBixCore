@@ -71,15 +71,21 @@ function environment(string $projectRoot): string
     }
 
     if (getenv('IS_SANDBOX') === 'true' || getenv('IS_DEV') === 'true') {
-        // `stderr`, not `1`. Displaying to stdout prints every notice INTO the
-        // response body, which on a JSON API corrupts the payload: kitg's dev
-        // checkout appended a PHP 8.5 curl_close() deprecation after its JSON,
-        // so the client's parse failed and reported a failed checkout that had
-        // in fact succeeded -- and leaked server file paths while doing it.
-        // stderr keeps every notice visible to a developer (the pod log, the
-        // terminal) and keeps the response exactly what production would send.
-        ini_set('display_errors', 'stderr');
-        ini_set('display_startup_errors', '1');
+        // Where a notice goes depends on the SAPI, and getting this wrong puts
+        // PHP's output INTO the response body: on a JSON API that corrupts the
+        // payload and leaks server paths. kitg's dev API shipped a stripe-php
+        // deprecation after its JSON for exactly this reason.
+        //
+        // `stderr` is honoured by the CLI and CGI SAPIs only. Under PHP-FPM any
+        // value PHP reads as truthy -- including the string "stderr" -- means
+        // "display", and "display" is the response. So FPM gets display off and
+        // logging on instead; the pod log and `docker logs` still carry every
+        // notice, which is the whole point of dev mode.
+        $toStandardError = displaysToStandardError(PHP_SAPI);
+
+        ini_set('display_errors', $toStandardError ? 'stderr' : '0');
+        ini_set('display_startup_errors', $toStandardError ? '1' : '0');
+        ini_set('log_errors', '1');
         error_reporting(E_ALL);
 
         register_shutdown_function(static function (): void {
@@ -91,6 +97,24 @@ function environment(string $projectRoot): string
     }
 
     return $root;
+}
+
+/**
+ * Whether this SAPI can send PHP's own error output to standard error
+ *
+ * `display_errors = "stderr"` is honoured by the CLI and CGI SAPIs. Under
+ * PHP-FPM (and mod_php) any value PHP reads as truthy means "display", and
+ * "display" is the HTTP response -- so a dev-mode notice lands in the body,
+ * which corrupts a JSON payload and leaks server paths. Those SAPIs get
+ * display off and `log_errors` on instead, which is where a pod log reads from.
+ *
+ * @param string $sapi The SAPI name, i.e. PHP_SAPI
+ *
+ * @return bool True when `stderr` means standard error
+ */
+function displaysToStandardError(string $sapi): bool
+{
+    return in_array($sapi, ['cli', 'cli-server', 'cgi', 'cgi-fcgi', 'phpdbg'], true);
 }
 
 /**
