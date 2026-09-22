@@ -10,7 +10,11 @@ use Stripe\ApiRequestor;
 use Stripe\HttpClient\ClientInterface as Client;
 use Stripe\HttpClient\CurlClient;
 use Stripe\StripeClient;
+use Ubix\DataTransferObject\Payment\CustomerRequest;
 use Ubix\DataTransferObject\Payment\OneOffCheckoutRequest;
+use Ubix\DataTransferObject\Payment\PaymentIntentRequest;
+use Ubix\DataTransferObject\Payment\PendingSubscriptionRequest;
+use Ubix\DataTransferObject\Payment\RecurringPriceRequest;
 use Ubix\DataTransferObject\Payment\SubscriptionCheckoutRequest;
 use Ubix\Enum\Exception\ExceptionCode;
 use Ubix\Exception\DtoException;
@@ -304,6 +308,113 @@ final class StripePaymentProviderServiceTest extends UbixConcreteClassOrEnumTest
     }
 
     /**
+     * A pending subscription waits for its first payment and hands back the invoice's confirmation secret
+     *
+     * @return void
+     */
+    public function testAPendingSubscriptionReturnsTheFirstInvoicesSecret(): void
+    {
+        $this->cannedHttpClient([
+            'id'             => 'sub_1',
+            'latest_invoice' => ['confirmation_secret' => ['client_secret' => 'pi_1_secret_x', 'type' => 'payment_intent'], 'id' => 'in_1', 'object' => 'invoice'],
+            'object'         => 'subscription',
+        ]);
+
+        $pending = $this->provider()->createPendingSubscription(new PendingSubscriptionRequest(
+            customerReference: 'cus_1',
+            priceReference:    'price_1',
+            metadata:          ['creatorId' => '3', 'userId' => '7'],
+        ));
+
+        $this->assertSame('sub_1', $pending->providerReference);
+        $this->assertSame('pi_1_secret_x', $pending->clientSecret);
+        $this->assertSame('default_incomplete', $this->sentParameters['payment_behavior'] ?? null);
+        $this->assertSame(['latest_invoice.confirmation_secret'], $this->sentParameters['expand'] ?? null);
+        $this->assertSame(['creatorId' => '3', 'userId' => '7'], $this->sentParameters['metadata'] ?? null);
+    }
+
+    /**
+     * No confirmation secret means the page could not take payment: refuse loudly
+     *
+     * @return void
+     */
+    public function testAPendingSubscriptionWithoutASecretFails(): void
+    {
+        $this->cannedHttpClient(['id' => 'sub_2', 'latest_invoice' => ['id' => 'in_2', 'object' => 'invoice'], 'object' => 'subscription']);
+
+        $this->expectException(DtoException::class);
+        $this->provider()->createPendingSubscription(new PendingSubscriptionRequest(customerReference: 'cus_1', priceReference: 'price_1'));
+    }
+
+    /**
+     * A yearly price is billed month x 12, exactly as the Checkout path bills it
+     *
+     * @return void
+     */
+    public function testARecurringPriceUsesMonthTimesN(): void
+    {
+        $this->cannedHttpClient(['id' => 'price_9', 'object' => 'price']);
+
+        $id = $this->provider()->createRecurringPrice(new RecurringPriceRequest(amountMinorUnits: 12000, currency: 'USD', intervalMonths: 12, productName: 'Gold (yearly)'));
+
+        $this->assertSame('price_9', $id);
+        $this->assertSame(['interval' => 'month', 'interval_count' => 12], $this->byName((array) ($this->sentParameters['recurring'] ?? [])));
+        $this->assertSame('usd', $this->sentParameters['currency'] ?? null);
+    }
+
+    /**
+     * A one-off payment intent enables in-page payment methods and returns its secret
+     *
+     * @return void
+     */
+    public function testAPaymentIntentReturnsItsSecret(): void
+    {
+        $this->cannedHttpClient(['client_secret' => 'pi_5_secret_y', 'id' => 'pi_5', 'object' => 'payment_intent']);
+
+        $pending = $this->provider()->createPaymentIntent(new PaymentIntentRequest(amountMinorUnits: 500, currency: 'usd', description: 'Gift', metadata: ['origin' => 'in_app']));
+
+        $this->assertSame('pi_5_secret_y', $pending->clientSecret);
+        $this->assertArrayHasKey('automatic_payment_methods', $this->sentParameters);
+        $this->assertSame(['origin' => 'in_app'], $this->sentParameters['metadata'] ?? null);
+    }
+
+    /**
+     * The card summary is brand, last four and expiry, or null without a default card
+     *
+     * @return void
+     */
+    public function testTheCardSummary(): void
+    {
+        $this->cannedHttpClient([
+            'id'               => 'cus_1',
+            'invoice_settings' => ['default_payment_method' => ['card' => ['brand' => 'visa', 'exp_month' => 4, 'exp_year' => 2030, 'last4' => '4242'], 'id' => 'pm_1', 'object' => 'payment_method']],
+            'object'           => 'customer',
+        ]);
+
+        $card = $this->provider()->getDefaultCardSummary('cus_1');
+
+        $this->assertNotNull($card);
+        $this->assertSame(['visa', '4242', 4, 2030], [$card->brand, $card->last4, $card->expMonth, $card->expYear]);
+
+        $this->cannedHttpClient(['id' => 'cus_2', 'invoice_settings' => ['default_payment_method' => null], 'object' => 'customer']);
+        $this->assertNull($this->provider()->getDefaultCardSummary('cus_2'));
+    }
+
+    /**
+     * A customer is created with only the fields given
+     *
+     * @return void
+     */
+    public function testACustomerIsCreatedWithTheGivenFields(): void
+    {
+        $this->cannedHttpClient(['id' => 'cus_7', 'object' => 'customer']);
+
+        $this->assertSame('cus_7', $this->provider()->createCustomer(new CustomerRequest(email: 'grace@example.com', metadata: ['userId' => '7'])));
+        $this->assertSame('grace@example.com', $this->sentParameters['email'] ?? null);
+        $this->assertArrayNotHasKey('name', $this->sentParameters);
+    }
+
+    /**
      * Restore global SDK and environment state between cases
      *
      * `ApiRequestor::setHttpClient()` is global, so a canned client left in
@@ -353,7 +464,7 @@ final class StripePaymentProviderServiceTest extends UbixConcreteClassOrEnumTest
     {
         $json = json_encode($body); // phpcs:ignore Generic.PHP.ForbiddenFunctions -- building a canned HTTP fixture, not application output
 
-        $client = $this->createMock(Client::class);
+        $client = $this->createStub(Client::class);
         $client->method('request')->willReturnCallback(
             function (mixed ...$arguments) use ($json): array {
                 $params               = $arguments[3] ?? [];

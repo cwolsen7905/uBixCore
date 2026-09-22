@@ -10,9 +10,15 @@ use Stripe\StripeClient;
 use Stripe\Subscription;
 use Stripe\Webhook;
 use Throwable;
+use Ubix\DataTransferObject\Payment\CardSummary;
 use Ubix\DataTransferObject\Payment\CheckoutSession;
+use Ubix\DataTransferObject\Payment\CustomerRequest;
 use Ubix\DataTransferObject\Payment\OneOffCheckoutRequest;
+use Ubix\DataTransferObject\Payment\PaymentIntentRequest;
+use Ubix\DataTransferObject\Payment\PendingPayment;
+use Ubix\DataTransferObject\Payment\PendingSubscriptionRequest;
 use Ubix\DataTransferObject\Payment\ProviderSubscription;
+use Ubix\DataTransferObject\Payment\RecurringPriceRequest;
 use Ubix\DataTransferObject\Payment\RefundResult;
 use Ubix\DataTransferObject\Payment\SubscriptionCheckoutRequest;
 use Ubix\DataTransferObject\Payment\VerifiedWebhookEvent;
@@ -290,6 +296,261 @@ final class StripePaymentProviderService implements PaymentProviderService
         }
 
         return null;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public function createCustomer(CustomerRequest $request): string
+    {
+        $customer = $this->call('create a customer', function () use ($request): object {
+            return $this->client()->customers->create(array_filter([
+                'email'    => $request->email,
+                'metadata' => $request->metadata,
+                'name'     => $request->name,
+            ], static function (mixed $value): bool {
+                return $value !== '' && $value !== [];
+            }));
+        });
+
+        return $this->idOf($customer);
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * @throws DtoException When the amount or period is invalid, or the provider refuses
+     */
+    public function createRecurringPrice(RecurringPriceRequest $request): string
+    {
+        if ($request->amountMinorUnits <= 0) {
+            throw new DtoException('A recurring price must be positive', ExceptionCode::PAYMENT_PROVIDER_OPERATION_FAILED->value);
+        }
+
+        $price = $this->call('create a recurring price', function () use ($request): object {
+            return $this->client()->prices->create([
+                'currency'     => strtolower($request->currency),
+                'metadata'     => $request->metadata,
+                'product_data' => ['name' => $request->productName],
+                'recurring'    => $this->recurringFor($request->intervalMonths),
+                'unit_amount'  => $request->amountMinorUnits,
+            ]);
+        });
+
+        return $this->idOf($price);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public function createPendingSubscription(PendingSubscriptionRequest $request): PendingPayment
+    {
+        $subscription = $this->call('create a subscription', function () use ($request): object {
+            return $this->client()->subscriptions->create([
+                'customer'         => $request->customerReference,
+                // Basil: the first invoice's confirmation secret replaces the
+                // payment intent's client secret.
+                'expand'           => ['latest_invoice.confirmation_secret'],
+                'items'            => [['price' => $request->priceReference]],
+                'metadata'         => $request->metadata,
+                // Created awaiting payment; it activates when the payer
+                // confirms in the page, and expires if they never do.
+                'payment_behavior' => 'default_incomplete',
+                'payment_settings' => ['save_default_payment_method' => 'on_subscription'],
+            ]);
+        });
+
+        $confirmation = $this->property($this->property($subscription, 'latest_invoice'), 'confirmation_secret');
+        $secret       = $this->property($confirmation, 'client_secret');
+
+        return new PendingPayment(providerReference: $this->idOf($subscription), clientSecret: $this->secretOf($secret));
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * @throws DtoException When the amount is invalid, or the provider refuses
+     */
+    public function createPaymentIntent(PaymentIntentRequest $request): PendingPayment
+    {
+        if ($request->amountMinorUnits <= 0) {
+            throw new DtoException('A payment amount must be positive', ExceptionCode::PAYMENT_PROVIDER_OPERATION_FAILED->value);
+        }
+
+        $intent = $this->call('create a payment', function () use ($request): object {
+            $parameters = [
+                'amount'                    => $request->amountMinorUnits,
+                'automatic_payment_methods' => ['enabled' => true],
+                'currency'                  => strtolower($request->currency),
+                'metadata'                  => $request->metadata,
+            ];
+            if ($request->customerReference !== null && $request->customerReference !== '') {
+                $parameters['customer'] = $request->customerReference;
+            }
+            if ($request->description !== '') {
+                $parameters['description'] = $request->description;
+            }
+
+            return $this->client()->paymentIntents->create($parameters);
+        });
+
+        return new PendingPayment(providerReference: $this->idOf($intent), clientSecret: $this->secretOf($this->property($intent, 'client_secret')));
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public function createSetupIntent(string $customerReference): PendingPayment
+    {
+        $intent = $this->call('start saving a card', function () use ($customerReference): object {
+            return $this->client()->setupIntents->create([
+                'automatic_payment_methods' => ['enabled' => true],
+                'customer'                  => $customerReference,
+                'usage'                     => 'off_session',
+            ]);
+        });
+
+        return new PendingPayment(providerReference: $this->idOf($intent), clientSecret: $this->secretOf($this->property($intent, 'client_secret')));
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public function setDefaultPaymentMethod(string $customerReference, string $paymentMethodReference): void
+    {
+        $this->call('set the default card', function () use ($customerReference, $paymentMethodReference): object {
+            return $this->client()->customers->update($customerReference, [
+                'invoice_settings' => ['default_payment_method' => $paymentMethodReference],
+            ]);
+        });
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public function getDefaultCardSummary(string $customerReference): ?CardSummary
+    {
+        $customer = $this->call('look up the default card', function () use ($customerReference): object {
+            return $this->client()->customers->retrieve($customerReference, ['expand' => ['invoice_settings.default_payment_method']]);
+        });
+
+        $card = $this->property($this->property($this->property($customer, 'invoice_settings'), 'default_payment_method'), 'card');
+        if (!is_object($card)) {
+            return null;
+        }
+
+        $brand    = $this->property($card, 'brand');
+        $last4    = $this->property($card, 'last4');
+        $expMonth = $this->property($card, 'exp_month');
+        $expYear  = $this->property($card, 'exp_year');
+
+        return new CardSummary(
+            brand:    is_string($brand) ? $brand : '',
+            last4:    is_string($last4) ? $last4 : '',
+            expMonth: is_numeric($expMonth) ? (int) $expMonth : 0,
+            expYear:  is_numeric($expYear) ? (int) $expYear : 0,
+        );
+    }
+
+    /**
+     * Make one provider call, turning any failure into the provider-operation error
+     *
+     * @param string   $what What was being done, for the log and the message
+     * @param callable $call The call
+     *
+     * @throws DtoException When the provider refuses or cannot be reached
+     *
+     * @return object The provider's response object
+     */
+    private function call(string $what, callable $call): object
+    {
+        try {
+            $result = $call();
+        } catch (Throwable $e) {
+            $this->logger->error('Stripe refused to ' . $what, ['error' => $e->getMessage()]);
+
+            throw new DtoException('The payment provider could not ' . $what, ExceptionCode::PAYMENT_PROVIDER_OPERATION_FAILED->value, previous: $e);
+        }
+
+        if (!is_object($result)) {
+            throw new DtoException('The payment provider could not ' . $what, ExceptionCode::PAYMENT_PROVIDER_OPERATION_FAILED->value);
+        }
+
+        return $result;
+    }
+
+    /**
+     * One property of a provider response, or null when the value is not an object or lacks it
+     *
+     * The SDK types every nested field as mixed; this keeps the narrowing in
+     * one place instead of at every access.
+     *
+     * @param mixed  $object The response object, or anything
+     * @param string $name   The property
+     *
+     * @return mixed The value, or null
+     */
+    private function property(mixed $object, string $name): mixed
+    {
+        return is_object($object) && isset($object->{$name}) ? $object->{$name} : null;
+    }
+
+    /**
+     * A provider object's id
+     *
+     * @param object $object The response object
+     *
+     * @throws DtoException When it has none
+     *
+     * @return string The id
+     */
+    private function idOf(object $object): string
+    {
+        $id = $object->id ?? null;
+        if (!is_string($id) || $id === '') {
+            throw new DtoException('The payment provider returned no id', ExceptionCode::PAYMENT_PROVIDER_OPERATION_FAILED->value);
+        }
+
+        return $id;
+    }
+
+    /**
+     * A confirmation secret, which must be present for the page to confirm anything
+     *
+     * @param mixed $secret The value from the response
+     *
+     * @throws DtoException When it is missing
+     *
+     * @return string The secret
+     */
+    private function secretOf(mixed $secret): string
+    {
+        if (!is_string($secret) || $secret === '') {
+            throw new DtoException('The payment provider returned no confirmation secret', ExceptionCode::PAYMENT_PROVIDER_OPERATION_FAILED->value);
+        }
+
+        return $secret;
+    }
+
+    /**
+     * The provider's recurring block for a period in months
+     *
+     * "month × N", exactly as the hosted Checkout path bills it, so a tier
+     * costs the same whichever way it was bought.
+     *
+     * @param int $months The period, 1 to 12 months
+     *
+     * @throws DtoException Outside that range
+     *
+     * @return array{interval: string, interval_count: int} The block
+     */
+    private function recurringFor(int $months): array
+    {
+        if ($months < 1 || $months > 12) {
+            throw new DtoException('A recurring period is 1 to 12 months', ExceptionCode::PAYMENT_PROVIDER_OPERATION_FAILED->value);
+        }
+
+        return ['interval' => 'month', 'interval_count' => $months];
     }
 
     /**
