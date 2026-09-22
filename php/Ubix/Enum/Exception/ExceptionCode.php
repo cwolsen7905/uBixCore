@@ -96,6 +96,8 @@ enum ExceptionCode: int
     case IDENTITY_AUTHORIZATION_DENIED                = 11165;
     case SESSION_NOT_STARTED                          = 11166;
     case RATE_LIMIT_SCOPE_INVALID                     = 11167;
+    case REALTIME_PUBLISH_FAILED                      = 11168;
+    case REALTIME_GRANT_INVALID                       = 11169;
     case ERROR_EXECUTING_PDO_QUERY                    = 13001;
     case USER_NOT_FOUND                               = 13019;
     case VALIDATION_FAILED                            = 29003;
