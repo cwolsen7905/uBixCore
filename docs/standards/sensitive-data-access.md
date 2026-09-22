@@ -42,7 +42,7 @@ Legacy customer search (`customers/search.php`) writes its own audit to `LEDGER.
 
 `Ubix\Service\Audit\PiiAccessAuditService::record(PiiAccess)` is the single insert path, backed by `Ubix\Repository\PiiAccessAudit\PiiAccessAuditWriterInterface` (SQL realisation: `PiiAccessAuditSqlRepository`). Surfaces call it after producing a result; they do not hand-roll the INSERT. It refuses a record with no actor, entity type or reason, de-duplicates subjects, writes nothing for an empty result, and writes the rest as one multi-row statement. The writer is append-only by construction — it has no update or delete.
 
-A host binds the writer in its DI container (`PiiAccessAuditWriterInterface => autowire(PiiAccessAuditSqlRepository::class)`) and carries the table in its own `sql/migrations/`; the reference DDL is `sql/migrations/20260921000000_create_pii_access_audits.sql`. New PII surfaces reuse this seam rather than adding a parallel audit.
+A host binds the writer in its DI container (`PiiAccessAuditWriterInterface => autowire(PiiAccessAuditSqlRepository::class)`) and carries the table by copying `sql/migrations/20260921000000_create_pii_access_audits.sql` into its own `sql/migrations/` **verbatim, under the same filename**. That is the same rule as the tracker init (`00000000000000_*`). The id and checksum must match the framework's, so every tracker sees one migration whoever applied it first; this repo's CI applies its own migrations to the shared test server. A host that re-authors the DDL under a new id gets a second migration that creates an existing table, and `migrate:up` refuses it. New PII surfaces reuse this seam rather than adding a parallel audit.
 
 ## Checklist for a new PII surface
 
