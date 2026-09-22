@@ -83,14 +83,37 @@ function environment(string $projectRoot): string
         error_reporting(E_ALL);
 
         register_shutdown_function(static function (): void {
-            $error = error_get_last();
-            if ($error !== null) {
-                echo '<pre>Fatal error in ', $error['file'], ' on line ', $error['line'], ':', PHP_EOL, $error['message'], '</pre>';
+            $report = fatalErrorReport(error_get_last());
+            if ($report !== null) {
+                echo $report;
             }
         });
     }
 
     return $root;
+}
+
+/**
+ * The dev-mode report for a request that died, or null when it did not
+ *
+ * `error_get_last()` returns the last error of ANY level, not the fatal one: a
+ * request that succeeded after a deprecation still has one. Echoing that as
+ * "Fatal error" appended it to a finished JSON body, which broke the client's
+ * parse and made a successful call look failed (kitg's dev checkout, on
+ * stripe-php's PHP 8.5 curl_close() deprecation). Only errors that actually
+ * end the request are reported; everything else already went to stderr.
+ *
+ * @param ?array{type: int, message: string, file: string, line: int} $error What error_get_last() returned
+ *
+ * @return ?string The report, or null when the request did not die of an error
+ */
+function fatalErrorReport(?array $error): ?string
+{
+    if ($error === null || ($error['type'] & (E_ERROR | E_PARSE | E_CORE_ERROR | E_COMPILE_ERROR | E_USER_ERROR | E_RECOVERABLE_ERROR)) === 0) {
+        return null;
+    }
+
+    return '<pre>Fatal error in ' . $error['file'] . ' on line ' . $error['line'] . ':' . PHP_EOL . $error['message'] . '</pre>';
 }
 
 /**
