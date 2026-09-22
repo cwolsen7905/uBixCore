@@ -219,6 +219,29 @@ final class StripePaymentProviderService implements PaymentProviderService
      *
      * @throws DtoException When the provider rejects the request or is unreachable
      */
+    public function cancelSubscriptionNow(string $providerSubscriptionId): ProviderSubscription
+    {
+        try {
+            // DELETE /v1/subscriptions/{id}: cancelled now. For an incomplete
+            // subscription Stripe also voids the open first invoice, which is
+            // the point -- its payment can no longer be confirmed.
+            $subscription = $this->client()->subscriptions->cancel($providerSubscriptionId);
+        } catch (Throwable $e) {
+            throw new DtoException(
+                'Could not cancel that subscription at the provider',
+                ExceptionCode::PAYMENT_SUBSCRIPTION_NOT_FOUND->value,
+                previous: $e,
+            );
+        }
+
+        return $this->toProviderSubscription($subscription);
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * @throws DtoException When the provider rejects the request or is unreachable
+     */
     public function refundPayment(string $providerPaymentReference, ?int $amountMinorUnits): RefundResult
     {
         $parameters = ['payment_intent' => $providerPaymentReference];

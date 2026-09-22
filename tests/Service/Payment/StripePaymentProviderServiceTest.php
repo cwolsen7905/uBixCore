@@ -451,6 +451,32 @@ final class StripePaymentProviderServiceTest extends UbixConcreteClassOrEnumTest
     }
 
     /**
+     * Cancelling now is a DELETE, not the at-period-end update
+     *
+     * @return void
+     */
+    public function testCancellingNowDeletesTheSubscription(): void
+    {
+        $this->requestLines = [];
+        $client             = $this->createStub(Client::class);
+        $client->method('request')->willReturnCallback(
+            function (mixed ...$arguments): array {
+                $method               = is_string($arguments[0] ?? null) ? $arguments[0] : '';
+                $url                  = is_string($arguments[1] ?? null) ? $arguments[1] : '';
+                $this->requestLines[] = strtoupper($method) . ' ' . (string) parse_url($url, PHP_URL_PATH);
+
+                return [(string) json_encode(['canceled_at' => 1758300000, 'customer' => 'cus_1', 'id' => 'sub_1', 'object' => 'subscription', 'status' => 'canceled']), 200, []]; // phpcs:ignore Generic.PHP.ForbiddenFunctions -- canned HTTP fixture
+            },
+        );
+        ApiRequestor::setHttpClient($client);
+
+        $subscription = $this->provider()->cancelSubscriptionNow('sub_1');
+
+        $this->assertSame(['DELETE /v1/subscriptions/sub_1'], $this->requestLines);
+        $this->assertSame('canceled', $subscription->status);
+    }
+
+    /**
      * Restore global SDK and environment state between cases
      *
      * `ApiRequestor::setHttpClient()` is global, so a canned client left in
