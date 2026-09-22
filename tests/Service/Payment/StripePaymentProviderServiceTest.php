@@ -49,6 +49,13 @@ final class StripePaymentProviderServiceTest extends UbixConcreteClassOrEnumTest
     private array $sentParameters = [];
 
     /**
+     * Method and path of every request the fake client saw, in order
+     *
+     * @var array<int, string>
+     */
+    private array $requestLines = [];
+
+    /**
      * Test that the class is following uBix standards
      *
      * @return void
@@ -412,6 +419,35 @@ final class StripePaymentProviderServiceTest extends UbixConcreteClassOrEnumTest
         $this->assertSame('cus_7', $this->provider()->createCustomer(new CustomerRequest(email: 'grace@example.com', metadata: ['userId' => '7'])));
         $this->assertSame('grace@example.com', $this->sentParameters['email'] ?? null);
         $this->assertArrayNotHasKey('name', $this->sentParameters);
+    }
+
+    /**
+     * Replacing the card moves live subscriptions to it, not just the customer default
+     *
+     * @return void
+     */
+    public function testReplacingTheCardMovesLiveSubscriptions(): void
+    {
+        $this->requestLines = [];
+        $client             = $this->createStub(Client::class);
+        $client->method('request')->willReturnCallback(
+            function (mixed ...$arguments): array {
+                $method               = is_string($arguments[0] ?? null) ? $arguments[0] : '';
+                $url                  = is_string($arguments[1] ?? null) ? $arguments[1] : '';
+                $this->requestLines[] = strtoupper($method) . ' ' . (string) parse_url($url, PHP_URL_PATH);
+
+                $body = str_contains($url, '/v1/subscriptions') && strtolower($method) === 'get' ? ['data' => [['id' => 'sub_live', 'object' => 'subscription', 'status' => 'active'], ['id' => 'sub_old', 'object' => 'subscription', 'status' => 'canceled']], 'has_more' => false, 'object' => 'list'] : ['id' => 'x', 'object' => 'customer'];
+
+                return [(string) json_encode($body), 200, []]; // phpcs:ignore Generic.PHP.ForbiddenFunctions -- canned HTTP fixture
+            },
+        );
+        ApiRequestor::setHttpClient($client);
+
+        $this->provider()->setDefaultPaymentMethod('cus_1', 'pm_new');
+
+        $this->assertContains('POST /v1/customers/cus_1', $this->requestLines);
+        $this->assertContains('POST /v1/subscriptions/sub_live', $this->requestLines);
+        $this->assertNotContains('POST /v1/subscriptions/sub_old', $this->requestLines);
     }
 
     /**

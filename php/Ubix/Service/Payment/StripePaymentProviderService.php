@@ -423,6 +423,30 @@ final class StripePaymentProviderService implements PaymentProviderService
                 'invoice_settings' => ['default_payment_method' => $paymentMethodReference],
             ]);
         });
+
+        // Subscriptions created with save_default_payment_method=on_subscription
+        // carry their OWN default card, which outranks the customer's. Without
+        // this, "replace my card" would change nothing about the next renewal.
+        $subscriptions = $this->call('list the customer\'s subscriptions', function () use ($customerReference): object {
+            return $this->client()->subscriptions->all(['customer' => $customerReference, 'limit' => 100, 'status' => 'all']);
+        });
+
+        $data = $this->property($subscriptions, 'data');
+        foreach (is_iterable($data) ? $data : [] as $subscription) {
+            $status = $this->property($subscription, 'status');
+            if (!in_array($status, ['active', 'past_due', 'trialing', 'unpaid'], true)) {
+                continue;
+            }
+
+            $id = $this->property($subscription, 'id');
+            if (!is_string($id) || $id === '') {
+                continue;
+            }
+
+            $this->call('move a subscription to the new card', function () use ($id, $paymentMethodReference): object {
+                return $this->client()->subscriptions->update($id, ['default_payment_method' => $paymentMethodReference]);
+            });
+        }
     }
 
     /**
