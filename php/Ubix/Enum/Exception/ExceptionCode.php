@@ -90,7 +90,11 @@ enum ExceptionCode: int
     case PAYMENT_WEBHOOK_SIGNATURE_INVALID            = 11159;
     case PAYMENT_PROVIDER_OPERATION_FAILED            = 11160;
     case PAYMENT_SUBSCRIPTION_NOT_FOUND               = 11161;
-    case SESSION_NOT_STARTED                          = 11166; // 11162-11165 are the identity codes in !169
+    case IDENTITY_FLOW_INVALID                        = 11162;
+    case IDENTITY_TOKEN_INVALID                       = 11163;
+    case IDENTITY_PROVIDER_OPERATION_FAILED           = 11164;
+    case IDENTITY_AUTHORIZATION_DENIED                = 11165;
+    case SESSION_NOT_STARTED                          = 11166;
     case RATE_LIMIT_SCOPE_INVALID                     = 11167;
     case ERROR_EXECUTING_PDO_QUERY                    = 13001;
     case USER_NOT_FOUND                               = 13019;
