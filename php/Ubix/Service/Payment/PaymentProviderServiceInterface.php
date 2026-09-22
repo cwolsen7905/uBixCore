@@ -134,6 +134,24 @@ interface PaymentProviderServiceInterface
     public function cancelSubscription(string $providerSubscriptionId): ProviderSubscription;
 
     /**
+     * End a recurring payment immediately, with nothing further owed or payable
+     *
+     * For discarding a subscription that was never paid for, such as an
+     * abandoned attempt still awaiting its first payment. Unlike
+     * `cancelSubscription()`, nothing runs on to a period end: any open first
+     * invoice stops being payable, so a stale payment form cannot complete it
+     * later. Not for ending one the payer has paid for; that is
+     * `cancelSubscription()`, which keeps the paid-through time.
+     *
+     * @param string $providerSubscriptionId The provider's id for the recurring payment
+     *
+     * @throws \Ubix\Exception\DtoException If no such subscription exists at the provider, or it is unreachable
+     *
+     * @return ProviderSubscription The provider's view after cancellation
+     */
+    public function cancelSubscriptionNow(string $providerSubscriptionId): ProviderSubscription;
+
+    /**
      * Return money for a payment the provider has already taken
      *
      * @param string $providerPaymentReference The provider's id for the payment being refunded
