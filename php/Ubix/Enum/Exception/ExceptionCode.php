@@ -94,6 +94,8 @@ enum ExceptionCode: int
     case IDENTITY_TOKEN_INVALID                       = 11163;
     case IDENTITY_PROVIDER_OPERATION_FAILED           = 11164;
     case IDENTITY_AUTHORIZATION_DENIED                = 11165;
+    case SESSION_NOT_STARTED                          = 11166;
+    case RATE_LIMIT_SCOPE_INVALID                     = 11167;
     case ERROR_EXECUTING_PDO_QUERY                    = 13001;
     case USER_NOT_FOUND                               = 13019;
     case VALIDATION_FAILED                            = 29003;
