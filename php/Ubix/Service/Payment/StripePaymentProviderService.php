@@ -12,6 +12,8 @@ use Stripe\Webhook;
 use Throwable;
 use Ubix\DataTransferObject\Payment\CardSummary;
 use Ubix\DataTransferObject\Payment\CheckoutSession;
+use Ubix\DataTransferObject\Payment\ConnectedAccount;
+use Ubix\DataTransferObject\Payment\ConnectedAccountRequest;
 use Ubix\DataTransferObject\Payment\CustomerRequest;
 use Ubix\DataTransferObject\Payment\OneOffCheckoutRequest;
 use Ubix\DataTransferObject\Payment\PaymentIntentRequest;
@@ -21,6 +23,8 @@ use Ubix\DataTransferObject\Payment\ProviderSubscription;
 use Ubix\DataTransferObject\Payment\RecurringPriceRequest;
 use Ubix\DataTransferObject\Payment\RefundResult;
 use Ubix\DataTransferObject\Payment\SubscriptionCheckoutRequest;
+use Ubix\DataTransferObject\Payment\TransferRequest;
+use Ubix\DataTransferObject\Payment\TransferResult;
 use Ubix\DataTransferObject\Payment\VerifiedWebhookEvent;
 use Ubix\Enum\Exception\ExceptionCode;
 use Ubix\Exception\DtoException;
@@ -500,6 +504,205 @@ final class StripePaymentProviderService implements PaymentProviderService
     }
 
     /**
+     * {@inheritDoc}
+     *
+     * @throws DtoException When Stripe refuses to create the account
+     */
+    public function createConnectedAccount(ConnectedAccountRequest $request): string
+    {
+        $parameters = [
+            'capabilities' => ['transfers' => ['requested' => true]],
+            // Express: Stripe hosts both onboarding and the holder's dashboard.
+            // Standard would make the holder a full Stripe customer of their
+            // own, and Custom would make this platform responsible for
+            // collecting their identity documents -- which is exactly what the
+            // seam exists to avoid.
+            'type'         => 'express',
+        ];
+
+        if ($request->country !== '') {
+            $parameters['country'] = $request->country;
+        }
+
+        if ($request->email !== null && $request->email !== '') {
+            $parameters['email'] = $request->email;
+        }
+
+        if ($request->metadata !== []) {
+            $parameters['metadata'] = $request->metadata;
+        }
+
+        try {
+            $account = $this->client()->accounts->create($parameters);
+        } catch (Throwable $e) {
+            $this->logger->error('Stripe refused to create a connected account', ['error' => $e->getMessage()]);
+
+            throw new DtoException(
+                'The provider refused to create the account',
+                ExceptionCode::PAYMENT_PROVIDER_OPERATION_FAILED->value,
+                previous: $e,
+            );
+        }
+
+        return (string) $account->id;
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * @throws DtoException When Stripe refuses to create the link
+     */
+    public function createConnectedAccountOnboardingLink(
+        string $accountReference,
+        string $refreshUrl,
+        string $returnUrl,
+    ): string {
+        try {
+            $link = $this->client()->accountLinks->create([
+                'account'     => $accountReference,
+                'refresh_url' => $refreshUrl,
+                'return_url'  => $returnUrl,
+                'type'        => 'account_onboarding',
+            ]);
+        } catch (Throwable $e) {
+            $this->logger->error('Stripe refused an onboarding link', ['error' => $e->getMessage()]);
+
+            throw new DtoException(
+                'The provider refused to create the onboarding link',
+                ExceptionCode::PAYMENT_PROVIDER_OPERATION_FAILED->value,
+                previous: $e,
+            );
+        }
+
+        return (string) $link->url;
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * @throws DtoException When Stripe refuses to create the link
+     */
+    public function createConnectedAccountDashboardLink(string $accountReference): string
+    {
+        try {
+            $link = $this->client()->accounts->createLoginLink($accountReference);
+        } catch (Throwable $e) {
+            $this->logger->error('Stripe refused a dashboard link', ['error' => $e->getMessage()]);
+
+            throw new DtoException(
+                'The provider refused to create the dashboard link',
+                ExceptionCode::PAYMENT_PROVIDER_OPERATION_FAILED->value,
+                previous: $e,
+            );
+        }
+
+        return (string) $link->url;
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * @throws DtoException When Stripe does not know the account or is unreachable
+     */
+    public function getConnectedAccount(string $accountReference): ConnectedAccount
+    {
+        try {
+            $account = $this->client()->accounts->retrieve($accountReference);
+        } catch (Throwable $e) {
+            $this->logger->error('Stripe refused an account lookup', ['error' => $e->getMessage()]);
+
+            throw new DtoException(
+                'The provider does not know that account',
+                ExceptionCode::PAYMENT_PROVIDER_OPERATION_FAILED->value,
+                previous: $e,
+            );
+        }
+
+        $requirements = $account->requirements;
+
+        // `currently_due` is what Stripe wants before the deadline it has
+        // already set; `past_due` is what it wanted before a deadline that has
+        // passed. Both stop an account being paid, so both are reported as one
+        // list -- a host asking "what is missing" does not care which bucket
+        // Stripe filed it under.
+        $due = array_merge(
+            $this->stringList($requirements->currently_due ?? null),
+            $this->stringList($requirements->past_due ?? null),
+        );
+
+        return new ConnectedAccount(
+            providerAccountId: (string) $account->id,
+            payoutsEnabled:    (bool) $account->payouts_enabled,
+            chargesEnabled:    (bool) $account->charges_enabled,
+            detailsSubmitted:  (bool) $account->details_submitted,
+            requirementsDue:   array_values(array_unique($due)),
+            disabledReason:    $this->nullableString($requirements->disabled_reason ?? null),
+        );
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * @throws DtoException When the amount is not positive, or Stripe refuses the transfer
+     */
+    public function createTransfer(TransferRequest $request): TransferResult
+    {
+        if ($request->amountMinorUnits <= 0) {
+            throw new DtoException(
+                'A transfer amount must be positive',
+                ExceptionCode::PAYMENT_PROVIDER_OPERATION_FAILED->value,
+            );
+        }
+
+        if ($request->idempotencyKey === '') {
+            throw new DtoException(
+                'A transfer requires an idempotency key',
+                ExceptionCode::PAYMENT_PROVIDER_OPERATION_FAILED->value,
+            );
+        }
+
+        $parameters = [
+            'amount'      => $request->amountMinorUnits,
+            'currency'    => $request->currency,
+            'destination' => $request->destinationAccountReference,
+        ];
+
+        if ($request->description !== '') {
+            $parameters['description'] = $request->description;
+        }
+
+        if ($request->metadata !== []) {
+            $parameters['metadata'] = $request->metadata;
+        }
+
+        try {
+            // The key is Stripe's own replay protection: a repeat of this
+            // request within its retention window returns the transfer the
+            // first one created rather than making a second.
+            $transfer = $this->client()->transfers->create(
+                $parameters,
+                ['idempotency_key' => $request->idempotencyKey],
+            );
+        } catch (Throwable $e) {
+            $this->logger->error('Stripe refused a transfer', ['error' => $e->getMessage()]);
+
+            throw new DtoException(
+                'The provider refused the transfer',
+                ExceptionCode::PAYMENT_PROVIDER_OPERATION_FAILED->value,
+                previous: $e,
+            );
+        }
+
+        return new TransferResult(
+            providerTransferId:          (string) $transfer->id,
+            destinationAccountReference: $request->destinationAccountReference,
+            // Positive, always. A host applies its own ledger sign convention.
+            amountMinorUnits:            abs((int) $transfer->amount),
+            currency:                    (string) $transfer->currency,
+        );
+    }
+
+    /**
      * Make one provider call, turning any failure into the provider-operation error
      *
      * @param string   $what What was being done, for the log and the message
@@ -737,6 +940,45 @@ final class StripePaymentProviderService implements PaymentProviderService
             currentPeriodEndUnixTimestamp: is_numeric($periodEnd) ? (int) $periodEnd : 0,
             canceledAtUnixTimestamp:       is_numeric($canceledAt) ? (int) $canceledAt : null,
         );
+    }
+
+    /**
+     * A provider field that should be a list of strings, as one
+     *
+     * @param mixed $value Whatever the SDK put there
+     *
+     * @return list<string> The strings in it, or an empty list
+     */
+    private function stringList(mixed $value): array
+    {
+        if (!is_array($value)) {
+            return [];
+        }
+
+        $strings = [];
+        foreach ($value as $item) {
+            if (is_string($item)) {
+                $strings[] = $item;
+            }
+        }
+
+        return $strings;
+    }
+
+    /**
+     * A provider field that should be a string, as one, or null
+     *
+     * @param mixed $value Whatever the SDK put there
+     *
+     * @return ?string The string, or null when it is absent or empty
+     */
+    private function nullableString(mixed $value): ?string
+    {
+        if (!is_string($value) || $value === '') {
+            return null;
+        }
+
+        return $value;
     }
 
     /**

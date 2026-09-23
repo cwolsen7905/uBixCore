@@ -10,12 +10,14 @@ use Stripe\ApiRequestor;
 use Stripe\HttpClient\ClientInterface as Client;
 use Stripe\HttpClient\CurlClient;
 use Stripe\StripeClient;
+use Ubix\DataTransferObject\Payment\ConnectedAccountRequest;
 use Ubix\DataTransferObject\Payment\CustomerRequest;
 use Ubix\DataTransferObject\Payment\OneOffCheckoutRequest;
 use Ubix\DataTransferObject\Payment\PaymentIntentRequest;
 use Ubix\DataTransferObject\Payment\PendingSubscriptionRequest;
 use Ubix\DataTransferObject\Payment\RecurringPriceRequest;
 use Ubix\DataTransferObject\Payment\SubscriptionCheckoutRequest;
+use Ubix\DataTransferObject\Payment\TransferRequest;
 use Ubix\Enum\Exception\ExceptionCode;
 use Ubix\Exception\DtoException;
 use Ubix\Service\Payment\StripePaymentProviderService;
@@ -54,6 +56,13 @@ final class StripePaymentProviderServiceTest extends UbixConcreteClassOrEnumTest
      * @var array<int, string>
      */
     private array $requestLines = [];
+
+    /**
+     * The headers the SDK last sent, captured by the canned HTTP client
+     *
+     * @var array<int, string>
+     */
+    private array $sentHeaders = [];
 
     /**
      * Test that the class is following uBix standards
@@ -474,6 +483,219 @@ final class StripePaymentProviderServiceTest extends UbixConcreteClassOrEnumTest
 
         $this->assertSame(['DELETE /v1/subscriptions/sub_1'], $this->requestLines);
         $this->assertSame('canceled', $subscription->status);
+    }
+
+    /**
+     * A connected account is Express and asks for transfers, never Custom
+     *
+     * Custom would make this platform responsible for collecting the holder's
+     * identity documents, which is the outcome the seam exists to prevent, so
+     * the account type is asserted rather than left to a default.
+     *
+     * @return void
+     */
+    public function testAConnectedAccountIsExpressAndRequestsTransfers(): void
+    {
+        $this->cannedHttpClient(['id' => 'acct_1', 'object' => 'account']);
+
+        $account = $this->provider()->createConnectedAccount(
+            new ConnectedAccountRequest(country: 'US', email: 'creator@example.com', metadata: ['creatorId' => '4']),
+        );
+
+        $this->assertSame('acct_1', $account);
+        $this->assertSame('express', $this->sentParameters['type'] ?? null);
+        // The capture sits at the SDK's HTTP client, which is downstream of
+        // its parameter encoding, so the boolean is already the string Stripe
+        // will receive rather than the one this class passed.
+        $this->assertSame(['transfers' => ['requested' => 'true']], $this->sentParameters['capabilities'] ?? null);
+        $this->assertSame('US', $this->sentParameters['country'] ?? null);
+        $this->assertSame('creator@example.com', $this->sentParameters['email'] ?? null);
+        $this->assertSame(['creatorId' => '4'], $this->sentParameters['metadata'] ?? null);
+    }
+
+    /**
+     * An omitted email is left out rather than sent empty
+     *
+     * @return void
+     */
+    public function testAConnectedAccountOmitsAnAbsentEmail(): void
+    {
+        $this->cannedHttpClient(['id' => 'acct_2', 'object' => 'account']);
+
+        $this->provider()->createConnectedAccount(new ConnectedAccountRequest(country: 'US'));
+
+        $this->assertArrayNotHasKey('email', $this->sentParameters);
+        $this->assertArrayNotHasKey('metadata', $this->sentParameters);
+    }
+
+    /**
+     * Onboarding and dashboard links come from their own endpoints
+     *
+     * @return void
+     */
+    public function testTheTwoHostedLinksUseTheirOwnEndpoints(): void
+    {
+        $this->cannedHttpClient(['created' => 1758300000, 'expires_at' => 1758300300, 'object' => 'account_link', 'url' => 'https://connect.stripe.com/setup/x']);
+
+        $onboarding = $this->provider()->createConnectedAccountOnboardingLink('acct_1', 'https://app.example.com/refresh', 'https://app.example.com/done');
+
+        $this->assertSame('https://connect.stripe.com/setup/x', $onboarding);
+        $this->assertSame('account_onboarding', $this->sentParameters['type'] ?? null);
+        $this->assertSame('acct_1', $this->sentParameters['account'] ?? null);
+        $this->assertSame('https://app.example.com/refresh', $this->sentParameters['refresh_url'] ?? null);
+        $this->assertSame('https://app.example.com/done', $this->sentParameters['return_url'] ?? null);
+
+        $this->requestLines = [];
+        $client             = $this->createStub(Client::class);
+        $client->method('request')->willReturnCallback(
+            function (mixed ...$arguments): array {
+                $method               = is_string($arguments[0] ?? null) ? $arguments[0] : '';
+                $url                  = is_string($arguments[1] ?? null) ? $arguments[1] : '';
+                $this->requestLines[] = strtoupper($method) . ' ' . (string) parse_url($url, PHP_URL_PATH);
+
+                return [(string) json_encode(['object' => 'login_link', 'url' => 'https://connect.stripe.com/express/y']), 200, []]; // phpcs:ignore Generic.PHP.ForbiddenFunctions -- canned HTTP fixture
+            },
+        );
+        ApiRequestor::setHttpClient($client);
+
+        $this->assertSame('https://connect.stripe.com/express/y', $this->provider()->createConnectedAccountDashboardLink('acct_1'));
+        $this->assertSame(['POST /v1/accounts/acct_1/login_links'], $this->requestLines);
+    }
+
+    /**
+     * Outstanding requirements report both buckets Stripe files them under, once each
+     *
+     * @return void
+     */
+    public function testOutstandingRequirementsMergeBothBucketsWithoutDuplicates(): void
+    {
+        $this->cannedHttpClient([
+            'charges_enabled'   => false,
+            'details_submitted' => true,
+            'id'                => 'acct_1',
+            'object'            => 'account',
+            'payouts_enabled'   => false,
+            'requirements'      => [
+                'currently_due'   => ['individual.id_number', 'external_account'],
+                'disabled_reason' => 'requirements.past_due',
+                'past_due'        => ['external_account'],
+            ],
+        ]);
+
+        $account = $this->provider()->getConnectedAccount('acct_1');
+
+        $this->assertSame('acct_1', $account->providerAccountId);
+        $this->assertFalse($account->payoutsEnabled);
+        $this->assertFalse($account->chargesEnabled);
+        $this->assertTrue($account->detailsSubmitted);
+        $this->assertSame(['individual.id_number', 'external_account'], $account->requirementsDue);
+        $this->assertSame('requirements.past_due', $account->disabledReason);
+    }
+
+    /**
+     * An account with nothing outstanding reports no requirements and no reason
+     *
+     * @return void
+     */
+    public function testAReadyAccountReportsNothingOutstanding(): void
+    {
+        $this->cannedHttpClient([
+            'charges_enabled'   => true,
+            'details_submitted' => true,
+            'id'                => 'acct_9',
+            'object'            => 'account',
+            'payouts_enabled'   => true,
+            'requirements'      => ['currently_due' => [], 'disabled_reason' => null, 'past_due' => []],
+        ]);
+
+        $account = $this->provider()->getConnectedAccount('acct_9');
+
+        $this->assertTrue($account->payoutsEnabled);
+        $this->assertSame([], $account->requirementsDue);
+        $this->assertNull($account->disabledReason);
+    }
+
+    /**
+     * A transfer sends the caller's idempotency key as a header
+     *
+     * The key is the only thing standing between a retried run and paying
+     * someone twice, so that it actually reaches Stripe is asserted rather than
+     * assumed.
+     *
+     * @return void
+     */
+    public function testATransferSendsTheCallersIdempotencyKey(): void
+    {
+        $this->sentHeaders = [];
+        $client            = $this->createStub(Client::class);
+        $client->method('request')->willReturnCallback(
+            function (mixed ...$arguments): array {
+                $headers           = $arguments[2] ?? [];
+                $this->sentHeaders = [];
+                if (is_array($headers)) {
+                    foreach ($headers as $header) {
+                        if (is_string($header)) {
+                            $this->sentHeaders[] = $header;
+                        }
+                    }
+                }
+                $params               = $arguments[3] ?? [];
+                $this->sentParameters = is_array($params) ? $this->byName($params) : [];
+
+                return [(string) json_encode(['amount' => 900, 'currency' => 'usd', 'destination' => 'acct_1', 'id' => 'tr_1', 'object' => 'transfer']), 200, []]; // phpcs:ignore Generic.PHP.ForbiddenFunctions -- canned HTTP fixture
+            },
+        );
+        ApiRequestor::setHttpClient($client);
+
+        $result = $this->provider()->createTransfer(new TransferRequest(
+            destinationAccountReference: 'acct_1',
+            amountMinorUnits:            900,
+            currency:                    'usd',
+            idempotencyKey:              'payout-run-12-creator-4',
+            description:                 'Sowing.me payout',
+        ));
+
+        $this->assertSame('tr_1', $result->providerTransferId);
+        $this->assertSame(900, $result->amountMinorUnits);
+        $this->assertSame('acct_1', $result->destinationAccountReference);
+        $this->assertContains('Idempotency-Key: payout-run-12-creator-4', $this->sentHeaders);
+        $this->assertSame('acct_1', $this->sentParameters['destination'] ?? null);
+    }
+
+    /**
+     * A transfer without a positive amount or a key never reaches the provider
+     *
+     * @return void
+     */
+    public function testATransferRefusesANonPositiveAmountOrAMissingKey(): void
+    {
+        $this->requestLines = [];
+        $client             = $this->createStub(Client::class);
+        $client->method('request')->willReturnCallback(
+            function (mixed ...$arguments): array {
+                $url                  = is_string($arguments[1] ?? null) ? $arguments[1] : '';
+                $this->requestLines[] = (string) parse_url($url, PHP_URL_PATH);
+
+                return ['{}', 200, []];
+            },
+        );
+        ApiRequestor::setHttpClient($client);
+
+        try {
+            $this->provider()->createTransfer(new TransferRequest(destinationAccountReference: 'acct_1', amountMinorUnits: 0, currency: 'usd', idempotencyKey: 'k'));
+            $this->fail('A zero transfer should be refused');
+        } catch (DtoException $e) {
+            $this->assertSame(ExceptionCode::PAYMENT_PROVIDER_OPERATION_FAILED->value, $e->getCode());
+        }
+
+        try {
+            $this->provider()->createTransfer(new TransferRequest(destinationAccountReference: 'acct_1', amountMinorUnits: 900, currency: 'usd'));
+            $this->fail('A transfer without an idempotency key should be refused');
+        } catch (DtoException $e) {
+            $this->assertSame(ExceptionCode::PAYMENT_PROVIDER_OPERATION_FAILED->value, $e->getCode());
+        }
+
+        $this->assertSame([], $this->requestLines);
     }
 
     /**
