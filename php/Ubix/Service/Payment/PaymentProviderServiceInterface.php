@@ -6,6 +6,8 @@ namespace Ubix\Service\Payment;
 
 use Ubix\DataTransferObject\Payment\CardSummary;
 use Ubix\DataTransferObject\Payment\CheckoutSession;
+use Ubix\DataTransferObject\Payment\ConnectedAccount;
+use Ubix\DataTransferObject\Payment\ConnectedAccountRequest;
 use Ubix\DataTransferObject\Payment\CustomerRequest;
 use Ubix\DataTransferObject\Payment\OneOffCheckoutRequest;
 use Ubix\DataTransferObject\Payment\PaymentIntentRequest;
@@ -15,6 +17,8 @@ use Ubix\DataTransferObject\Payment\ProviderSubscription;
 use Ubix\DataTransferObject\Payment\RecurringPriceRequest;
 use Ubix\DataTransferObject\Payment\RefundResult;
 use Ubix\DataTransferObject\Payment\SubscriptionCheckoutRequest;
+use Ubix\DataTransferObject\Payment\TransferRequest;
+use Ubix\DataTransferObject\Payment\TransferResult;
 use Ubix\DataTransferObject\Payment\VerifiedWebhookEvent;
 
 /**
@@ -257,4 +261,125 @@ interface PaymentProviderServiceInterface
      * @return ?CardSummary Brand, last four and expiry; null when there is no default card
      */
     public function getDefaultCardSummary(string $customerReference): ?CardSummary;
+
+    /*
+     * Paying third parties. A platform that collects money on someone else's
+     * behalf eventually has to give it to them, which means the provider needs
+     * an account for that person and a way to move funds into it. These calls
+     * open such an account, send its holder to the provider to prove who they
+     * are, and move money once the provider says it may.
+     *
+     * What is deliberately absent is any notion of how much anyone is owed.
+     * Balances, commission, schedules, thresholds and the record of what was
+     * paid are host concerns, for the same reason entitlement is: they are
+     * where a platform's actual business rules live, and no two hosts agree.
+     */
+
+    /**
+     * Open an account at the provider that the platform can later pay money to
+     *
+     * The account is created empty and unusable: the provider will not pay it
+     * until its holder has proven who they are, which they do through the
+     * provider's own hosted flow -- see {@see self::createConnectedAccountOnboardingLink()}.
+     * Creating an account is therefore the start of a conversation with a
+     * person, not a provisioning step that completes on its own.
+     *
+     * Nothing about the holder's identity is passed here, and there is no
+     * method on this interface that could carry it. Identity documents, dates
+     * of birth, government identifiers and bank details go from the holder to
+     * the provider directly, so a host built against this seam has none of it
+     * to protect, disclose or lose.
+     *
+     * @param ConnectedAccountRequest $request Where the account holder is, and how the provider may contact them
+     *
+     * @throws \Ubix\Exception\DtoException If the provider refuses to create the account, the platform is not configured to pay third parties, or the provider is unreachable
+     *
+     * @return string The provider's id for the new account
+     */
+    public function createConnectedAccount(ConnectedAccountRequest $request): string;
+
+    /**
+     * A single-use link sending an account's holder to the provider to prove who they are
+     *
+     * The link is short-lived and burns on use, so it is created when someone
+     * is about to follow it and never stored. A host that keeps one and shows
+     * it again later shows an error page.
+     *
+     * Returning from `$returnUrl` means the holder finished the form. It does
+     * not mean the provider has approved them, and it is not proof of anything
+     * -- exactly as returning from a hosted checkout is not proof of payment.
+     * The account's own state, read back from the provider, is the only answer:
+     * see {@see self::getConnectedAccount()}.
+     *
+     * @param string $accountReference The provider's id for the account
+     * @param string $refreshUrl       Where the provider sends the holder if the link expired before they used it, so the host can mint another
+     * @param string $returnUrl        Where the provider sends the holder when they finish the form
+     *
+     * @throws \Ubix\Exception\DtoException If no such account exists at the provider, or it is unreachable
+     *
+     * @return string The URL to send the account holder to
+     */
+    public function createConnectedAccountOnboardingLink(
+        string $accountReference,
+        string $refreshUrl,
+        string $returnUrl,
+    ): string;
+
+    /**
+     * A single-use link to the provider's own dashboard for an account's holder
+     *
+     * Where the holder sees what they have been paid and changes where it goes.
+     * Keeping this at the provider is what keeps bank details out of the host:
+     * the alternative is a host screen that collects them.
+     *
+     * Access is the host's to control. The link authenticates whoever opens it,
+     * so a host mints one only for a holder it has already authenticated as the
+     * owner of that account, and never puts one somewhere it can be shared.
+     *
+     * @param string $accountReference The provider's id for the account
+     *
+     * @throws \Ubix\Exception\DtoException If the account cannot use the provider's dashboard, no such account exists, or the provider is unreachable
+     *
+     * @return string The URL to send the account holder to
+     */
+    public function createConnectedAccountDashboardLink(string $accountReference): string;
+
+    /**
+     * Read the provider's current view of an account the platform can pay
+     *
+     * The provider decides whether an account may be paid, and changes that
+     * answer on its own schedule as verification completes, documents expire or
+     * reviews restrict an account. A host asks here rather than trusting what
+     * it last wrote down -- and always before it moves money, since a mirrored
+     * flag is only ever as fresh as the last time it was read.
+     *
+     * @param string $accountReference The provider's id for the account
+     *
+     * @throws \Ubix\Exception\DtoException If no such account exists at the provider, or it is unreachable
+     *
+     * @return ConnectedAccount The provider's view, as of now
+     */
+    public function getConnectedAccount(string $accountReference): ConnectedAccount;
+
+    /**
+     * Move money from the platform's balance to a connected account
+     *
+     * This moves money the platform already holds; it does not charge anyone.
+     * The funds land on the connected account's balance at the provider, and
+     * the provider's own payout schedule takes them to a bank from there, so
+     * this call completing is not the holder being paid.
+     *
+     * An implementation must honour {@see TransferRequest::$idempotencyKey}:
+     * replaying a request that already succeeded returns the original transfer
+     * and moves no further money. A retry after a timeout is otherwise
+     * indistinguishable from a second payment, and the loser is whoever the
+     * money was already sent to.
+     *
+     * @param TransferRequest $request Who to pay, how much, and the key identifying this transfer
+     *
+     * @throws \Ubix\Exception\DtoException If the destination cannot currently be paid, the platform's balance is insufficient, the amount is not positive, or the provider is unreachable
+     *
+     * @return TransferResult The accepted transfer, with a positive amount; a host applies its own ledger sign convention
+     */
+    public function createTransfer(TransferRequest $request): TransferResult;
 }
