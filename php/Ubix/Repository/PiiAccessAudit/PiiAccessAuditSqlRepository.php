@@ -66,4 +66,21 @@ final class PiiAccessAuditSqlRepository implements PiiAccessAuditWriter
 
         $this->sqlService->query($sql, $parameters, true);
     }
+
+    /**
+     * {@inheritDoc}
+     */
+    public function purgeAccessesBefore(string $cutoff, int $limit = 10000): void
+    {
+        // Bounded by LIMIT rather than deleting a whole history at once: the
+        // first run after a retention policy is introduced can face years of
+        // rows, and one unbounded DELETE would lock the table for all of them.
+        // A caller with a backlog calls this again; writers return void by
+        // house rule, so "how many were left" is not this method's to answer.
+        $sql = 'DELETE FROM ' . UbixDatabase::SYSTEMS->databaseName() . '.Pii_Access_Audits
+                 WHERE date_created < :cutoff
+                 LIMIT ' . max(1, $limit);
+
+        $this->sqlService->query($sql, ['cutoff' => $cutoff]);
+    }
 }

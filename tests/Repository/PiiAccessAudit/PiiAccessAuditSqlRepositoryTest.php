@@ -81,4 +81,50 @@ final class PiiAccessAuditSqlRepositoryTest extends UbixConcreteClassOrEnumTestC
         $repository = new PiiAccessAuditSqlRepository(logger: $this->createStub(Logger::class), sqlService: $sqlService);
         $repository->recordAccess(new PiiAccess(actorId: 7, entityType: 'member', subjectIds: [], reason: 'ledger_view'));
     }
+
+    /**
+     * A purge deletes only what is older than the cutoff, and is bounded
+     *
+     * Keeping "who looked at this person" forever is itself a privacy problem,
+     * so hosts expire the trail on their own schedule. The bound matters: the
+     * first run after a retention policy is introduced can face years of rows.
+     *
+     * @return void
+     */
+    public function testAPurgeIsBoundedAndCutoffScoped(): void
+    {
+        $sqlService = $this->createMock(SqlService::class);
+        $sqlService->expects($this->once())
+            ->method('query')
+            ->with(
+                $this->logicalAnd(
+                    $this->stringContains('DELETE FROM'),
+                    $this->stringContains('Pii_Access_Audits'),
+                    $this->stringContains('date_created < :cutoff'),
+                    $this->stringContains('LIMIT 500'),
+                ),
+                ['cutoff' => '2025-09-22 00:00:00'],
+            )
+            ->willReturn(500);
+
+        (new PiiAccessAuditSqlRepository($this->createStub(Logger::class), $sqlService))
+            ->purgeAccessesBefore('2025-09-22 00:00:00', 500);
+    }
+
+    /**
+     * A nonsense limit still bounds the statement
+     *
+     * @return void
+     */
+    public function testALimitIsAlwaysAtLeastOne(): void
+    {
+        $sqlService = $this->createMock(SqlService::class);
+        $sqlService->expects($this->once())
+            ->method('query')
+            ->with($this->stringContains('LIMIT 1'), $this->anything())
+            ->willReturn(0);
+
+        (new PiiAccessAuditSqlRepository($this->createStub(Logger::class), $sqlService))
+            ->purgeAccessesBefore('2025-09-22 00:00:00', 0);
+    }
 }
