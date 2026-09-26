@@ -180,6 +180,18 @@ Checklist for the cutover MR set (ubixcore OSS-10 + kitg + kubernetes repos):
 5. Cut over dev first, then staging, then prod; retire the ubixcore-driven
    Deployments and the `-node` image variants from `ubixsys/ubixcore`.
 
+## 5a. Skeleton backlog
+
+Things the skeleton should ship but does not yet. None block the split; each one
+is a bug every future host would otherwise inherit.
+
+| ID | Item | Why |
+|---|---|---|
+| SK-01 | **A JS app template** (`skeleton/app/<App>Js/`, React + TypeScript on `@ubixsys/ubixcore` since v0.3.0) alongside `HelloApi`. | The skeleton ships only a PHP app, so every host hand-rolls its JS apps and hand-rolls their pipeline wiring. KITG has two, and both were clones of each other -- `SowingMeAdminJs` had the same Deployment name, selector, `APP_NAME` and Ingress hostname as `SowingMeJs`, so `bin/deploy.sh` (which applies app dirs alphabetically) overwrote it every deploy and it had never actually run. A template with the identity fields parameterised prevents that whole class of mistake. |
+| SK-02 | That template must carry a **`.prettierignore` excluding the k8s manifests** (`*-deploy.yaml`, `*-ingress.yaml`, `*-service.yaml`). | `npm run lint` is `eslint . && prettier --check .` from inside the app directory, which also lints the per-app manifests sitting there. On 2026-09-07 adding `resources:`/`affinity:` to KITG's deployments failed the `js-lint` CI stage -- a JavaScript stage broken by an infrastructure edit. Fixed in kitg (!29); the skeleton has no JS template yet, so there is nothing upstream to fix until SK-01 lands. |
+| SK-03 | **Per-app node Dockerfiles.** | KITG's three `Dockerfile_Node_*` all `COPY app/SowingMeJs/`, so a second JS app has no image and cannot deploy however correct its manifests are. The skeleton should make the app name a build arg rather than leaving hosts to copy-paste a Dockerfile per app and miss one. |
+| SK-04 | **`code:merge` cannot run non-interactively.** | It runs `code:review`, and when stdin is a pipe phpcs lints the piped text as a PHP file (`Generic.Files.InlineHTML.Found` on `STDIN`), so the command fails its own gate whenever it is not attached to a TTY. That rules it out of CI or any script. `Ubix\Console\Command\Code\MergeCommand` is framework code, so this is an upstream fix. |
+
 ## 6. Open questions
 
 - ~~BSD-2 vs BSD-3~~ resolved: BSD-3-Clause, matching the rest of the uBix family.
@@ -187,6 +199,13 @@ Checklist for the cutover MR set (ubixcore OSS-10 + kitg + kubernetes repos):
   `ubix init` from a globally installed CLI. Default: both, `create-project` first.
 - Versioning: start at `v0.1.0` and stay 0.x until Sowing.me runs on a released
   tag; CalVer (the original monorepo) was considered and rejected for a library.
-- ~~Namespaces at cutover~~ resolved: stay in `live-*`/`ws-*` (§5).
+- ~~Namespaces at cutover~~ resolved at the time as "stay in `live-*`/`ws-*`" (§5),
+  but **superseded 2026-09-06**: Sowing.me moved to product-scoped
+  `kitg-{dev,staging,prod}`. It handles payments and PII and should not share an
+  RBAC/quota/NetworkPolicy boundary with the other products in those namespaces,
+  and the move is far cheaper pre-launch (it re-binds uBixVault k8s auth roles,
+  `regcred` and TLS). Rationale and runbook live in the kubernetes repo
+  (`docs/standards/namespaces.md`, `docs/operations/kitg-namespace-migration.md`).
+  Nothing in this repo depends on the namespace names.
 - Where `docs/standards` live for a host: copied by `ubix init` (host owns them)
   vs referenced from `vendor/` (framework owns them). Default: copied.
