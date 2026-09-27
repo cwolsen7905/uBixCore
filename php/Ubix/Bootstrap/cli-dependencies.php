@@ -17,6 +17,9 @@ use Psr\Log\LoggerInterface as Logger;
 use Psr\SimpleCache\CacheInterface as SimpleCache;
 use Slim\Psr7\Factory\ResponseFactory as SlimResponseFactory;
 use Ubix\HttpClient\CurlHttpClient;
+use Ubix\Repository\DatabaseEnvironment\DatabaseEnvironmentReaderInterface as DatabaseEnvironmentReader;
+use Ubix\Repository\DatabaseEnvironment\DatabaseEnvironmentSqlRepository;
+use Ubix\Repository\DatabaseEnvironment\DatabaseEnvironmentWriterInterface as DatabaseEnvironmentWriter;
 use Ubix\Repository\SchemaMigration\SchemaMigrationReaderInterface as SchemaMigrationReader;
 use Ubix\Repository\SchemaMigration\SchemaMigrationSqlRepository;
 use Ubix\Repository\SchemaMigration\SchemaMigrationWriterInterface as SchemaMigrationWriter;
@@ -56,31 +59,36 @@ return static function (): Container {
     $container = new ContainerBuilder();
 
     $container->addDefinitions([
-        HttpClient::class                   => autowire(CurlHttpClient::class),
-        Logger::class                       => autowire(MonologLogger::class)->constructorParameter('name', $appName)->constructorParameter('handlers', [new StreamHandler(getenv('LOGGER_PATH') . '/' . $appName . '.log', getenv('IS_SANDBOX') === 'true' || getenv('IS_DEV') === 'true' ? Level::Debug : Level::Info)])->constructorParameter('processors', [new UidProcessor()]),
-        Psr17Factory::class                 => autowire(Psr17Factory::class),
-        RequestFactory::class               => get(Psr17Factory::class),
-        ResponseFactory::class              => autowire(SlimResponseFactory::class),
-        SimpleCache::class                  => autowire(MemcachedLegacySimpleCache::class)->constructorParameter('servers', $memcacheServers),
-        StreamFactory::class                => get(Psr17Factory::class),
+        HttpClient::class                       => autowire(CurlHttpClient::class),
+        Logger::class                           => autowire(MonologLogger::class)->constructorParameter('name', $appName)->constructorParameter('handlers', [new StreamHandler(getenv('LOGGER_PATH') . '/' . $appName . '.log', getenv('IS_SANDBOX') === 'true' || getenv('IS_DEV') === 'true' ? Level::Debug : Level::Info)])->constructorParameter('processors', [new UidProcessor()]),
+        Psr17Factory::class                     => autowire(Psr17Factory::class),
+        RequestFactory::class                   => get(Psr17Factory::class),
+        ResponseFactory::class                  => autowire(SlimResponseFactory::class),
+        SimpleCache::class                      => autowire(MemcachedLegacySimpleCache::class)->constructorParameter('servers', $memcacheServers),
+        StreamFactory::class                    => get(Psr17Factory::class),
 
         //
         //  Migration engine. The migrate:* commands are auto-discovered by
         //  bin/ubix, but the services they inject need these bindings.
         //
-        MigrationFileScannerService::class  => autowire(MigrationFileScannerService::class)->constructorParameter('migrationsPath', $migrationsPath),
-        ProjectRootService::class           => autowire()->constructorParameter('root', $projectRoot),
-        SqlService::class                   => autowire(MysqlPdoSqlService::class),
-        SchemaMigrationSqlRepository::class => autowire(SchemaMigrationSqlRepository::class)->constructorParameter('sqlService', get(MigrationPdoSqlService::class)),
-        SchemaMigrationReader::class        => get(SchemaMigrationSqlRepository::class),
-        SchemaMigrationWriter::class        => get(SchemaMigrationSqlRepository::class),
-        SlackService::class                 => autowire()
+        MigrationFileScannerService::class      => autowire(MigrationFileScannerService::class)->constructorParameter('migrationsPath', $migrationsPath),
+        ProjectRootService::class               => autowire()->constructorParameter('root', $projectRoot),
+        SqlService::class                       => autowire(MysqlPdoSqlService::class),
+        SchemaMigrationSqlRepository::class     => autowire(SchemaMigrationSqlRepository::class)->constructorParameter('sqlService', get(MigrationPdoSqlService::class)),
+        SchemaMigrationReader::class            => get(SchemaMigrationSqlRepository::class),
+        SchemaMigrationWriter::class            => get(SchemaMigrationSqlRepository::class),
+        // The database's own environment label, read and written on the migration
+        // connection (MYSQL_MIGRATION_* win) because migrate:up creates the table.
+        DatabaseEnvironmentSqlRepository::class => autowire(DatabaseEnvironmentSqlRepository::class)->constructorParameter('sqlService', get(MigrationPdoSqlService::class)),
+        DatabaseEnvironmentReader::class        => get(DatabaseEnvironmentSqlRepository::class),
+        DatabaseEnvironmentWriter::class        => get(DatabaseEnvironmentSqlRepository::class),
+        SlackService::class                     => autowire()
             ->constructorParameter('apiEndpoint', (string) getenv('SLACK_API_ENDPOINT'))
             ->constructorParameter('channelAllowlist', array_values(array_unique(array_filter([
                 ...array_map('trim', explode(',', (string) getenv('SLACK_CHANNEL_ALLOWLIST'))),
                 ltrim(getenv('SLACK_MIGRATION_CHANNEL') ?: '#databases', '#'), // Always allow the migration notifier's own channel
             ])))),
-        MigrationNotificationService::class => autowire()
+        MigrationNotificationService::class     => autowire()
             ->constructorParameter('channel', getenv('SLACK_MIGRATION_CHANNEL') ?: '#databases'),
     ]);
 

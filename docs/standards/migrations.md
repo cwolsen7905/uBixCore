@@ -1,7 +1,7 @@
 # Schema Migration Standards
 
 **Status:** Approved
-**Last Updated:** 2026-08-18
+**Last Updated:** 2026-09-27
 
 This document defines how schema changes flow into uBix Core's databases. It complements [`database.md`](database.md) — that doc covers _what_ a well-formed schema looks like; this doc covers _how_ a schema change actually lands in dev / staging / prod and how the platform tracks what's been applied where.
 
@@ -568,6 +568,27 @@ A flagged migration with neither header **fails to parse** — it cannot land, a
 
 ---
 
+### 11.10 The database knows which environment it is — `SYSTEMS.Database_Environment` (2026-09-27)
+
+A pipeline's `--target` and its host settings say where it *believes* it is connected. When a
+manifest, a Vault secret or a laptop is wrong, that belief is wrong, and a staging run migrates
+production. So the **database carries its own label**: one row in `SYSTEMS.Database_Environment`
+(`environment`, who and when, plus a `sanitised_at` stamp a host can set after scrubbing a clone).
+
+- **`migrate:up --target=X`** reads the label before anything is read as pending. A label naming a
+  different environment → **exit 5 (`EXIT_ENVIRONMENT_MISMATCH`)**, nothing applied. No label → the
+  run labels the database `X` (the migration account creates the table; no migration file does,
+  because the check must run before any migration).
+- Only **dev, staging and prod** take part. `test` and `sandbox` are scratch databases several
+  pipelines share on purpose; they are never labelled and never refused.
+- **The label travels with the data.** A server rebuilt from a production dump arrives labelled
+  `prod`, and its staging pipeline refuses it until someone changes the label **deliberately**:
+  `database:label --target=staging --from=prod` (migration credentials; `--from` must name the
+  label that is there). Relabelling clears `sanitised_at` — sanitise the data *after* relabelling.
+- **Hosts** use `DatabaseEnvironmentService` for their own guards: a destructive tool should require
+  a non-production label equal to the process's `ENV`, and call `markSanitised()` when done
+  (it refuses a production label outright).
+
 ## 12. Authoring Checklist
 
 Before opening a PR that adds a migration:
@@ -638,4 +659,5 @@ The `00000000000000_` prefix is reserved for the bootstrap migration; never use 
 | 2.14 | 2026-07-30 | Christopher W. Olsen | **§2.1 header grammar made explicit + parser hardened.** Only the seven known header keys start a header line; continuation lines may contain colons. Fixes silent truncation of multi-line `RequiresDBA:` reasons (Claude review catch on 20260728233256). |
 | 2.15 | 2026-07-30 | Christopher W. Olsen | **Expected holds converted to loud green success in the CI wrapper (§10, §10.1, §11.3, §11.3.1).** The v2.7 `allow_failure.exit_codes: [3,4]` model was never exercised until the first real `RequiresDBA` hold (2026-07-30) — and GitLab did not soften the jobs: `migrate-apply-dev` and `-staging` both hard-failed on exit 4, blocking pipelines for an expected, human-gated state. The `.migrate_apply` wrapper now converts exits 3/4 to exit 0 with a prominent HOLD banner (nothing was applied; the migration stays pending until the `-destructive` button or the DBA apply + `migrate:reconcile`), which is executor- and GitLab-semantics-proof; `allow_failure.exit_codes` stays on the jobs as defense-in-depth. Exit 1 (real apply error) still reds the pipeline. Runner exit codes unchanged (`UpCommandTest` contract intact). |
 | 2.16 | 2026-07-30 | Christopher W. Olsen | **Per-migration holds + per-database damming; deploys proceed on holds; merge-when-ready policy (§4, §10, §10.1, §11.3, §11.8, §12).** The first live `RequiresDBA` hold froze the whole migration queue: the runner aborted the entire run on the first held migration, so `20260730170532` (`SYSTEMS.Claude_Reviews`) never applied on dev — and the interim wrapper conversion also left the `needs:`-gated deploys firing with contradictory docs (Claude-review findings on `a39c7a0b`). Resolution: **(1)** `UpCommand` now *partitions* the pending set — held migrations (`RequiresDBA:` everywhere but test; unacknowledged `Destructive:` on staging/prod) are skipped while everything else applies in the same run; later migrations of the **same database** dam behind a hold (strict per-database ordering preserved; other databases flow — the scoped form of Flyway's `outOfOrder`); exit codes unchanged (4 wins over 3), wrapper still converts holds to a loud green job. **(2)** Deploys intentionally **proceed** on a hold — safe by §11.5 expand/contract; the §11.8 author rules make it stay safe (no dependent code merges un-flagged until reconcile; dependent follow-up migrations target the same database). **(3)** `RequiresDBA:` migrations land **merge-when-ready** (§11.8/§12) — merged only when the DBA apply is scheduled; `20260728233256` was pulled off `dev` and parked on `feature-mig-reland-transact-attempt-id` accordingly. **(4)** The dead `allow_failure.exit_codes` blocks (unreachable after wrapper conversion) were removed from the migrate-apply jobs and the stale deploy-gating comments/doc bullets corrected. |
+| 2.18 | 2026-09-27 | Christopher W. Olsen | **§11.10 database environment label.** `SYSTEMS.Database_Environment` (one row) records which environment a server belongs to. `migrate:up` refuses a database labelled for another `--target` (new exit 5, `EXIT_ENVIRONMENT_MISMATCH`) and labels an unlabelled one; dev/staging/prod only. New `database:label` changes a label deliberately (`--from` must match). New `DatabaseEnvironmentService`, `DatabaseEnvironmentSqlRepository` (missing table = unlabelled; any other read failure surfaces), DTOs, tests. Prompted by kitg staging becoming a clone of production on its own server. |
 | 2.17 | 2026-08-18 | Christopher W. Olsen | **Backtick-quoted schema qualifiers are now rewritten under `DATABASE_PREFIX` (§2.1).** `MigrationApplyService::runBodyViaMariadbCli()` rewrote qualified references with a plain `str_replace('<db>.', '<prefix><db>.')`, which matched only the BARE form — a body written as `` ALTER TABLE `legacy_db`.`transact` `` (the conventional quoting, and what the pre-flight clash check already handled via `splitObjectRef()`) kept its unprefixed schema and ran against the real cluster's name. It broke the dev pipeline's test-DB pass on `20260817221748_add_bin_8_column_to_legacy_db_transaction_tables` with `ERROR 1146 ... Table 'legacy_db.transact' doesn't exist`, and bit precisely the `RequiresDBA:` class of file that v2.13 made apply inline on TEST. Replaced with a backtick-aware, identifier-anchored `preg_replace_callback` (new private `prefixQualifiedReferences()`); a table whose name merely ends with the database name (`archive_legacy_db.x`) is left alone. New DB-backed regression test applies a backtick-quoted `CREATE TABLE` and asserts it lands in the prefixed schema (verified to fail against the old rewrite). §2.1 gains the body-qualification rule: either quoting style is fine, cross-database references are NOT rewritten. |

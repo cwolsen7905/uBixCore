@@ -17,6 +17,7 @@ use Ubix\DataTransferObject\Migration\MigrationFile;
 use Ubix\DataTransferObject\PdoError;
 use Ubix\Enum\Env;
 use Ubix\Exception\DtoException;
+use Ubix\Service\DatabaseEnvironment\DatabaseEnvironmentService;
 use Ubix\Service\Migration\DestructiveBackupService;
 use Ubix\Service\Migration\MigrationApplyService;
 use Ubix\Service\Migration\MigrationConnectionTargetService;
@@ -74,14 +75,23 @@ final class UpCommand extends MigrationCommand
     public const int EXIT_REQUIRES_DBA_PENDING = 4;
 
     /**
+     * Exit code: the database is labelled for a different environment than
+     * `--target` (`SYSTEMS.Database_Environment`). Nothing was applied. Either
+     * the connection reached the wrong server, or the data is a clone that
+     * still carries its source's label -- `database:label` changes it on purpose.
+     */
+    public const int EXIT_ENVIRONMENT_MISMATCH = 5;
+
+    /**
      * Constructor
      *
-     * @param Logger                           $logger                  Logger
-     * @param MigrationConnectionTargetService $connectionTargetService Resolves and applies --target / --username
-     * @param MigrationRunnerService           $runnerService           Pending list + advisory lock
-     * @param MigrationApplyService            $applyService            Applies a single migration end-to-end
-     * @param DestructiveBackupService         $backupService           Pre-apply snapshot for destructive migrations on staging / prod
-     * @param MigrationNotificationService     $notificationService     Posts a #databases Slack notice after applying on dev / staging / prod
+     * @param Logger                           $logger                     Logger
+     * @param MigrationConnectionTargetService $connectionTargetService    Resolves and applies --target / --username
+     * @param MigrationRunnerService           $runnerService              Pending list + advisory lock
+     * @param MigrationApplyService            $applyService               Applies a single migration end-to-end
+     * @param DestructiveBackupService         $backupService              Pre-apply snapshot for destructive migrations on staging / prod
+     * @param MigrationNotificationService     $notificationService        Posts a #databases Slack notice after applying on dev / staging / prod
+     * @param DatabaseEnvironmentService       $databaseEnvironmentService Which environment the database says it is
      */
     public function __construct(
         Logger $logger,
@@ -90,6 +100,7 @@ final class UpCommand extends MigrationCommand
         private MigrationApplyService $applyService,
         private DestructiveBackupService $backupService,
         private MigrationNotificationService $notificationService,
+        private DatabaseEnvironmentService $databaseEnvironmentService,
     ) {
         parent::__construct($logger, $connectionTargetService);
     }
@@ -121,6 +132,25 @@ final class UpCommand extends MigrationCommand
         $isDryRun       = (bool) $input->getOption('dry-run');
         $destructiveAck = (bool) $input->getOption('i-acknowledge-destructive');
         $environment    = $this->resolveRuntimeEnvironment();
+
+        // The database's own label must agree with --target before anything is
+        // read as pending, let alone applied: the connection may have reached a
+        // server other than the one this run believes it is migrating.
+        $conflict = $this->databaseEnvironmentService->conflictWith($environment);
+        if ($conflict !== null) {
+            $output->writeln(sprintf(
+                '<error>REFUSING: this database is labelled `%s`, but --target is `%s`. Nothing applied.</error>',
+                $conflict->value,
+                $environment->value,
+            ));
+            $output->writeln('<error>Either this connection reached the wrong server, or the data was cloned from another environment and still carries its label. If it is a clone, sanitise it and change the label deliberately: `database:label --target=' . $environment->value . ' --from=' . $conflict->value . '`.</error>');
+
+            return self::EXIT_ENVIRONMENT_MISMATCH;
+        }
+
+        if (!$isDryRun && $this->databaseEnvironmentService->labelIfUnlabelled($environment, $this->resolveActorIdentity())) {
+            $output->writeln(sprintf('<info>Database labelled `%s` (SYSTEMS.Database_Environment).</info>', $environment->value));
+        }
 
         $pending = $this->runnerService->getPendingMigrations($databaseFilter);
         if ($pending === []) {

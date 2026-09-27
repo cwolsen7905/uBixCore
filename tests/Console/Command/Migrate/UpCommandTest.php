@@ -43,6 +43,7 @@ final class UpCommandTest extends UbixConcreteClassOrEnumTestCase implements IUb
     {
         $this->assertSame(3, UpCommand::EXIT_DESTRUCTIVE_PENDING);
         $this->assertSame(4, UpCommand::EXIT_REQUIRES_DBA_PENDING);
+        $this->assertSame(5, UpCommand::EXIT_ENVIRONMENT_MISMATCH);
     }
 
     /**
