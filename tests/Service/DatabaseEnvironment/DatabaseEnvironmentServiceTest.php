@@ -44,7 +44,7 @@ final class DatabaseEnvironmentServiceTest extends UbixConcreteClassOrEnumTestCa
     }
 
     /**
-     * Test and sandbox are shared scratch databases: never refused, never labelled
+     * Test and sandbox are shared scratch databases: never refused, never labelled -- but they get the table, so a replay's schema matches a tier's
      *
      * @return void
      */
@@ -52,7 +52,7 @@ final class DatabaseEnvironmentServiceTest extends UbixConcreteClassOrEnumTestCa
     {
         $writer = $this->createMock(DatabaseEnvironmentWriter::class);
         $writer->expects($this->never())->method('label');
-        $writer->expects($this->never())->method('ensureTable');
+        $writer->expects($this->once())->method('ensureTable');
 
         $service = $this->service(Env::DEV, $writer);
 
