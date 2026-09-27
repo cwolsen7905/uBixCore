@@ -6,6 +6,7 @@ namespace Ubix\Service\Migration;
 
 use Psr\Log\LoggerInterface as Logger;
 use Ubix\DataTransferObject\Migration\SchemaDiffResult;
+use Ubix\Enum\Migration\SchemaDiffMode;
 use Ubix\Service\ProcessService;
 use Ubix\Service\ProjectRootService;
 
@@ -57,12 +58,17 @@ final class SchemaDiffService
      * which the reference dump is missing surface a result with
      * `errorMessage` populated.
      *
-     * @param ?string $databaseFilter Restrict to one target database
+     * @param ?string        $databaseFilter Restrict to one target database
+     * @param SchemaDiffMode $mode           How the expected schema is built (§9)
+     * @param string         $replayPrefix   Replay mode: the prefix the expected schema was rebuilt under
      *
      * @return SchemaDiffResult[]
      */
-    public function diffAll(?string $databaseFilter = null): array
-    {
+    public function diffAll(
+        ?string $databaseFilter = null,
+        SchemaDiffMode $mode = SchemaDiffMode::REFERENCE_DUMP,
+        string $replayPrefix = '',
+    ): array {
         $known     = $this->databases();
         $databases = $known;
         if ($databaseFilter !== null) {
@@ -85,7 +91,7 @@ final class SchemaDiffService
 
         $results = [];
         foreach ($databases as $database) {
-            $results[] = $this->diffOne($database);
+            $results[] = $this->diffOne($database, $mode, $replayPrefix);
         }
         return $results;
     }
@@ -93,23 +99,53 @@ final class SchemaDiffService
     /**
      * Run the diff for a single database.
      *
-     * @param string $database Target database
+     * @param string         $database     Target database
+     * @param SchemaDiffMode $mode         How the expected schema is built
+     * @param string         $replayPrefix Replay mode: the prefix the expected schema was rebuilt under
      *
      * @return SchemaDiffResult
      */
-    private function diffOne(string $database): SchemaDiffResult
+    private function diffOne(string $database, SchemaDiffMode $mode, string $replayPrefix): SchemaDiffResult
     {
-        $referencePath = $this->referenceDumpPath($database);
-        if (! is_readable($referencePath)) {
-            return new SchemaDiffResult(
-                database:        $database,
-                hasDrift:        false,
-                extraInLive:     [],
-                missingFromLive: [],
-                errorMessage:    sprintf('Reference dump `%s` is missing or not readable.', $referencePath),
-            );
+        if ($mode === SchemaDiffMode::REPLAY) {
+            if ($replayPrefix === '') {
+                return new SchemaDiffResult(
+                    database:        $database,
+                    hasDrift:        false,
+                    extraInLive:     [],
+                    missingFromLive: [],
+                    errorMessage:    'Replay mode needs --replay-prefix: the schema rebuilt from baseline + migrations lives at `<prefix><database>` on the TEST connection. Build it first with `database:resetSchema --prefix=<prefix>` then `migrate:up --target=test --prefix=<prefix>`.',
+                );
+            }
+
+            $reference = $this->dumpRebuiltSchema($replayPrefix . $database);
+            if ($reference === null) {
+                return new SchemaDiffResult(
+                    database:        $database,
+                    hasDrift:        false,
+                    extraInLive:     [],
+                    missingFromLive: [],
+                    errorMessage:    sprintf(
+                        'Replay mode could not read the rebuilt schema `%s` on the TEST connection. Build it first with `database:resetSchema --prefix=%s` then `migrate:up --target=test --prefix=%s`.',
+                        $replayPrefix . $database,
+                        $replayPrefix,
+                        $replayPrefix,
+                    ),
+                );
+            }
+        } else {
+            $referencePath = $this->referenceDumpPath($database);
+            if (! is_readable($referencePath)) {
+                return new SchemaDiffResult(
+                    database:        $database,
+                    hasDrift:        false,
+                    extraInLive:     [],
+                    missingFromLive: [],
+                    errorMessage:    sprintf('Reference dump `%s` is missing or not readable.', $referencePath),
+                );
+            }
+            $reference = (string) file_get_contents($referencePath);
         }
-        $reference = (string) file_get_contents($referencePath);
 
         $live = $this->dumpLiveSchema($database);
         if ($live === null) {
@@ -167,6 +203,97 @@ final class SchemaDiffService
             return null;
         }
         return $result->stdoutOutput;
+    }
+
+    /**
+     * Dump the rebuilt expected schema from the TEST connection
+     *
+     * Replay mode's expected schema is built by `database:resetSchema --prefix=` plus
+     * `migrate:up --target=test --prefix=`, which put it at `<prefix><database>` on the
+     * unit-test server. This only reads it.
+     *
+     * The TEST connection rather than the tier being diffed, deliberately: the tier is
+     * only ever read from, so a drift check can run against production without holding
+     * CREATE or DROP on it.
+     *
+     * Same dump flags as the live capture. Not tidiness -- a difference in dump options
+     * would surface as drift in every comparison.
+     *
+     * @param string $schema The prefixed schema name
+     *
+     * @return ?string The dump, or null when it could not be read
+     */
+    private function dumpRebuiltSchema(string $schema): ?string
+    {
+        $host     = (string) getenv('TEST_MYSQL_WRITE_HOST');
+        $port     = (string) getenv('TEST_MYSQL_WRITE_PORT');
+        $username = (string) getenv('TEST_MYSQL_WRITE_USERNAME');
+        $password = (string) getenv('TEST_MYSQL_WRITE_PASSWORD');
+
+        if ($host === '' || $username === '') {
+            return null;
+        }
+
+        // The password goes in a 0600 file, never argv: the process list is world
+        // readable, and this class's sibling commands already learned that lesson.
+        $defaultsFile = $this->writeDefaultsFile($username, $password, $host, $port === '' ? '3306' : $port);
+        if ($defaultsFile === null) {
+            return null;
+        }
+
+        try {
+            $command = sprintf(
+                'mariadb-dump --defaults-extra-file=%s --ssl=0 --no-data --skip-comments --skip-extended-insert --skip-add-drop-table --single-transaction %s',
+                escapeshellarg($defaultsFile),
+                escapeshellarg($schema),
+            );
+
+            $result = $this->processService->executeAsSubprocess($command);
+
+            return $result->exitCode === 0 ? $result->stdoutOutput : null;
+        } finally {
+            unlink($defaultsFile);
+        }
+    }
+
+    /**
+     * Write connection settings to a private file the client reads instead of argv
+     *
+     * @param string $user     Database user
+     * @param string $password Database password
+     * @param string $host     Database host
+     * @param string $port     Database port
+     *
+     * @return ?string Path to the file, or null when it could not be created
+     */
+    private function writeDefaultsFile(string $user, string $password, string $host, string $port): ?string
+    {
+        $path = tempnam(sys_get_temp_dir(), 'ubix-diff-');
+        if ($path === false) {
+            return null;
+        }
+
+        if (chmod($path, 0600) === false) {
+            unlink($path);
+
+            return null;
+        }
+
+        $contents = sprintf(
+            "[client]\nuser=%s\npassword=%s\nhost=%s\nport=%s\n",
+            $user,
+            $password,
+            $host,
+            $port,
+        );
+
+        if (file_put_contents($path, $contents) === false) {
+            unlink($path);
+
+            return null;
+        }
+
+        return $path;
     }
 
     /**

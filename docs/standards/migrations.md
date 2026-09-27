@@ -313,10 +313,22 @@ The `sql/<DB>.sql` files in the repo are the **frozen pre-migration baseline** (
 
 `migrate:diff` ships two modes:
 
-1. **`--mode=replay` (canonical, v2 work).** Rebuilds a scratch DB from the baseline dump + every applied migration, diffs the live cluster against that. This is the only mode that returns a clean signal under the frozen-baseline policy. **Not implemented in v1** — the scratch-DB lifecycle on the runner host needs to land first.
+1. **`--mode=replay` (canonical).** Diffs the live cluster against the schema rebuilt from the baseline dump + every migration. The only mode that returns a clean signal under the frozen-baseline policy, and therefore the only one safe to gate on.
+
+   Shipped 2026-09-27. The scratch-DB lifecycle that blocked it turned out to need no new infrastructure: `DATABASE_PREFIX` already rewrites qualified schema references (`MigrationApplyService::prefixQualifiedReferences()`), and the baseline dumps are unqualified, so the expected schema can be rebuilt *beside* the unit-test schema on the existing `TEST_MYSQL_*` connection rather than on a new server. Three composed steps:
+
+   ```sh
+   bin/ubix database:resetSchema <env> --prefix=REPLAY_          # baseline  -> REPLAY_<db> on the TEST connection
+   bin/ubix migrate:up --target=test --prefix=REPLAY_ --yes      # every migration on top
+   bin/ubix migrate:diff --target=<tier> --mode=replay --replay-prefix=REPLAY_
+   ```
+
+   The tier being checked is only ever **read** (one `mariadb-dump --no-data`), so a drift check can run against production without holding `CREATE` or `DROP` there. Credentials go in a `0600` defaults file, never argv.
+
+   Reading the output: **`extraInLive` is drift** — something in the live schema that no migration created, which is what the gate fails on. **`missingFromLive` is pending migrations** — expected on a tier that is behind, and informational rather than a failure.
 2. **`--mode=reference-dump` (v1 default, advisory only).** Diffs live against the baseline dump. After any migration applies, "extra in live" rows include both real out-of-band drift AND the entire migration history's effect — output is structurally noisy. Useful for human inspection ("did anything weird land that's not in any migration?") but not safe to use as a CI gate.
 
-CI's drift policy in §10 currently uses the v1 reference-dump mode; treat its `migrate:diff` failures as advisory until replay-mode ships. The tiered alerting (paging on prod) is the operational gate of last resort.
+CI's drift policy in §10 may now use replay mode as a real gate. `reference-dump` remains available and remains advisory — the command prints a warning saying so on every run in that mode, and `SchemaDiffMode::isGateable()` exists so a caller cannot gate on it by accident. The tiered alerting (paging on prod) stays the operational gate of last resort.
 
 `migrate:status --verify` (checksum drift on applied migrations — §7) is unaffected by the frozen-baseline policy and remains a hard CI gate per §10.
 
