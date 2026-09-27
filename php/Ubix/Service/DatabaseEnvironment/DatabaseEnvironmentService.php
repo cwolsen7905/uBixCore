@@ -94,7 +94,7 @@ final class DatabaseEnvironmentService
     }
 
     /**
-     * Label an unlabelled database; leaves a labelled one, and test/sandbox, alone
+     * Label an unlabelled database; leaves a labelled one alone, and gives test/sandbox the table only
      *
      * @param Env    $environment The environment
      * @param string $actor       Who
@@ -103,11 +103,16 @@ final class DatabaseEnvironmentService
      */
     public function labelIfUnlabelled(Env $environment, string $actor): bool
     {
+        $this->writer->ensureTable();
+
+        // The test and sandbox targets get the (empty) table but never a label. The table
+        // must exist on a replay built with `migrate:up --target=test`, or a
+        // schema-drift check that compares a tier against that replay reports
+        // the table as drift on every tier.
         if (!$this->participates($environment)) {
             return false;
         }
 
-        $this->writer->ensureTable();
         if ($this->reader->current() !== null) {
             return false;
         }

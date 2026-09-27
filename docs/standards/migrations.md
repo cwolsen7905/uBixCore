@@ -592,7 +592,9 @@ production. So the **database carries its own label**: one row in `SYSTEMS.Datab
   run labels the database `X` (the migration account creates the table; no migration file does,
   because the check must run before any migration).
 - Only **dev, staging and prod** take part. `test` and `sandbox` are scratch databases several
-  pipelines share on purpose; they are never labelled and never refused.
+  pipelines share on purpose; they are never labelled and never refused. They do get the (empty)
+  table: a schema-drift check that compares a tier with a `migrate:up --target=test` replay would
+  otherwise report the table as drift on every tier (v0.25).
 - **The label travels with the data.** A server rebuilt from a production dump arrives labelled
   `prod`, and its staging pipeline refuses it until someone changes the label **deliberately**:
   `database:label --target=staging --from=prod` (migration credentials; `--from` must name the
