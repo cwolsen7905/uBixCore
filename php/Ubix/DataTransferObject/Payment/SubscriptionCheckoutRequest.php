@@ -33,6 +33,7 @@ final readonly class SubscriptionCheckoutRequest implements Dto
      * @param ?string               $customerReference The provider's own id for a payer this host has transacted with before, if it has one; null creates a new customer on the provider's side
      * @param string                $clientReference   The host's own opaque reference, echoed back on every webhook about this subscription
      * @param array<string, string> $metadata          Additional host-side key/value context; never secret or personally identifying, since it is visible in the provider's dashboard
+     * @param array<int, string>    $couponReferences  Provider coupon ids to apply (see createCoupon()); empty for none
      */
     public function __construct(
         public readonly int $amountMinorUnits = 0,
@@ -44,6 +45,7 @@ final readonly class SubscriptionCheckoutRequest implements Dto
         public readonly ?string $customerReference = null,
         public readonly string $clientReference = '',
         public readonly array $metadata = [],
+        public readonly array $couponReferences = [],
     ) {
     }
 }

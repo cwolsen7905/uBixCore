@@ -21,11 +21,13 @@ final readonly class PendingSubscriptionRequest implements Dto
      * @param string                $customerReference The provider's customer id
      * @param string                $priceReference    The provider's recurring price id
      * @param array<string, string> $metadata          Host-side context stored on the subscription and echoed on every invoice webhook
+     * @param array<int, string>    $couponReferences  Provider coupon ids to apply (see createCoupon()); empty for none
      */
     public function __construct(
         public readonly string $customerReference = '',
         public readonly string $priceReference = '',
         public readonly array $metadata = [],
+        public readonly array $couponReferences = [],
     ) {
     }
 }

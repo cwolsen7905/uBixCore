@@ -11,6 +11,7 @@ use Stripe\HttpClient\ClientInterface as Client;
 use Stripe\HttpClient\CurlClient;
 use Stripe\StripeClient;
 use Ubix\DataTransferObject\Payment\ConnectedAccountRequest;
+use Ubix\DataTransferObject\Payment\CouponRequest;
 use Ubix\DataTransferObject\Payment\CustomerRequest;
 use Ubix\DataTransferObject\Payment\OneOffCheckoutRequest;
 use Ubix\DataTransferObject\Payment\PaymentIntentRequest;
@@ -360,6 +361,79 @@ final class StripePaymentProviderServiceTest extends UbixConcreteClassOrEnumTest
 
         $this->expectException(DtoException::class);
         $this->provider()->createPendingSubscription(new PendingSubscriptionRequest(customerReference: 'cus_1', priceReference: 'price_1'));
+    }
+
+    /**
+     * A percentage coupon for N months repeats; a fixed amount with no months applies once
+     *
+     * @return void
+     */
+    public function testACouponIsPercentForMonthsOrAmountOnce(): void
+    {
+        $this->cannedHttpClient(['id' => 'co_1', 'object' => 'coupon']);
+
+        $id = $this->provider()->createCoupon(new CouponRequest(percentOff: 25, durationMonths: 3, name: 'EASTER25', metadata: ['promotionId' => '4']));
+
+        $this->assertSame('co_1', $id);
+        $this->assertSame(25, $this->sentParameters['percent_off'] ?? null);
+        $this->assertSame('repeating', $this->sentParameters['duration'] ?? null);
+        $this->assertSame(3, $this->sentParameters['duration_in_months'] ?? null);
+
+        $this->cannedHttpClient(['id' => 'co_2', 'object' => 'coupon']);
+        $this->provider()->createCoupon(new CouponRequest(amountOffMinorUnits: 500, currency: 'USD'));
+
+        $this->assertSame(500, $this->sentParameters['amount_off'] ?? null);
+        $this->assertSame('usd', $this->sentParameters['currency'] ?? null);
+        $this->assertSame('once', $this->sentParameters['duration'] ?? null);
+    }
+
+    /**
+     * Both a percentage and an amount, or neither, is refused before any request
+     *
+     * @return void
+     */
+    public function testACouponMustBeExactlyOneKind(): void
+    {
+        $this->expectException(DtoException::class);
+        $this->provider()->createCoupon(new CouponRequest(percentOff: 10, amountOffMinorUnits: 100, currency: 'usd'));
+    }
+
+    /**
+     * A pending subscription carries its coupons as `discounts`
+     *
+     * @return void
+     */
+    public function testAPendingSubscriptionCarriesItsCoupons(): void
+    {
+        $this->cannedHttpClient([
+            'id'             => 'sub_3',
+            'latest_invoice' => ['confirmation_secret' => ['client_secret' => 'pi_3_secret_z', 'type' => 'payment_intent'], 'id' => 'in_3', 'object' => 'invoice'],
+            'object'         => 'subscription',
+        ]);
+
+        $this->provider()->createPendingSubscription(new PendingSubscriptionRequest(customerReference: 'cus_1', priceReference: 'price_1', couponReferences: ['co_1']));
+
+        $discounts = $this->sentParameters['discounts'] ?? null;
+        $this->assertIsArray($discounts);
+        $this->assertSame(['coupon' => 'co_1'], $this->byName((array) ($discounts[0] ?? [])));
+    }
+
+    /**
+     * No coupons, no `discounts` parameter at all
+     *
+     * @return void
+     */
+    public function testNoCouponsSendsNoDiscounts(): void
+    {
+        $this->cannedHttpClient([
+            'id'             => 'sub_4',
+            'latest_invoice' => ['confirmation_secret' => ['client_secret' => 'pi_4_secret_z', 'type' => 'payment_intent'], 'id' => 'in_4', 'object' => 'invoice'],
+            'object'         => 'subscription',
+        ]);
+
+        $this->provider()->createPendingSubscription(new PendingSubscriptionRequest(customerReference: 'cus_1', priceReference: 'price_1'));
+
+        $this->assertArrayNotHasKey('discounts', $this->sentParameters);
     }
 
     /**

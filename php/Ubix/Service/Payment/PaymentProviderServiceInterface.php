@@ -8,6 +8,7 @@ use Ubix\DataTransferObject\Payment\CardSummary;
 use Ubix\DataTransferObject\Payment\CheckoutSession;
 use Ubix\DataTransferObject\Payment\ConnectedAccount;
 use Ubix\DataTransferObject\Payment\ConnectedAccountRequest;
+use Ubix\DataTransferObject\Payment\CouponRequest;
 use Ubix\DataTransferObject\Payment\CustomerRequest;
 use Ubix\DataTransferObject\Payment\OneOffCheckoutRequest;
 use Ubix\DataTransferObject\Payment\PaymentIntentRequest;
@@ -210,6 +211,18 @@ interface PaymentProviderServiceInterface
      * @return string The provider's price id
      */
     public function createRecurringPrice(RecurringPriceRequest $request): string;
+
+    /**
+     * Create a discount, once, for reuse by every subscription it applies to
+     *
+     * What is charged, invoiced and reported by webhook is the discounted
+     * amount, so a host's ledger records what was actually paid.
+     *
+     * @param CouponRequest $request Percentage or fixed amount, and for how long
+     *
+     * @return string The provider's coupon id, for `couponReferences` on a subscription request
+     */
+    public function createCoupon(CouponRequest $request): string;
 
     /**
      * Create a subscription that waits for its first payment, confirmed in the page
