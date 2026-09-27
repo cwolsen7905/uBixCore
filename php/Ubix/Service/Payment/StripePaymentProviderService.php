@@ -14,6 +14,7 @@ use Ubix\DataTransferObject\Payment\CardSummary;
 use Ubix\DataTransferObject\Payment\CheckoutSession;
 use Ubix\DataTransferObject\Payment\ConnectedAccount;
 use Ubix\DataTransferObject\Payment\ConnectedAccountRequest;
+use Ubix\DataTransferObject\Payment\CouponRequest;
 use Ubix\DataTransferObject\Payment\CustomerRequest;
 use Ubix\DataTransferObject\Payment\OneOffCheckoutRequest;
 use Ubix\DataTransferObject\Payment\PaymentIntentRequest;
@@ -110,6 +111,7 @@ final class StripePaymentProviderService implements PaymentProviderService
             clientRef:   $request->clientReference,
             metadata:    $request->metadata,
             recurring:   ['interval' => 'month', 'interval_count' => max(1, $request->intervalMonths)],
+            coupons:     $request->couponReferences,
         );
     }
 
@@ -369,11 +371,55 @@ final class StripePaymentProviderService implements PaymentProviderService
 
     /**
      * {@inheritDoc}
+     *
+     * @throws DtoException When the discount is not exactly one of a percentage or an amount, or the provider refuses
+     */
+    public function createCoupon(CouponRequest $request): string
+    {
+        $invalid    = 'A coupon is exactly one of 1-100 percent off or a positive amount off with a currency, for at least one month';
+        $percent    = $request->percentOff;
+        $amount     = $request->amountOffMinorUnits;
+        $currency   = $request->currency ?? '';
+        $parameters = ['metadata' => $request->metadata];
+
+        if ($percent !== null && $amount === null && $percent >= 1 && $percent <= 100) {
+            $parameters['percent_off'] = $percent;
+        } elseif ($amount !== null && $percent === null && $amount > 0 && $currency !== '') {
+            $parameters['amount_off'] = $amount;
+            $parameters['currency']   = strtolower($currency);
+        } else {
+            throw new DtoException($invalid, ExceptionCode::PAYMENT_PROVIDER_OPERATION_FAILED->value);
+        }
+
+        $months = $request->durationMonths;
+        if ($months === null) {
+            $parameters['duration'] = 'once';
+        } elseif ($months >= 1) {
+            $parameters['duration']           = 'repeating';
+            $parameters['duration_in_months'] = $months;
+        } else {
+            throw new DtoException($invalid, ExceptionCode::PAYMENT_PROVIDER_OPERATION_FAILED->value);
+        }
+
+        if ($request->name !== '') {
+            $parameters['name'] = mb_substr($request->name, 0, 40);
+        }
+
+        $coupon = $this->call('create a coupon', function () use ($parameters): object {
+            return $this->client()->coupons->create($parameters);
+        });
+
+        return $this->idOf($coupon);
+    }
+
+    /**
+     * {@inheritDoc}
      */
     public function createPendingSubscription(PendingSubscriptionRequest $request): PendingPayment
     {
-        $subscription = $this->call('create a subscription', function () use ($request): object {
-            return $this->client()->subscriptions->create([
+        $discounts    = $this->discountsFor($request->couponReferences);
+        $subscription = $this->call('create a subscription', function () use ($request, $discounts): object {
+            $parameters = [
                 'customer'         => $request->customerReference,
                 // Basil: the first invoice's confirmation secret replaces the
                 // payment intent's client secret.
@@ -384,7 +430,12 @@ final class StripePaymentProviderService implements PaymentProviderService
                 // confirms in the page, and expires if they never do.
                 'payment_behavior' => 'default_incomplete',
                 'payment_settings' => ['save_default_payment_method' => 'on_subscription'],
-            ]);
+            ];
+            if ($discounts !== []) {
+                $parameters['discounts'] = $discounts;
+            }
+
+            return $this->client()->subscriptions->create($parameters);
         });
 
         $confirmation = $this->property($this->property($subscription, 'latest_invoice'), 'confirmation_secret');
@@ -804,6 +855,25 @@ final class StripePaymentProviderService implements PaymentProviderService
     }
 
     /**
+     * Stripe's `discounts` entries for the given coupons
+     *
+     * @param array<int, string> $coupons Coupon ids
+     *
+     * @return list<array{coupon: string}> One entry per coupon; empty for none
+     */
+    private function discountsFor(array $coupons): array
+    {
+        $discounts = [];
+        foreach ($coupons as $coupon) {
+            if ($coupon !== '') {
+                $discounts[] = ['coupon' => $coupon];
+            }
+        }
+
+        return $discounts;
+    }
+
+    /**
      * Create a hosted Checkout Session in either mode
      *
      * @param string                                        $mode        Either `payment` or `subscription`
@@ -816,6 +886,7 @@ final class StripePaymentProviderService implements PaymentProviderService
      * @param string                                        $clientRef   The host's own opaque reference
      * @param array<string, string>                         $metadata    Host-side context
      * @param ?array{interval: string, interval_count: int} $recurring   Stripe's recurring block, or null for one-off
+     * @param array<int, string>                            $coupons     Coupon ids to apply; empty for none
      *
      * @throws DtoException When the provider rejects the request or is unreachable
      *
@@ -832,6 +903,7 @@ final class StripePaymentProviderService implements PaymentProviderService
         string $clientRef,
         array $metadata,
         ?array $recurring,
+        array $coupons = [],
     ): CheckoutSession {
         if ($amount <= 0 || $currency === '') {
             throw new DtoException(
@@ -869,6 +941,11 @@ final class StripePaymentProviderService implements PaymentProviderService
 
         if ($customer !== null && $customer !== '') {
             $parameters['customer'] = $customer;
+        }
+
+        $discounts = $this->discountsFor($coupons);
+        if ($discounts !== []) {
+            $parameters['discounts'] = $discounts;
         }
 
         // Also stamped on the subscription itself: a Checkout Session's metadata
