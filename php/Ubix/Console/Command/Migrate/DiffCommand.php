@@ -10,6 +10,7 @@ use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface as Output;
 use Ubix\Console\Command\AbstractCommand as Command;
 use Ubix\Console\Command\AbstractMigrationCommand as MigrationCommand;
+use Ubix\Enum\Migration\SchemaDiffMode;
 use Ubix\Service\Migration\MigrationConnectionTargetService;
 use Ubix\Service\Migration\SchemaDiffService;
 
@@ -64,7 +65,21 @@ final class DiffCommand extends MigrationCommand
     {
         $this->setDescription('Compare each live database schema against its checked-in `sql/<DB>.sql` reference dump')
             ->setHelp('Diffs the live cluster schema (via `mariadb-dump --no-data`) against the checked-in `sql/<DB>.sql` for each Ubix-consumed database. Use `--database` to scope to one schema. Exits non-zero on any drift or comparison error.')
-            ->addOption('database', null, InputOption::VALUE_REQUIRED, 'Restrict to one target database');
+            ->addOption('database', null, InputOption::VALUE_REQUIRED, 'Restrict to one target database')
+            ->addOption(
+                'mode',
+                null,
+                InputOption::VALUE_REQUIRED,
+                'reference-dump (default, advisory) or replay (canonical, gateable — see migrations standard §9)',
+                SchemaDiffMode::REFERENCE_DUMP->value,
+            )
+            ->addOption(
+                'replay-prefix',
+                null,
+                InputOption::VALUE_REQUIRED,
+                'Replay mode: the prefix the expected schema was rebuilt under on the TEST connection',
+                '',
+            );
         $this->configureTargetOptions();
     }
 
@@ -80,7 +95,28 @@ final class DiffCommand extends MigrationCommand
         $databaseFilterRaw = $input->getOption('database');
         $databaseFilter    = is_string($databaseFilterRaw) && $databaseFilterRaw !== '' ? $databaseFilterRaw : null;
 
-        $results  = $this->diffService->diffAll($databaseFilter);
+        $modeRaw = $input->getOption('mode');
+        $mode    = SchemaDiffMode::tryFrom(is_string($modeRaw) ? $modeRaw : '');
+        if ($mode === null) {
+            $output->writeln(sprintf(
+                '<error>Unknown --mode `%s`.</error> Use one of: %s',
+                is_string($modeRaw) ? $modeRaw : '',
+                implode(', ', array_column(SchemaDiffMode::cases(), 'value')),
+            ));
+
+            return Command::FAILURE;
+        }
+
+        $prefixRaw    = $input->getOption('replay-prefix');
+        $replayPrefix = is_string($prefixRaw) ? $prefixRaw : '';
+
+        // Printed on every advisory run, because the trap this whole option exists to
+        // avoid is treating a structurally noisy signal as a gate (§9).
+        if (! $mode->isGateable()) {
+            $output->writeln('<comment>Advisory mode.</comment> reference-dump compares against the frozen pre-migration baseline, so everything any migration added reads as drift. Use --mode=replay for a signal worth failing a build on.');
+        }
+
+        $results  = $this->diffService->diffAll($databaseFilter, $mode, $replayPrefix);
         $exitCode = Command::SUCCESS;
 
         foreach ($results as $result) {

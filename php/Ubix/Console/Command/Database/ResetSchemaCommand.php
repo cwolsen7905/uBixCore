@@ -7,6 +7,7 @@ namespace Ubix\Console\Command\Database;
 use Psr\Log\LoggerInterface as Logger;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface as Input;
+use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface as Output;
 use Ubix\Console\Command\AbstractCommand as Command;
 use Ubix\Enum\Env;
@@ -47,6 +48,15 @@ final class ResetSchemaCommand extends Command
             $env = Env::from($envArg);
         } catch (ValueError $e) {
             $output->writeln('<error>Invalid environment specified.</error>');
+            return Command::FAILURE;
+        }
+
+        $prefixRaw = $input->getOption('prefix');
+        $prefix    = is_string($prefixRaw) ? $prefixRaw : '';
+        if ($prefix !== '' && preg_match('/^[A-Za-z0-9_]+$/', $prefix) !== 1) {
+            // Interpolated straight into a CREATE DATABASE, so the charset is the guard.
+            $output->writeln('<error>--prefix must be alphanumeric and underscores only.</error>');
+
             return Command::FAILURE;
         }
 
@@ -93,12 +103,17 @@ final class ResetSchemaCommand extends Command
             $client = $this->clientBinary();
 
             foreach ($databases as $database) {
+                // The baseline file is named for the unprefixed database; the schema it
+                // is loaded into carries the prefix. Keeping those two apart is the whole
+                // point -- `sql/<db>.sql` must stay findable by its real name.
+                $targetSchema = $prefix . $database;
+
                 // Create database if it does not exist
                 $command = sprintf(
                     '%s --defaults-extra-file=%s -e %s',
                     $client,
                     escapeshellarg($defaultsFile),
-                    escapeshellarg('CREATE DATABASE IF NOT EXISTS ' . $database),
+                    escapeshellarg('CREATE DATABASE IF NOT EXISTS ' . $targetSchema),
                 );
                 $result  = $this->processService->executeAsSubprocess($command);
                 if ($result->exitCode !== 0) {
@@ -108,11 +123,14 @@ final class ResetSchemaCommand extends Command
                     return Command::FAILURE;
                 }
 
+                // The baseline dumps are unqualified, so they land in whichever schema
+                // the client connects to -- which is what makes a prefixed rebuild work
+                // without rewriting the file.
                 $command = sprintf(
                     '%s --defaults-extra-file=%s %s < %s',
                     $client,
                     escapeshellarg($defaultsFile),
-                    escapeshellarg($database),
+                    escapeshellarg($targetSchema),
                     escapeshellarg($this->projectRoot->getPath('sql', $database . '.sql')),
                 );
                 $result  = $this->processService->executeAsSubprocess($command);
@@ -122,7 +140,7 @@ final class ResetSchemaCommand extends Command
                     $output->writeln('<error>STDERR: ' . $result->stderrOutput . '</error>');
                     return Command::FAILURE;
                 }
-                $output->writeln('<info>Successfully rebuilt schema: ' . $database . '</info>');
+                $output->writeln('<info>Successfully rebuilt schema: ' . $targetSchema . '</info>');
             }
         } finally {
             unlink($defaultsFile);
@@ -147,6 +165,12 @@ HELP,
             'env',
             InputArgument::REQUIRED,
             'The environment to build',
+        )->addOption(
+            'prefix',
+            null,
+            InputOption::VALUE_REQUIRED,
+            'Build each baseline into `<prefix><database>` instead of `<database>`. Used by `migrate:diff --mode=replay` to rebuild the expected schema beside the unit-test one without colliding with it. Alphanumeric and underscores only.',
+            '',
         );
     }
 
