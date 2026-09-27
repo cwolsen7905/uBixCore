@@ -26,12 +26,12 @@ use Ubix\Tests\UbixConcreteClassOrEnumTestCaseInterface as IUbixConcreteClassOrE
 final class VaultCredentialResolverServiceTest extends UbixConcreteClassOrEnumTestCase implements IUbixConcreteClassOrEnumTestCase
 {
     private const ENV = [
-        'VAULT_TOKEN', 'VAULT_K8S_ROLE', 'VAULT_DB_KV_PATH', 'VAULT_APP_KV_PATH', 'VAULT_DB_STRATEGY',
+        'VAULT_TOKEN', 'VAULT_K8S_ROLE', 'VAULT_DB_KV_PATH', 'VAULT_APP_KV_PATH', 'VAULT_APP_KV_PATHS', 'VAULT_DB_STRATEGY',
         'VAULT_DB_ROLE', 'VAULT_TEST_DB_KV_PATH',
         'MYSQL_READ_USERNAME', 'MYSQL_READ_PASSWORD', 'MYSQL_WRITE_USERNAME', 'MYSQL_WRITE_PASSWORD',
         'TEST_MYSQL_WRITE_HOST', 'TEST_MYSQL_WRITE_PORT', 'TEST_MYSQL_WRITE_DATABASE',
         'TEST_MYSQL_WRITE_USERNAME', 'TEST_MYSQL_WRITE_PASSWORD',
-        'API_BEARER_TOKENS', 'lower_case_key', 'VAULT_ADDR_OVERRIDE',
+        'API_BEARER_TOKENS', 'lower_case_key', 'VAULT_ADDR_OVERRIDE', 'OWN_KEY', 'SHARED_KEY', 'OTHER_KEY',
     ];
 
     private const VAULT_ADDRESS = 'https://vault.test';
@@ -392,6 +392,76 @@ final class VaultCredentialResolverServiceTest extends UbixConcreteClassOrEnumTe
         $this->assertSame(self::VAULT_ADDRESS . '/v1/secret/data/app/db', (string) $this->requests[0]->getUri());
         $this->assertSame(self::VAULT_ADDRESS . '/v1/secret/data/app/api', (string) $this->requests[1]->getUri());
         $this->assertSame('test-token', $this->requests[1]->getHeaderLine('X-Vault-Token'));
+    }
+
+    /**
+     * VAULT_APP_KV_PATH then VAULT_APP_KV_PATHS are read in order, repeats skipped, and the first definition of a key wins
+     *
+     * @return void
+     */
+    public function testReadsSeveralAppPathsInOrderAndTheFirstDefinitionWins(): void
+    {
+        putenv('VAULT_TOKEN=test-token');
+        putenv('VAULT_APP_KV_PATH=app/admin');
+        putenv('VAULT_APP_KV_PATHS= app/api , app/admin,');
+
+        $logger = $this->createMock(Logger::class);
+        $logger->expects($this->once())
+            ->method('warning')
+            ->with($this->stringContains('more than one'), $this->callback(
+                static function (array $context): bool {
+                    return $context['key'] === 'SHARED_KEY' && $context['kept'] === 'app/admin' && !in_array('from-api', $context, true);
+                },
+            ));
+
+        $this->resolver([
+            $this->kv(self::FULL_DB_SECRET),
+            $this->kv(['OWN_KEY' => 'own', 'SHARED_KEY' => 'from-admin']),
+            $this->kv(['SHARED_KEY' => 'from-api', 'OTHER_KEY' => 'other']),
+        ], $logger)->hydrateEnvironment(self::VAULT_ADDRESS);
+
+        $this->assertCount(3, $this->requests, 'app/admin is listed twice but read once');
+        $this->assertSame(self::VAULT_ADDRESS . '/v1/secret/data/app/admin', (string) $this->requests[1]->getUri());
+        $this->assertSame(self::VAULT_ADDRESS . '/v1/secret/data/app/api', (string) $this->requests[2]->getUri());
+        $this->assertSame('own', getenv('OWN_KEY'));
+        $this->assertSame('other', getenv('OTHER_KEY'));
+        $this->assertSame('from-admin', getenv('SHARED_KEY'), 'The first path to define a key wins');
+    }
+
+    /**
+     * VAULT_APP_KV_PATHS works without VAULT_APP_KV_PATH
+     *
+     * @return void
+     */
+    public function testPathsListWorksOnItsOwn(): void
+    {
+        putenv('VAULT_TOKEN=test-token');
+        putenv('VAULT_APP_KV_PATHS=app/api');
+
+        $this->resolver([$this->kv(self::FULL_DB_SECRET), $this->kv(['API_BEARER_TOKENS' => 'one'])])
+            ->hydrateEnvironment(self::VAULT_ADDRESS);
+
+        $this->assertSame('one', getenv('API_BEARER_TOKENS'));
+    }
+
+    /**
+     * Each configured path must yield something: a later empty path fails closed even when an earlier one did not
+     *
+     * @return void
+     */
+    public function testFailsClosedWhenAnyListedPathIsEmpty(): void
+    {
+        putenv('VAULT_TOKEN=test-token');
+        putenv('VAULT_APP_KV_PATHS=app/admin,app/api');
+
+        $this->expectException(RuntimeException::class);
+        $this->expectExceptionMessage('app/api');
+
+        $this->resolver([
+            $this->kv(self::FULL_DB_SECRET),
+            $this->kv(['OWN_KEY' => 'own']),
+            $this->kv(['lower_case_only' => 'x']),
+        ])->hydrateEnvironment(self::VAULT_ADDRESS);
     }
 
     /**
