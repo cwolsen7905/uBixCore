@@ -25,9 +25,11 @@ use Ubix\Service\ProjectRootService;
  * 1. `mariadb-dump --no-data --skip-comments --skip-extended-insert
  *    --skip-add-drop-table <DB>` for the live snapshot.
  * 2. Read `sql/<DB>.sql` for the reference snapshot.
- * 3. Normalise both — strip the version-banner header lines, strip
- *    `AUTO_INCREMENT=N` counters, strip the dump-timestamp line,
- *    drop blank lines.
+ * 3. Normalise both through `SchemaDumpNormaliserService`, which drops
+ *    what varies between two servers rendering one schema (dump chrome,
+ *    `AUTO_INCREMENT=N`, a column-level charset/collation that only
+ *    repeats the table default, MariaDB's auto-generated `json_valid`
+ *    check) and attributes every line to its table.
  * 4. Diff line-by-line, splitting into `extraInLive` (drift in the
  *    live cluster) and `missingFromLive` (un-applied migrations).
  *
@@ -42,12 +44,14 @@ final class SchemaDiffService
      * @param ProcessService                     $processService     Shells out to `mariadb-dump`
      * @param MigrationCredentialResolverService $credentialResolver Picks MySQL connection params; prefers `MYSQL_MIGRATION_*` over `MYSQL_WRITE_*`
      * @param ProjectRootService                 $projectRoot        Resolves `sql/` under the host project root
+     * @param SchemaDumpNormaliserService        $normaliser         Reduces a dump to comparable, table-attributed lines
      */
     public function __construct(
         private Logger $logger, // @phpstan-ignore property.onlyWritten (Logger is a required dependency of most uBixCore classes but has not been implemented in this class yet)
         private ProcessService $processService,
         private MigrationCredentialResolverService $credentialResolver,
         private ProjectRootService $projectRoot,
+        private SchemaDumpNormaliserService $normaliser,
     ) {
     }
 
@@ -158,8 +162,8 @@ final class SchemaDiffService
             );
         }
 
-        $referenceLines = $this->normalise($reference);
-        $liveLines      = $this->normalise($live);
+        $referenceLines = $this->normaliser->normalise($reference);
+        $liveLines      = $this->normaliser->normalise($live);
 
         $extraInLive     = array_values(array_diff($liveLines, $referenceLines));
         $missingFromLive = array_values(array_diff($referenceLines, $liveLines));
@@ -294,77 +298,6 @@ final class SchemaDiffService
         }
 
         return $path;
-    }
-
-    /**
-     * Normalise a SQL dump for diffing. Returns the cleaned content
-     * as an array of trimmed non-empty lines.
-     *
-     * Stripped: leading/trailing whitespace, blank lines, mariadb-dump
-     * version-banner lines (`-- MySQL dump …`, `-- Host:`,
-     * `-- Server version`, `-- Dump completed on …`), the
-     * conditional-comment SET-block, and `AUTO_INCREMENT=N`
-     * counters (which drift naturally as rows are inserted and
-     * are not a real schema-difference).
-     *
-     * @param string $dump Raw SQL dump output
-     *
-     * @return string[] Cleaned non-empty lines
-     */
-    private function normalise(string $dump): array
-    {
-        $stripped = preg_replace('/\s+AUTO_INCREMENT=\d+/i', '', $dump) ?? $dump;
-
-        $lines = preg_split('/\r\n|\n|\r/', $stripped) ?: [];
-        $clean = [];
-        foreach ($lines as $line) {
-            $trimmed = trim($line);
-            if ($trimmed === '') {
-                continue;
-            }
-            if ($this->isIgnorableHeaderLine($trimmed)) {
-                continue;
-            }
-            $clean[] = $trimmed;
-        }
-        return $clean;
-    }
-
-    /**
-     * Whether a line should be dropped from the normalised output —
-     * mariadb-dump banners that vary by host / version / time and the
-     * `/*!N SET …*` conditional-compatibility block.
-     *
-     * @param string $trimmed Line with leading / trailing whitespace stripped
-     *
-     * @return bool True when the line should be dropped
-     */
-    private function isIgnorableHeaderLine(string $trimmed): bool
-    {
-        // All `--` SQL comment lines — covers mariadb-dump banner
-        // header (`-- MySQL dump`, `-- Host:`, `-- Server version`,
-        // `-- Dump completed on …`), per-table narration
-        // (`-- Table structure for table …`, `-- Dumping data for
-        // table …`), and any other operator commentary. Schema
-        // structure lives in CREATE / ALTER, not in comments.
-        if (str_starts_with($trimmed, '--')) {
-            return true;
-        }
-        // MariaDB conditional-compatibility comment lines: `/*!N SET …*/;`
-        // (MySQL-style) and `/*M! … */` (MariaDB-only banner like
-        // "enable the sandbox mode"). Both vary by dump-source server
-        // version and aren't real schema state.
-        if (str_starts_with($trimmed, '/*!') && str_ends_with($trimmed, '*/;')) {
-            return true;
-        }
-        if (str_starts_with($trimmed, '/*M!') && (str_ends_with($trimmed, '*/') || str_ends_with($trimmed, '*/;'))) {
-            return true;
-        }
-        // `DROP TABLE IF EXISTS` setup chrome — present when the dump
-        // is taken without `--skip-add-drop-table` and absent when it
-        // is. Strip both forms so the diff doesn't false-positive on
-        // dump-flag differences.
-        return preg_match('/^DROP\s+TABLE\s+IF\s+EXISTS\b/i', $trimmed) === 1;
     }
 
     /**
