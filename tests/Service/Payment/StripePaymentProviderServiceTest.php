@@ -437,6 +437,22 @@ final class StripePaymentProviderServiceTest extends UbixConcreteClassOrEnumTest
     }
 
     /**
+     * Removing a subscription's discount deletes it at the provider and returns quietly
+     *
+     * @return void
+     */
+    public function testRemovingADiscountDeletesIt(): void
+    {
+        $this->cannedHttpClient(['deleted' => true, 'id' => 'di_1', 'object' => 'discount']);
+
+        $this->provider()->removeSubscriptionDiscount('sub_1');
+
+        // The canned client answered; reaching here without an exception is the
+        // contract -- nothing is returned.
+        $this->assertSame([], $this->sentParameters);
+    }
+
+    /**
      * A yearly price is billed month x 12, exactly as the Checkout path bills it
      *
      * @return void

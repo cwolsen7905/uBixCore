@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Ubix\Service\Payment;
 
 use Psr\Log\LoggerInterface as Logger;
+use Stripe\Exception\InvalidRequestException;
 use Stripe\Exception\SignatureVerificationException;
 use Stripe\StripeClient;
 use Stripe\Subscription;
@@ -224,6 +225,28 @@ final class StripePaymentProviderService implements PaymentProviderService
      * {@inheritDoc}
      *
      * @throws DtoException When the provider rejects the request or is unreachable
+     */
+    public function removeSubscriptionDiscount(string $providerSubscriptionId): void
+    {
+        try {
+            // DELETE /v1/subscriptions/{id}/discount. Stripe answers 404 when
+            // there is no discount to remove, which is the outcome we want.
+            $this->client()->subscriptions->deleteDiscount($providerSubscriptionId);
+        } catch (InvalidRequestException $e) {
+            if ($e->getHttpStatus() === 404 && str_contains(strtolower($e->getMessage()), 'discount')) {
+                return;
+            }
+
+            throw new DtoException('Could not remove that subscription\'s discount at the provider', ExceptionCode::PAYMENT_SUBSCRIPTION_NOT_FOUND->value, previous: $e);
+        } catch (Throwable $e) {
+            throw new DtoException('Could not remove that subscription\'s discount at the provider', ExceptionCode::PAYMENT_SUBSCRIPTION_NOT_FOUND->value, previous: $e);
+        }
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * @throws DtoException When no such subscription exists at the provider, or it is unreachable
      */
     public function cancelSubscriptionNow(string $providerSubscriptionId): ProviderSubscription
     {
