@@ -21,6 +21,7 @@ use Ubix\DataTransferObject\Payment\OneOffCheckoutRequest;
 use Ubix\DataTransferObject\Payment\PaymentIntentRequest;
 use Ubix\DataTransferObject\Payment\PendingPayment;
 use Ubix\DataTransferObject\Payment\PendingSubscriptionRequest;
+use Ubix\DataTransferObject\Payment\ProviderSettlement;
 use Ubix\DataTransferObject\Payment\ProviderSubscription;
 use Ubix\DataTransferObject\Payment\RecurringPriceRequest;
 use Ubix\DataTransferObject\Payment\RefundResult;
@@ -307,6 +308,61 @@ final class StripePaymentProviderService implements PaymentProviderService
             // Positive, always. A host applies its own ledger sign convention.
             amountMinorUnits:         abs((int) $refund->amount),
             currency:                 (string) $refund->currency,
+        );
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * Reads the balance transaction behind the payment's latest charge, which is
+     * where Stripe reports what it took. It is fetched by expanding
+     * `latest_charge.balance_transaction` on the intent: a webhook payload never
+     * carries it, so a caller reacting to `payment_intent.succeeded` has to come
+     * back for it.
+     *
+     * Returns null in two ordinary cases that are not errors: the intent has no
+     * charge yet, and the charge has not settled, so Stripe has no balance
+     * transaction to report. Both mean "not known yet" and both resolve on their
+     * own; a caller retries rather than recording a zero.
+     *
+     * @throws DtoException When the provider refuses the lookup or is unreachable
+     */
+    public function getSettlementForPayment(string $providerPaymentReference): ?ProviderSettlement
+    {
+        try {
+            $intent = $this->client()->paymentIntents->retrieve(
+                $providerPaymentReference,
+                ['expand' => ['latest_charge.balance_transaction']],
+            );
+        } catch (Throwable $e) {
+            $this->logger->error('Stripe refused a settlement lookup', ['error' => $e->getMessage()]);
+
+            throw new DtoException(
+                'The provider refused the settlement lookup',
+                ExceptionCode::PAYMENT_PROVIDER_OPERATION_FAILED->value,
+                previous: $e,
+            );
+        }
+
+        $charge = $intent->latest_charge ?? null;
+        if (!is_object($charge)) {
+            return null;
+        }
+
+        $balanceTransaction = $charge->balance_transaction ?? null;
+        if (!is_object($balanceTransaction)) {
+            return null;
+        }
+
+        return new ProviderSettlement(
+            providerPaymentReference: $providerPaymentReference,
+            providerSettlementId:     (string) ($balanceTransaction->id ?? ''),
+            // Positive, always, like RefundResult: the host applies its own sign.
+            feeMinorUnits:            abs((int) ($balanceTransaction->fee ?? 0)),
+            netMinorUnits:            (int) ($balanceTransaction->net ?? 0),
+            // The settlement currency, which is not necessarily the payment's:
+            // a converted charge settles in the account's currency.
+            currency:                 (string) ($balanceTransaction->currency ?? ''),
         );
     }
 
