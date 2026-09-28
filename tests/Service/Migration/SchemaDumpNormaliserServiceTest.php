@@ -282,6 +282,85 @@ final class SchemaDumpNormaliserServiceTest extends UbixConcreteClassOrEnumTestC
     }
 
     /**
+     * An explicit `ROW_FORMAT=DYNAMIC` is InnoDB's own default and is dropped,
+     * so a long-lived tier matches a freshly rebuilt schema.
+     *
+     * @return void
+     *
+     * @covers ::normalise
+     */
+    public function testRedundantDynamicRowFormatIsDropped(): void
+    {
+        $service = $this->service();
+
+        $stated = implode("\n", [
+            'CREATE TABLE `users` (',
+            '`id` int(10) unsigned NOT NULL,',
+            ') ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci ROW_FORMAT=DYNAMIC;',
+            '',
+        ]);
+        $silent = $this->table('users', ['`id` int(10) unsigned NOT NULL,']);
+
+        $this->assertSame(
+            $service->normalise($silent),
+            $service->normalise($stated),
+            'DYNAMIC is InnoDB\'s default; stating it is not a schema difference.',
+        );
+    }
+
+    /**
+     * A row format that is *not* the default says something real about storage
+     * and is kept.
+     *
+     * @return void
+     *
+     * @covers ::normalise
+     */
+    public function testNonDefaultRowFormatIsKept(): void
+    {
+        $dump = implode("\n", [
+            'CREATE TABLE `archive` (',
+            '`id` int(10) unsigned NOT NULL,',
+            ') ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci ROW_FORMAT=COMPRESSED;',
+            '',
+        ]);
+
+        $lines = $this->service()->normalise($dump);
+
+        $this->assertContains(
+            'archive: ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci ROW_FORMAT=COMPRESSED;',
+            $lines,
+            'COMPRESSED is not the default and must still be compared.',
+        );
+    }
+
+    /**
+     * Only InnoDB. DYNAMIC is not every engine's default, so it is left alone
+     * elsewhere.
+     *
+     * @return void
+     *
+     * @covers ::normalise
+     */
+    public function testRowFormatIsKeptOnOtherEngines(): void
+    {
+        $dump = implode("\n", [
+            'CREATE TABLE `legacy` (',
+            '`id` int(10) unsigned NOT NULL,',
+            ') ENGINE=MyISAM DEFAULT CHARSET=utf8mb4 ROW_FORMAT=DYNAMIC;',
+            '',
+        ]);
+
+        $lines = $this->service()->normalise($dump);
+
+        $this->assertContains(
+            'legacy: ) ENGINE=MyISAM DEFAULT CHARSET=utf8mb4 ROW_FORMAT=DYNAMIC;',
+            $lines,
+            'The default-row-format argument is an InnoDB one.',
+        );
+    }
+
+    /**
      * Build a one-table dump fragment with the project's usual table defaults
      *
      * @param string             $table The table name
