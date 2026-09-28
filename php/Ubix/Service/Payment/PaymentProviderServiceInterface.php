@@ -14,6 +14,7 @@ use Ubix\DataTransferObject\Payment\OneOffCheckoutRequest;
 use Ubix\DataTransferObject\Payment\PaymentIntentRequest;
 use Ubix\DataTransferObject\Payment\PendingPayment;
 use Ubix\DataTransferObject\Payment\PendingSubscriptionRequest;
+use Ubix\DataTransferObject\Payment\ProviderSettlement;
 use Ubix\DataTransferObject\Payment\ProviderSubscription;
 use Ubix\DataTransferObject\Payment\RecurringPriceRequest;
 use Ubix\DataTransferObject\Payment\RefundResult;
@@ -181,6 +182,28 @@ interface PaymentProviderServiceInterface
      * @return RefundResult The accepted refund, with a positive amount; a host applies its own ledger sign convention
      */
     public function refundPayment(string $providerPaymentReference, ?int $amountMinorUnits): RefundResult;
+
+    /**
+     * What the provider charged on a payment, once it has settled
+     *
+     * The figure is the provider's own, read back from it; it is never derived
+     * from a published rate. A host recording the true cost of a payment has no
+     * other honest source: rates carry rounding, fixed per-transaction
+     * components and account-specific pricing, so a locally computed number is a
+     * guess about a charge somebody else made.
+     *
+     * Returns null when the payment exists but has not settled yet, which is
+     * normal for a short window after it succeeds. Null means "not known yet",
+     * never "nothing was charged" -- a caller that treats the two alike will
+     * record an unsettled payment as free.
+     *
+     * @param string $providerPaymentReference The provider's id for the payment
+     *
+     * @throws \Ubix\Exception\DtoException If the payment is unknown or the provider is unreachable
+     *
+     * @return ?ProviderSettlement The reported fee and net, or null while the payment has not settled
+     */
+    public function getSettlementForPayment(string $providerPaymentReference): ?ProviderSettlement;
 
     /**
      * The payment reference an invoice was settled by, if the provider has one

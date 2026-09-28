@@ -789,6 +789,147 @@ final class StripePaymentProviderServiceTest extends UbixConcreteClassOrEnumTest
     }
 
     /**
+     * A settled payment reports the provider's own fee and net
+     *
+     * @return void
+     */
+    public function testSettlementReportsTheProvidersFeeAndNet(): void
+    {
+        $this->cannedHttpClient([
+            'id'            => 'pi_1',
+            'latest_charge' => [
+                'balance_transaction' => [
+                    'currency' => 'usd',
+                    'fee'      => 103,
+                    'id'       => 'txn_1',
+                    'net'      => 2397,
+                    'object'   => 'balance_transaction',
+                ],
+                'id'                  => 'ch_1',
+                'object'              => 'charge',
+            ],
+            'object'        => 'payment_intent',
+        ]);
+
+        $settlement = $this->provider()->getSettlementForPayment('pi_1');
+
+        $this->assertNotNull($settlement);
+        $this->assertSame('pi_1', $settlement->providerPaymentReference);
+        $this->assertSame('txn_1', $settlement->providerSettlementId);
+        $this->assertSame(103, $settlement->feeMinorUnits);
+        $this->assertSame(2397, $settlement->netMinorUnits);
+        $this->assertSame('usd', $settlement->currency);
+    }
+
+    /**
+     * The fee comes back positive, leaving the sign to the host's ledger
+     *
+     * Mirrors refundPayment(): whether a fee is stored negative is the host's
+     * convention, so a provider reporting it either way yields one shape here.
+     *
+     * @return void
+     */
+    public function testSettlementFeeIsAlwaysPositive(): void
+    {
+        $this->cannedHttpClient([
+            'id'            => 'pi_1',
+            'latest_charge' => [
+                'balance_transaction' => [
+                    'currency' => 'usd',
+                    'fee'      => -103,
+                    'id'       => 'txn_1',
+                    'net'      => 2397,
+                    'object'   => 'balance_transaction',
+                ],
+                'id'                  => 'ch_1',
+                'object'              => 'charge',
+            ],
+            'object'        => 'payment_intent',
+        ]);
+
+        $settlement = $this->provider()->getSettlementForPayment('pi_1');
+
+        $this->assertNotNull($settlement);
+        $this->assertSame(103, $settlement->feeMinorUnits);
+    }
+
+    /**
+     * A payment that has not settled yet is null, not a zero fee
+     *
+     * The distinction this pins is the whole point of the null return: a
+     * caller that reads "no balance transaction" as "no fee" records an
+     * unsettled payment as free, and the creator is paid the provider's cut
+     * as well as their own share.
+     *
+     * @return void
+     */
+    public function testAnUnsettledPaymentIsNullRatherThanAZeroFee(): void
+    {
+        $this->cannedHttpClient([
+            'id'            => 'pi_1',
+            'latest_charge' => [
+                // Present, unsettled: Stripe has not written a balance
+                // transaction for it yet.
+                'balance_transaction' => null,
+                'id'                  => 'ch_1',
+                'object'              => 'charge',
+            ],
+            'object'        => 'payment_intent',
+        ]);
+
+        $this->assertNull($this->provider()->getSettlementForPayment('pi_1'));
+    }
+
+    /**
+     * An intent with no charge at all is null too
+     *
+     * @return void
+     */
+    public function testAnIntentWithoutAChargeIsNull(): void
+    {
+        $this->cannedHttpClient([
+            'id'            => 'pi_1',
+            'latest_charge' => null,
+            'object'        => 'payment_intent',
+        ]);
+
+        $this->assertNull($this->provider()->getSettlementForPayment('pi_1'));
+    }
+
+    /**
+     * A zero fee the provider actually reported is kept, not treated as absent
+     *
+     * The mirror of the unsettled case: zero is a real figure -- a fully
+     * covered or promotional charge -- and must round-trip as a settlement
+     * rather than collapsing into "not known yet".
+     *
+     * @return void
+     */
+    public function testAReportedZeroFeeIsASettlementNotAnAbsence(): void
+    {
+        $this->cannedHttpClient([
+            'id'            => 'pi_1',
+            'latest_charge' => [
+                'balance_transaction' => [
+                    'currency' => 'usd',
+                    'fee'      => 0,
+                    'id'       => 'txn_1',
+                    'net'      => 2500,
+                    'object'   => 'balance_transaction',
+                ],
+                'id'                  => 'ch_1',
+                'object'              => 'charge',
+            ],
+            'object'        => 'payment_intent',
+        ]);
+
+        $settlement = $this->provider()->getSettlementForPayment('pi_1');
+
+        $this->assertNotNull($settlement);
+        $this->assertSame(0, $settlement->feeMinorUnits);
+    }
+
+    /**
      * Restore global SDK and environment state between cases
      *
      * `ApiRequestor::setHttpClient()` is global, so a canned client left in
