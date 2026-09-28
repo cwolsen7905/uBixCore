@@ -157,6 +157,20 @@ interface PaymentProviderServiceInterface
     public function cancelSubscriptionNow(string $providerSubscriptionId): ProviderSubscription;
 
     /**
+     * Stop a subscription's coupon from discounting any future invoice
+     *
+     * Invoices already paid keep their discount; the next one is full price.
+     * A subscription with no discount is left as it is.
+     *
+     * @param string $providerSubscriptionId The provider's id for the recurring payment
+     *
+     * @throws \Ubix\Exception\DtoException If no such subscription exists at the provider, or it is unreachable
+     *
+     * @return void
+     */
+    public function removeSubscriptionDiscount(string $providerSubscriptionId): void;
+
+    /**
      * Return money for a payment the provider has already taken
      *
      * @param string $providerPaymentReference The provider's id for the payment being refunded
