@@ -32,6 +32,11 @@ use Psr\Log\LoggerInterface as Logger;
  *   constraint. Some versions render it inline on the column, some as a named
  *   `CONSTRAINT` line, some not at all. Only the auto-generated shape is
  *   dropped — a `CHECK` a human wrote is left alone.
+ * - **`ROW_FORMAT=DYNAMIC` on an InnoDB table.** DYNAMIC has been InnoDB's
+ *   default since MariaDB 10.2, so stating it changes nothing; a table created
+ *   under an older default records it and every later dump repeats it, so a
+ *   long-lived tier disagrees with a fresh rebuild on every such table.
+ *   COMPACT, COMPRESSED and REDUNDANT are meaningful and stay compared.
  *
  * Every remaining line is **prefixed with its table**. That is not decoration:
  * the diff is line-based, so without it a reported difference cannot be traced
@@ -92,7 +97,7 @@ final class SchemaDumpNormaliserService
                 // the body can only be canonicalised once it has been read.
                 $canonical = $this->canonicaliseBody($body, $trimmed);
                 $clean     = array_merge($clean, $this->attributeAll($table, $canonical));
-                $clean[]   = $this->attribute($table, $trimmed);
+                $clean[]   = $this->attribute($table, $this->canonicaliseClosing($trimmed));
                 $table     = '';
                 $body      = [];
                 continue;
@@ -194,6 +199,35 @@ final class SchemaDumpNormaliserService
         }
 
         return $canonical;
+    }
+
+    /**
+     * Canonicalise a table's closing line
+     *
+     * Drops `ROW_FORMAT=DYNAMIC` on an InnoDB table. DYNAMIC has been InnoDB's
+     * default row format since MariaDB 10.2 / MySQL 5.7, so stating it changes
+     * nothing — but a table created under an older default, or restored from a
+     * dump taken then, records it explicitly and every later dump repeats it.
+     * A tier with a long history therefore disagrees with a freshly rebuilt
+     * schema on every such table, for no difference in behaviour.
+     *
+     * Only DYNAMIC, and only on InnoDB. COMPACT, COMPRESSED and REDUNDANT say
+     * something real about how rows are stored, and stay compared.
+     *
+     * The charset and collation on this line are left alone: a table-level
+     * collation difference is real drift, and this is where it would show.
+     *
+     * @param string $closing The `) ENGINE=… ;` line
+     *
+     * @return string The closing line without a redundant row format
+     */
+    private function canonicaliseClosing(string $closing): string
+    {
+        if (stripos($closing, 'ENGINE=InnoDB') === false) {
+            return $closing;
+        }
+
+        return (string) (preg_replace('/\s+ROW_FORMAT=DYNAMIC\b/i', '', $closing) ?? $closing);
     }
 
     /**
