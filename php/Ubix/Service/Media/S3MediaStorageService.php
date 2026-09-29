@@ -176,6 +176,47 @@ final class S3MediaStorageService implements MediaStorageService
     }
 
     /**
+     * Upload a local file to a key the caller chooses
+     *
+     * @param string $objectKey     The key to write, relative to the bucket root
+     * @param string $localFilePath The absolute path of the local file to upload
+     * @param string $contentType   The object's content type
+     *
+     * @throws DtoException If the key is unsafe, the file cannot be read, or the upload fails
+     *
+     * @return ObjectMetadata The stored object's metadata
+     */
+    public function putObjectAt(string $objectKey, string $localFilePath, string $contentType): ObjectMetadata
+    {
+        $this->assertKeyIsSafe($objectKey);
+
+        if (!is_readable($localFilePath)) {
+            throw new DtoException(
+                'Local file is not readable',
+                ExceptionCode::MEDIA_LOCAL_FILE_UNREADABLE->value,
+            );
+        }
+
+        try {
+            $this->getClient()->putObject([
+                'ACL'         => 'private',
+                'Bucket'      => $this->bucket(),
+                'ContentType' => $contentType,
+                'Key'         => $objectKey,
+                'SourceFile'  => $localFilePath,
+            ]);
+        } catch (AwsException $e) {
+            throw new DtoException(
+                'Failed to upload local file to the object store',
+                ExceptionCode::MEDIA_STORAGE_OPERATION_FAILED->value,
+                previous: $e,
+            );
+        }
+
+        return $this->inspectObject($objectKey);
+    }
+
+    /**
      * {@inheritDoc}
      */
     public function createSignedReadUrl(string $objectKey, int $ttlSeconds): SignedUrl
@@ -218,6 +259,35 @@ final class S3MediaStorageService implements MediaStorageService
                 'Failed to delete object from the object store',
                 ExceptionCode::MEDIA_STORAGE_OPERATION_FAILED->value,
                 previous: $e,
+            );
+        }
+    }
+
+    /**
+     * Refuse a key that could write outside the prefix it was meant to
+     *
+     * `putObject()` generates its own key and needs none of this; `putObjectAt()`
+     * takes one from a caller who may have composed it from user input, so the
+     * traversal and control characters are checked here rather than trusted.
+     *
+     * @param string $objectKey The key to check
+     *
+     * @throws DtoException If the key is unsafe
+     *
+     * @return void
+     */
+    private function assertKeyIsSafe(string $objectKey): void
+    {
+        $unsafe = $objectKey === ''
+        || str_starts_with($objectKey, '/')
+        || str_contains($objectKey, '\\')
+        || str_contains($objectKey, '..')
+        || preg_match('/[\x00-\x1F\x7F]/', $objectKey) === 1;
+
+        if ($unsafe) {
+            throw new DtoException(
+                'Object key is not safe to write',
+                ExceptionCode::MEDIA_STORAGE_OPERATION_FAILED->value,
             );
         }
     }

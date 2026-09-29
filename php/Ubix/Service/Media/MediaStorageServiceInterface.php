@@ -90,6 +90,37 @@ interface MediaStorageServiceInterface
     public function putObject(string $localFilePath, string $contentType): ObjectMetadata;
 
     /**
+     * Upload a local file to a key the caller chooses
+     *
+     * The same trusted server-side path as {@see self::putObject()}, which generates
+     * an opaque key and is the right default for a single standalone object. This
+     * exists for the case that cannot use a generated key: a **multi-file artifact
+     * whose files reference each other by relative name**.
+     *
+     * An HLS package is the motivating example. Its playlist lists segments as
+     * `seg-00001.ts`, resolved relative to the playlist's own URL, so the playlist
+     * and its segments have to sit together under a prefix the caller decides.
+     * Generated keys cannot express that, and rewriting the playlist to absolute
+     * signed URLs does not work either because those expire part-way through
+     * playback. The same applies to a DASH manifest, an archive expanded on upload,
+     * or any static bundle with internal links.
+     *
+     * The caller owns the key and therefore owns uniqueness: passing a key that
+     * exists **overwrites** it. Implementations must reject a key that could escape
+     * its prefix (`..`, a leading slash, a backslash, or a control character), so a
+     * caller composing a key from user input cannot write outside where it meant to.
+     *
+     * @param string $objectKey     The key to write, relative to the bucket root
+     * @param string $localFilePath The absolute path of the local file to upload; the caller cleans it up, this method never deletes its input
+     * @param string $contentType   The object's content type as the caller has determined it
+     *
+     * @throws \Ubix\Exception\DtoException If the key is unsafe, the local file cannot be read, or the upload fails
+     *
+     * @return ObjectMetadata The stored object's metadata, read back from the store
+     */
+    public function putObjectAt(string $objectKey, string $localFilePath, string $contentType): ObjectMetadata;
+
+    /**
      * Mint a short-lived URL for reading one object
      *
      * The delivery path for gated or private content: every read gets a

@@ -101,6 +101,58 @@ final class S3MediaStorageServiceTest extends UbixConcreteClassOrEnumTestCase im
     }
 
     /**
+     * A caller-chosen key that could escape its prefix is refused
+     *
+     * `putObject()` generates its own key and needs none of this. `putObjectAt()`
+     * takes one from a caller who may have composed it from user input -- a creator
+     * id, an asset id, a filename -- so the traversal cases are refused here rather
+     * than trusted. Each would otherwise write outside the prefix the caller meant,
+     * and the empty key would write the bucket root itself.
+     *
+     * @return void
+     */
+    public function testAnUnsafeObjectKeyIsRefused(): void
+    {
+        $service = $this->service();
+        $file    = tempnam(sys_get_temp_dir(), 'ubix-put-at-');
+        self::assertIsString($file);
+        file_put_contents($file, 'x');
+
+        $keys = [
+            '',
+            '/absolute/key.ts',
+            'creators/5/../../secrets/key.ts',
+            '..',
+            "creators/5/key\x00.ts",
+        ];
+
+        try {
+            foreach ($keys as $key) {
+                try {
+                    $service->putObjectAt($key, $file, 'video/mp2t');
+                    $this->fail(sprintf('key [%s] should be refused', addcslashes($key, "\0..\37")));
+                } catch (DtoException $e) {
+                    $this->assertStringContainsString('not safe', $e->getMessage());
+                }
+            }
+        } finally {
+            unlink($file);
+        }
+    }
+
+    /**
+     * An unreadable local file is refused, and nothing is uploaded.
+     *
+     * @return void
+     */
+    public function testPutObjectAtRefusesAnUnreadableFile(): void
+    {
+        $this->expectException(DtoException::class);
+
+        $this->service()->putObjectAt('creators/5/video/1/hls/master.m3u8', '/no/such/file.m3u8', 'application/vnd.apple.mpegurl');
+    }
+
+    /**
      * The publicUrl() method is entirely configuration-driven, with no vendor assumption baked in
      *
      * @return void
