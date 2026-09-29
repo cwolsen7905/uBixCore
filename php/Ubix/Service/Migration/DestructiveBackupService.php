@@ -8,7 +8,7 @@ use Psr\Log\LoggerInterface as Logger;
 use RuntimeException;
 use Ubix\DataTransferObject\Migration\MigrationFile;
 use Ubix\Enum\Env;
-use Ubix\Service\ProcessService;
+use Ubix\Service\ProcessServiceInterface as ProcessService;
 
 /**
  * Pre-apply backup snapshot for destructive migrations on staging /

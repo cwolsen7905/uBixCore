@@ -8,13 +8,23 @@ use Exception;
 use Psr\Log\LoggerInterface as Logger;
 use Ubix\DataTransferObject\ProcessResults;
 use Ubix\Enum\Exception\ExceptionCode;
+use Ubix\Service\ProcessServiceInterface as ProcessService;
 
 /**
  * Service to manage processes and subprocesses
  *
- * @see \Ubix\Tests\Service\ProcessServiceTest PHPUnit test case
+ * The implementation of {@see ProcessServiceInterface} that actually starts a
+ * process, with `proc_open()` on the machine the code is running on. Callers depend
+ * on the interface so they can be tested without the program being present; this
+ * class is what runs in production, and is bound to the interface in
+ * `Bootstrap/cli-dependencies.php`.
+ *
+ * Called `ProcessService` before v0.32.0. The name moved to the interface because
+ * that is what call sites now depend on.
+ *
+ * @see \Ubix\Tests\Service\NativeProcessServiceTest PHPUnit test case
  */
-final class ProcessService
+final class NativeProcessService implements ProcessService
 {
     private const DESCRIPTOR_SPEC = [
         0 => [ 'pipe', 'w' ], // STDIN

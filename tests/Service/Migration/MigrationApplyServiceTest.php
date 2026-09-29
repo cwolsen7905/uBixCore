@@ -11,7 +11,7 @@ use Ubix\Enum\UbixDatabase;
 use Ubix\Repository\SchemaMigration\SchemaMigrationSqlRepository;
 use Ubix\Service\Migration\MigrationApplyService;
 use Ubix\Service\Migration\MigrationCredentialResolverService;
-use Ubix\Service\ProcessService;
+use Ubix\Service\NativeProcessService;
 use Ubix\Tests\AbstractUbixConcreteClassOrEnumTestCase as UbixConcreteClassOrEnumTestCase;
 use Ubix\Tests\UbixConcreteClassOrEnumTestCaseInterface as IUbixConcreteClassOrEnumTestCase;
 
@@ -283,7 +283,7 @@ final class MigrationApplyServiceTest extends UbixConcreteClassOrEnumTestCase im
             logger:             $logger,
             reader:             $repository,
             writer:             $repository,
-            processService:     new ProcessService($logger),
+            processService:     new NativeProcessService($logger),
             credentialResolver: new MigrationCredentialResolverService($logger),
         );
     }

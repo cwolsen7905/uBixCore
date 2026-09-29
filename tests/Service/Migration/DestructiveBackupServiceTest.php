@@ -11,7 +11,7 @@ use Ubix\Enum\Env;
 use Ubix\Enum\UbixDatabase;
 use Ubix\Service\Migration\DestructiveBackupService;
 use Ubix\Service\Migration\MigrationCredentialResolverService;
-use Ubix\Service\ProcessService;
+use Ubix\Service\NativeProcessService;
 use Ubix\Tests\AbstractUbixConcreteClassOrEnumTestCase as UbixConcreteClassOrEnumTestCase;
 use Ubix\Tests\UbixConcreteClassOrEnumTestCaseInterface as IUbixConcreteClassOrEnumTestCase;
 
@@ -234,7 +234,7 @@ final class DestructiveBackupServiceTest extends UbixConcreteClassOrEnumTestCase
 
         return new DestructiveBackupService(
             $logger,
-            new ProcessService($logger),
+            new NativeProcessService($logger),
             new MigrationCredentialResolverService($logger),
         );
     }

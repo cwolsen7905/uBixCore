@@ -8,7 +8,7 @@ use Psr\Log\LoggerInterface as Logger;
 use Symfony\Component\Console\Input\InputInterface as Input;
 use Symfony\Component\Console\Output\OutputInterface as Output;
 use Ubix\Console\Command\AbstractCommand as Command;
-use Ubix\Service\ProcessService;
+use Ubix\Service\ProcessServiceInterface as ProcessService;
 use Ubix\Service\ProjectRootService;
 
 /**

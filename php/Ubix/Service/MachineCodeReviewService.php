@@ -19,6 +19,7 @@ use Ubix\DataTransferObject\MachineCodeReviewTestSuite;
 use Ubix\Enum\Exception\ExceptionCode;
 use Ubix\Enum\MachineCodeReview\MachineCodeReviewTool;
 use Ubix\Model\MachineCodeReview;
+use Ubix\Service\ProcessServiceInterface as ProcessService;
 
 /**
  * Service to access machine code review
