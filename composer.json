@@ -45,7 +45,8 @@
 		"symfony/property-access": "^7.3",
 		"ramsey/uuid": "^4.9",
 		"fig/http-message-util": "^1.1",
-		"symfony/yaml": "^7.3"
+		"symfony/yaml": "^7.3",
+		"league/commonmark": "^2.10"
 	},
 	"require-dev": {
 		"aws/aws-sdk-php": "^3",
