@@ -6,6 +6,7 @@ namespace Ubix\Service;
 
 use Exception;
 use Psr\Log\LoggerInterface as Logger;
+use Ubix\Service\ProcessServiceInterface as ProcessService;
 
 /**
  * Service to access models
@@ -217,10 +218,12 @@ final class GitService
     /**
      * Turn the output of `git symbolic-ref refs/remotes/origin/HEAD` into a branch name.
      *
-     * Separated from the subprocess call so the interesting half is testable:
-     * `ProcessService` is final and cannot be doubled, and the call itself is
-     * one line with no logic in it. Kept an instance method because the `Ubix`
-     * standard forbids static ones.
+     * Separated from the subprocess call so the interesting half is testable on
+     * its own; the call itself is one line with no logic in it. Kept an instance
+     * method because the `Ubix` standard forbids static ones. (Since v0.32.0 the
+     * runner is `ProcessServiceInterface` and can be doubled directly, so a test
+     * could go through `defaultBranch()` instead — this split is no longer forced,
+     * only still convenient.)
      *
      * @param int    $exitCode Exit code git reported.
      * @param string $stdout   Standard output git produced, e.g. `origin/main`.

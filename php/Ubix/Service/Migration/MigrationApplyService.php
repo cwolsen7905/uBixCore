@@ -12,7 +12,7 @@ use Ubix\DataTransferObject\Migration\AppliedMigration;
 use Ubix\DataTransferObject\Migration\MigrationFile;
 use Ubix\Repository\SchemaMigration\SchemaMigrationReaderInterface as SchemaMigrationReader;
 use Ubix\Repository\SchemaMigration\SchemaMigrationWriterInterface as SchemaMigrationWriter;
-use Ubix\Service\ProcessService;
+use Ubix\Service\ProcessServiceInterface as ProcessService;
 
 /**
  * Applies a single parsed `MigrationFile` against the target

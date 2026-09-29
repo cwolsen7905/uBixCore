@@ -8,7 +8,7 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\NullLogger;
 use Ubix\Service\GitService;
-use Ubix\Service\ProcessService;
+use Ubix\Service\NativeProcessService;
 
 /**
  * Behavioural tests for GitService::getDefaultBranch().
@@ -84,6 +84,6 @@ final class GitServiceDefaultBranchTest extends TestCase
      */
     private function gitService(): GitService
     {
-        return new GitService(new NullLogger(), new ProcessService(new NullLogger()));
+        return new GitService(new NullLogger(), new NativeProcessService(new NullLogger()));
     }
 }

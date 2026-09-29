@@ -7,7 +7,7 @@ namespace Ubix\Service\Migration;
 use Psr\Log\LoggerInterface as Logger;
 use Ubix\DataTransferObject\Migration\SchemaDiffResult;
 use Ubix\Enum\Migration\SchemaDiffMode;
-use Ubix\Service\ProcessService;
+use Ubix\Service\ProcessServiceInterface as ProcessService;
 use Ubix\Service\ProjectRootService;
 
 /**

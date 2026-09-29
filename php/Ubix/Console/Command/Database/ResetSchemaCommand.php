@@ -11,7 +11,7 @@ use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface as Output;
 use Ubix\Console\Command\AbstractCommand as Command;
 use Ubix\Enum\Env;
-use Ubix\Service\ProcessService;
+use Ubix\Service\ProcessServiceInterface as ProcessService;
 use Ubix\Service\ProjectRootService;
 use ValueError;
 

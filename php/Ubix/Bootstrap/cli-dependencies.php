@@ -25,6 +25,8 @@ use Ubix\Repository\SchemaMigration\SchemaMigrationSqlRepository;
 use Ubix\Repository\SchemaMigration\SchemaMigrationWriterInterface as SchemaMigrationWriter;
 use Ubix\Service\Migration\MigrationFileScannerService;
 use Ubix\Service\Migration\MigrationNotificationService;
+use Ubix\Service\NativeProcessService;
+use Ubix\Service\ProcessServiceInterface as ProcessService;
 use Ubix\Service\ProjectRootService;
 use Ubix\Service\SlackService;
 use Ubix\Service\Sql\MigrationPdoSqlService;
@@ -61,6 +63,9 @@ return static function (): Container {
     $container->addDefinitions([
         HttpClient::class                       => autowire(CurlHttpClient::class),
         Logger::class                           => autowire(MonologLogger::class)->constructorParameter('name', $appName)->constructorParameter('handlers', [new StreamHandler(getenv('LOGGER_PATH') . '/' . $appName . '.log', getenv('IS_SANDBOX') === 'true' || getenv('IS_DEV') === 'true' ? Level::Debug : Level::Info)])->constructorParameter('processors', [new UidProcessor()]),
+        // Anything that shells out depends on the interface so it can be doubled
+        // in a test; `proc_open()` is the only implementation there is.
+        ProcessService::class                   => autowire(NativeProcessService::class),
         Psr17Factory::class                     => autowire(Psr17Factory::class),
         RequestFactory::class                   => get(Psr17Factory::class),
         ResponseFactory::class                  => autowire(SlimResponseFactory::class),

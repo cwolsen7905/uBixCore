@@ -4,16 +4,16 @@ declare(strict_types=1);
 
 namespace Ubix\Tests\Service;
 
-use Ubix\Service\ProcessService;
+use Ubix\Service\NativeProcessService;
 use Ubix\Tests\AbstractUbixConcreteClassOrEnumTestCase as UbixConcreteClassOrEnumTestCase;
 use Ubix\Tests\UbixConcreteClassOrEnumTestCaseInterface as IUbixConcreteClassOrEnumTestCase;
 
 /**
- * PHPUnit test case for \Ubix\Service\ProcessService
+ * PHPUnit test case for \Ubix\Service\NativeProcessService
  *
- * @coversDefaultClass \Ubix\Service\ProcessService
+ * @coversDefaultClass \Ubix\Service\NativeProcessService
  */
-final class ProcessServiceTest extends UbixConcreteClassOrEnumTestCase implements IUbixConcreteClassOrEnumTestCase
+final class NativeProcessServiceTest extends UbixConcreteClassOrEnumTestCase implements IUbixConcreteClassOrEnumTestCase
 {
     /**
      * Test that the class is following uBix standards
@@ -22,6 +22,6 @@ final class ProcessServiceTest extends UbixConcreteClassOrEnumTestCase implement
      */
     public function testFollowingUbixStandards(): void
     {
-        $this->testClassFollowingUbixStandards(ProcessService::class);
+        $this->testClassFollowingUbixStandards(NativeProcessService::class);
     }
 }
