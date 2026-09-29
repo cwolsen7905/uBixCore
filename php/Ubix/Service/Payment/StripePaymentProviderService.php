@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Ubix\Service\Payment;
 
+use DateTimeImmutable;
+use DateTimeInterface;
 use Psr\Log\LoggerInterface as Logger;
 use Stripe\Exception\InvalidRequestException;
 use Stripe\Exception\SignatureVerificationException;
@@ -830,6 +832,108 @@ final class StripePaymentProviderService implements PaymentProviderService
             amountMinorUnits:            abs((int) $transfer->amount),
             currency:                    (string) $transfer->currency,
         );
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public function listTransfers(DateTimeInterface $createdSince, int $limit = 100): array
+    {
+        // Stripe's page size ceiling. Asking for more is an error rather than a
+        // silently shorter page, so it is clamped here and the interface says so.
+        $pageSize = max(1, min($limit, 100));
+
+        $transfers = $this->call('list transfers', function () use ($createdSince, $pageSize): object {
+            return $this->client()->transfers->all([
+                'created' => ['gte' => $createdSince->getTimestamp()],
+                'limit'   => $pageSize,
+            ]);
+        });
+
+        $results = [];
+        $data    = $this->property($transfers, 'data');
+        foreach (is_iterable($data) ? $data : [] as $transfer) {
+            $id = is_object($transfer) ? $this->property($transfer, 'id') : null;
+            if (!is_object($transfer) || !is_string($id) || $id === '') {
+                continue;
+            }
+
+            $amount   = $this->property($transfer, 'amount');
+            $currency = $this->property($transfer, 'currency');
+            $created  = $this->property($transfer, 'created');
+
+            $results[] = new TransferResult(
+                providerTransferId:          $id,
+                destinationAccountReference: $this->destinationReference($transfer),
+                amountMinorUnits:            is_numeric($amount) ? abs((int) $amount) : 0,
+                currency:                    is_string($currency) ? $currency : '',
+                metadata:                    $this->stringMetadata($transfer),
+                createdAt:                   is_numeric($created) ? (new DateTimeImmutable())->setTimestamp((int) $created) : null,
+            );
+        }
+
+        return $results;
+    }
+
+    /**
+     * The paid account's id, whether the provider expanded it or not
+     *
+     * `destination` comes back as a bare id string normally, and as an object when
+     * something in the request expanded it. Reading only one shape would leave the
+     * field empty exactly when a caller is trying to work out who was paid.
+     *
+     * @param object $transfer The Stripe transfer
+     *
+     * @return string The account id, or '' when it cannot be read
+     */
+    private function destinationReference(object $transfer): string
+    {
+        $destination = $this->property($transfer, 'destination');
+
+        if (is_string($destination)) {
+            return $destination;
+        }
+
+        if (is_object($destination)) {
+            $id = $this->property($destination, 'id');
+
+            return is_string($id) ? $id : '';
+        }
+
+        return '';
+    }
+
+    /**
+     * A transfer's metadata as strings
+     *
+     * Stringified rather than passed through: Stripe stores metadata as strings, but
+     * the SDK hands back a `StripeObject`, and a host matching with `===` against what
+     * it believes is a string would silently never match.
+     *
+     * @param object $transfer The Stripe transfer
+     *
+     * @return array<string, string> The metadata
+     */
+    private function stringMetadata(object $transfer): array
+    {
+        $metadata = $this->property($transfer, 'metadata');
+
+        // A StripeObject, not an array and not iterable: `toArray()` is the only way
+        // in. Iterating it directly yields nothing, silently, which is how a
+        // reconciliation that matches on metadata comes back empty and looks correct.
+        if (is_object($metadata) && method_exists($metadata, 'toArray')) {
+            $metadata = $metadata->toArray();
+        }
+
+        $pairs = [];
+
+        foreach (is_iterable($metadata) ? $metadata : [] as $key => $value) {
+            if ((is_string($key) || is_int($key)) && (is_string($value) || is_numeric($value))) {
+                $pairs[(string) $key] = (string) $value;
+            }
+        }
+
+        return $pairs;
     }
 
     /**

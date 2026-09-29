@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Ubix\Tests\Service\Payment;
 
 use DateTime;
+use DateTimeImmutable;
 use Psr\Log\LoggerInterface as Logger;
 use Stripe\ApiRequestor;
 use Stripe\HttpClient\ClientInterface as Client;
@@ -927,6 +928,117 @@ final class StripePaymentProviderServiceTest extends UbixConcreteClassOrEnumTest
 
         $this->assertNotNull($settlement);
         $this->assertSame(0, $settlement->feeMinorUnits);
+    }
+
+    /**
+     * Listing transfers returns each one with the metadata the host set
+     *
+     * The metadata is the whole point: Stripe cannot filter a transfer list by it, so a
+     * host reconciling its records has to match client-side on the field it set at
+     * creation. A list that dropped metadata would make reconciliation impossible while
+     * still looking like it worked.
+     *
+     * @return void
+     */
+    public function testListingTransfersCarriesTheirMetadata(): void
+    {
+        $this->cannedHttpClient([
+            'data'   => [
+                [
+                    'amount'      => 2500,
+                    'created'     => 1790000000,
+                    'currency'    => 'usd',
+                    'destination' => 'acct_1',
+                    'id'          => 'tr_1',
+                    'metadata'    => ['creatorId' => '4', 'payoutRunId' => '7'],
+                    'object'      => 'transfer',
+                ],
+            ],
+            'object' => 'list',
+        ]);
+
+        $transfers = $this->provider()->listTransfers(new DateTimeImmutable('@1789999000'));
+
+        $this->assertCount(1, $transfers);
+        $this->assertSame('tr_1', $transfers[0]->providerTransferId);
+        $this->assertSame('acct_1', $transfers[0]->destinationAccountReference);
+        $this->assertSame(2500, $transfers[0]->amountMinorUnits);
+        $this->assertSame('7', $transfers[0]->metadata['payoutRunId']);
+        $this->assertSame(1790000000, $transfers[0]->createdAt?->getTimestamp());
+    }
+
+    /**
+     * The window is passed to the provider as a lower bound on creation time
+     *
+     * @return void
+     */
+    public function testTheCreatedSinceWindowIsSentToTheProvider(): void
+    {
+        $this->cannedHttpClient(['data' => [], 'object' => 'list']);
+
+        $this->provider()->listTransfers(new DateTimeImmutable('@1789999000'));
+
+        $created = $this->sentParameters['created'] ?? null;
+        $this->assertIsArray($created);
+        $this->assertSame(1789999000, $created['gte'] ?? null);
+    }
+
+    /**
+     * A page size above the provider's ceiling is clamped, not sent and rejected
+     *
+     * @return void
+     */
+    public function testAnOversizedLimitIsClampedToTheProvidersCeiling(): void
+    {
+        $this->cannedHttpClient(['data' => [], 'object' => 'list']);
+
+        $this->provider()->listTransfers(new DateTimeImmutable('@1789999000'), 500);
+
+        $this->assertSame(100, $this->sentParameters['limit'] ?? null);
+    }
+
+    /**
+     * An expanded destination object is read as well as a bare id
+     *
+     * Reading only the string shape would empty the field exactly when a caller is
+     * working out who was paid.
+     *
+     * @return void
+     */
+    public function testAnExpandedDestinationIsStillReadAsAnAccountId(): void
+    {
+        $this->cannedHttpClient([
+            'data'   => [
+                [
+                    'amount'      => 100,
+                    'created'     => 1790000000,
+                    'currency'    => 'usd',
+                    'destination' => ['id' => 'acct_9', 'object' => 'account'],
+                    'id'          => 'tr_2',
+                    'object'      => 'transfer',
+                ],
+            ],
+            'object' => 'list',
+        ]);
+
+        $transfers = $this->provider()->listTransfers(new DateTimeImmutable('@1789999000'));
+
+        $this->assertSame('acct_9', $transfers[0]->destinationAccountReference);
+    }
+
+    /**
+     * A transfer with no usable id is skipped rather than returned half-built
+     *
+     * @return void
+     */
+    public function testATransferWithoutAnIdIsSkipped(): void
+    {
+        $this->cannedHttpClient([
+            'data'   => [['amount' => 100, 'currency' => 'usd', 'object' => 'transfer']],
+            'object' => 'list',
+        ]);
+
+        $this->assertSame([], $this->provider()->listTransfers(new DateTimeImmutable('@1789999000')));
     }
 
     /**

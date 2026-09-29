@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Ubix\Service\Payment;
 
+use DateTimeInterface;
 use Ubix\DataTransferObject\Payment\CardSummary;
 use Ubix\DataTransferObject\Payment\CheckoutSession;
 use Ubix\DataTransferObject\Payment\ConnectedAccount;
@@ -432,4 +433,34 @@ interface PaymentProviderServiceInterface
      * @return TransferResult The accepted transfer, with a positive amount; a host applies its own ledger sign convention
      */
     public function createTransfer(TransferRequest $request): TransferResult;
+
+    /**
+     * List the transfers the provider has made since a given moment
+     *
+     * The read side of {@see self::createTransfer()}, and it exists for one job:
+     * letting a host answer "what did you actually send" after its own process died
+     * part-way through paying people. A host that records a transfer *after* the
+     * provider accepted it has a window in which money has moved and nothing local
+     * says so, and the only authority on what happened in that window is the provider.
+     *
+     * **There is no filter argument beyond the window, deliberately.** The obvious one
+     * would be "give me the transfers whose metadata says X", and Stripe cannot do it:
+     * its transfer list supports `created` and `destination`, and its Search API does
+     * not cover transfers at all. Rather than offer a filter that one implementation
+     * would have to fake by fetching and discarding, this returns the window and the
+     * caller matches on {@see TransferResult::$metadata}, which is the field it set
+     * itself. Anyone looking for a metadata filter should stop looking.
+     *
+     * Newest first, and `$limit` is a ceiling a provider may lower — Stripe's page size
+     * is 100. A caller reconciling a window longer than one page has to narrow the
+     * window, which is the honest constraint rather than a hidden truncation.
+     *
+     * @param DateTimeInterface $createdSince Only transfers created at or after this moment
+     * @param int               $limit        At most this many, newest first
+     *
+     * @throws \Ubix\Exception\DtoException If the provider cannot be reached or refuses
+     *
+     * @return array<int, TransferResult> The transfers, each carrying its metadata
+     */
+    public function listTransfers(DateTimeInterface $createdSince, int $limit = 100): array;
 }
