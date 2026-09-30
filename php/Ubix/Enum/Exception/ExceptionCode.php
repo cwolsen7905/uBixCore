@@ -98,6 +98,8 @@ enum ExceptionCode: int
     case RATE_LIMIT_SCOPE_INVALID                     = 11167;
     case REALTIME_PUBLISH_FAILED                      = 11168;
     case REALTIME_GRANT_INVALID                       = 11169;
+    case MISSING_DISCORD_MESSAGE                      = 11170;
+    case DISCORD_CHANNEL_NOT_CONFIGURED               = 11171;
     case ERROR_EXECUTING_PDO_QUERY                    = 13001;
     case USER_NOT_FOUND                               = 13019;
     case VALIDATION_FAILED                            = 29003;
