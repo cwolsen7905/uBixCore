@@ -100,6 +100,8 @@ enum ExceptionCode: int
     case REALTIME_GRANT_INVALID                       = 11169;
     case MISSING_DISCORD_MESSAGE                      = 11170;
     case DISCORD_CHANNEL_NOT_CONFIGURED               = 11171;
+    case ONE_TIME_CODE_PEPPER_TOO_SHORT               = 11172;
+    case ONE_TIME_CODE_BINDING_MISSING                = 11173;
     case ERROR_EXECUTING_PDO_QUERY                    = 13001;
     case USER_NOT_FOUND                               = 13019;
     case VALIDATION_FAILED                            = 29003;
