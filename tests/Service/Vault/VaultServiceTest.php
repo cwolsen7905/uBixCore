@@ -57,6 +57,33 @@ final class VaultServiceTest extends UbixConcreteClassOrEnumTestCase implements 
     }
 
     /**
+     * Test that revokeSelf posts to revoke-self with the token, and accepts the empty 204
+     *
+     * @return void
+     */
+    public function testRevokeSelfPostsWithTheTokenAndAcceptsAnEmptyResponse(): void
+    {
+        $this->service([new Response(204)])->revokeSelf(self::VAULT_ADDRESS, 'hvs.minted');
+
+        $request = $this->onlyRequest();
+        $this->assertSame('POST', $request->getMethod());
+        $this->assertSame(self::VAULT_ADDRESS . '/v1/auth/token/revoke-self', (string) $request->getUri());
+        $this->assertSame('hvs.minted', $request->getHeaderLine('X-Vault-Token'));
+    }
+
+    /**
+     * Test that a failed revocation surfaces as a RuntimeException for the caller to decide on
+     *
+     * @return void
+     */
+    public function testRevokeSelfFailureThrows(): void
+    {
+        $this->expectException(RuntimeException::class);
+
+        $this->service([new Response(403, [], '{"errors":["permission denied"]}')])->revokeSelf(self::VAULT_ADDRESS, 'hvs.minted');
+    }
+
+    /**
      * Kubernetes login POSTs the JWT + role unauthenticated and returns the client token
      *
      * @return void

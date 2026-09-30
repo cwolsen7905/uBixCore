@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Ubix\Tests\Service\Vault;
 
+use ArrayObject;
 use GuzzleHttp\Client;
 use GuzzleHttp\Handler\MockHandler;
 use GuzzleHttp\HandlerStack;
@@ -11,6 +12,7 @@ use GuzzleHttp\Middleware;
 use GuzzleHttp\Psr7\Response;
 use Psr\Http\Message\RequestInterface as Request;
 use Psr\Log\LoggerInterface as Logger;
+use Psr\SimpleCache\CacheInterface as SimpleCache;
 use RuntimeException;
 use Ubix\Service\JsonService;
 use Ubix\Service\Vault\VaultCredentialResolverService;
@@ -32,6 +34,7 @@ final class VaultCredentialResolverServiceTest extends UbixConcreteClassOrEnumTe
         'TEST_MYSQL_WRITE_HOST', 'TEST_MYSQL_WRITE_PORT', 'TEST_MYSQL_WRITE_DATABASE',
         'TEST_MYSQL_WRITE_USERNAME', 'TEST_MYSQL_WRITE_PASSWORD',
         'API_BEARER_TOKENS', 'lower_case_key', 'VAULT_ADDR_OVERRIDE', 'OWN_KEY', 'SHARED_KEY', 'OTHER_KEY',
+        'VAULT_CACHE_TTL',
     ];
 
     private const VAULT_ADDRESS = 'https://vault.test';
@@ -49,6 +52,11 @@ final class VaultCredentialResolverServiceTest extends UbixConcreteClassOrEnumTe
      * @var array<string, string|false>
      */
     private array $originalEnv = [];
+
+    /**
+     * A service-account JWT file for the Kubernetes-auth tests
+     */
+    private string $jwtPath = '';
 
     /**
      * Requests the resolver's VaultService sent, in order.
@@ -465,6 +473,230 @@ final class VaultCredentialResolverServiceTest extends UbixConcreteClassOrEnumTe
     }
 
     /**
+     * A token obtained by Kubernetes login is revoked once the reads are done
+     *
+     * @return void
+     */
+    public function testKubernetesLoginTokenIsRevokedAfterTheReads(): void
+    {
+        putenv('VAULT_K8S_ROLE=app');
+
+        $this->resolver([$this->json(['auth' => ['client_token' => 'hvs.minted']]), $this->kv(self::FULL_DB_SECRET), new Response(204)])
+            ->hydrateEnvironment(self::VAULT_ADDRESS);
+
+        $this->assertSame('writer', getenv('MYSQL_WRITE_USERNAME'));
+        $this->assertCount(3, $this->requests);
+        $this->assertSame(self::VAULT_ADDRESS . '/v1/auth/token/revoke-self', (string) $this->requests[2]->getUri());
+        $this->assertSame('hvs.minted', $this->requests[2]->getHeaderLine('X-Vault-Token'));
+    }
+
+    /**
+     * The minted token is revoked even when a read fails, and the read's error still propagates
+     *
+     * @return void
+     */
+    public function testKubernetesLoginTokenIsRevokedEvenWhenAReadFails(): void
+    {
+        putenv('VAULT_K8S_ROLE=app');
+
+        try {
+            $this->resolver([
+                $this->json(['auth' => ['client_token' => 'hvs.minted']]),
+                new Response(403, [], '{"errors":["permission denied"]}'),
+                new Response(204),
+            ])->hydrateEnvironment(self::VAULT_ADDRESS);
+            $this->fail('Expected the read failure to propagate');
+        } catch (RuntimeException $exception) {
+            $this->assertStringContainsString('secret/data/app/db', $exception->getMessage());
+        }
+
+        $this->assertCount(3, $this->requests);
+        $this->assertSame(self::VAULT_ADDRESS . '/v1/auth/token/revoke-self', (string) $this->requests[2]->getUri());
+    }
+
+    /**
+     * A failed revocation is logged and does not fail the request
+     *
+     * @return void
+     */
+    public function testRevocationFailureIsLoggedAndDoesNotFailTheRequest(): void
+    {
+        putenv('VAULT_K8S_ROLE=app');
+
+        $logger = $this->createMock(Logger::class);
+        $logger->expects($this->once())->method('warning')->with($this->stringContains('Could not revoke'));
+
+        $this->resolver([
+            $this->json(['auth' => ['client_token' => 'hvs.minted']]),
+            $this->kv(self::FULL_DB_SECRET),
+            new Response(500, [], '{"errors":["boom"]}'),
+        ], $logger)->hydrateEnvironment(self::VAULT_ADDRESS);
+
+        $this->assertSame('writer', getenv('MYSQL_WRITE_USERNAME'));
+    }
+
+    /**
+     * A static VAULT_TOKEN is never revoked: it is not this process's to end
+     *
+     * @return void
+     */
+    public function testStaticTokenIsNeverRevoked(): void
+    {
+        putenv('VAULT_TOKEN=ci-token');
+
+        $this->resolver([$this->kv(self::FULL_DB_SECRET)])->hydrateEnvironment(self::VAULT_ADDRESS);
+
+        $this->assertCount(1, $this->requests);
+        $this->assertSame(self::VAULT_ADDRESS . '/v1/secret/data/app/db', (string) $this->requests[0]->getUri());
+    }
+
+    /**
+     * A resolved environment is cached and the next request needs no vault call at all
+     *
+     * @return void
+     */
+    public function testResolvedEnvironmentIsCachedAndReused(): void
+    {
+        putenv('VAULT_K8S_ROLE=app');
+        putenv('VAULT_APP_KV_PATH=app/api');
+        $cache = $this->arrayCache();
+
+        $this->resolver([
+            $this->json(['auth' => ['client_token' => 'hvs.minted']]),
+            $this->kv(self::FULL_DB_SECRET),
+            $this->kv(['API_BEARER_TOKENS' => 'one']),
+            new Response(204),
+        ], null, $cache)->hydrateEnvironment(self::VAULT_ADDRESS);
+
+        foreach (['MYSQL_WRITE_USERNAME', 'MYSQL_WRITE_PASSWORD', 'API_BEARER_TOKENS'] as $name) {
+            putenv($name);
+        }
+
+        // An empty response queue: any vault request would fail the test.
+        $this->resolver([], null, $cache)->hydrateEnvironment(self::VAULT_ADDRESS);
+
+        $this->assertCount(0, $this->requests);
+        $this->assertSame('writer', getenv('MYSQL_WRITE_USERNAME'));
+        $this->assertSame('write-pass', getenv('MYSQL_WRITE_PASSWORD'));
+        $this->assertSame('one', getenv('API_BEARER_TOKENS'));
+    }
+
+    /**
+     * VAULT_CACHE_TTL=0 turns the cache off
+     *
+     * @return void
+     */
+    public function testCacheTtlZeroDisablesTheCache(): void
+    {
+        putenv('VAULT_TOKEN=test-token');
+        putenv('VAULT_CACHE_TTL=0');
+        $cache = $this->arrayCache();
+
+        $this->resolver([$this->kv(self::FULL_DB_SECRET)], null, $cache)->hydrateEnvironment(self::VAULT_ADDRESS);
+        $this->resolver([$this->kv(self::FULL_DB_SECRET)], null, $cache)->hydrateEnvironment(self::VAULT_ADDRESS);
+
+        $this->assertCount(1, $this->requests, 'the second resolution went to the vault');
+    }
+
+    /**
+     * Dynamic database credentials are never cached (their lease belongs to the vault)
+     *
+     * @return void
+     */
+    public function testDynamicCredentialsAreNotCached(): void
+    {
+        putenv('VAULT_TOKEN=test-token');
+        putenv('VAULT_DB_STRATEGY=dynamic');
+        $cache = $this->arrayCache();
+
+        $this->resolver([$this->creds('dyn-user', 'dyn-pass')], null, $cache)->hydrateEnvironment(self::VAULT_ADDRESS);
+        $this->resolver([$this->creds('dyn-user2', 'dyn-pass2')], null, $cache)->hydrateEnvironment(self::VAULT_ADDRESS);
+
+        $this->assertCount(1, $this->requests);
+        $this->assertSame('dyn-user2', getenv('MYSQL_WRITE_USERNAME'));
+    }
+
+    /**
+     * A change to what is read (here the KV path) is a cache miss, not a stale hit
+     *
+     * @return void
+     */
+    public function testCacheIsKeyedOnConfiguration(): void
+    {
+        putenv('VAULT_TOKEN=test-token');
+        $cache = $this->arrayCache();
+
+        $this->resolver([$this->kv(self::FULL_DB_SECRET)], null, $cache)->hydrateEnvironment(self::VAULT_ADDRESS);
+
+        putenv('VAULT_DB_KV_PATH=other/db');
+        $this->resolver([$this->kv(['write_username' => 'other-writer', 'write_password' => 'x'])], null, $cache)
+            ->hydrateEnvironment(self::VAULT_ADDRESS);
+
+        $this->assertCount(1, $this->requests);
+        $this->assertSame('other-writer', getenv('MYSQL_WRITE_USERNAME'));
+    }
+
+    /**
+     * A failed resolution is not cached
+     *
+     * @return void
+     */
+    public function testFailuresAreNotCached(): void
+    {
+        putenv('VAULT_TOKEN=test-token');
+        $cache = $this->arrayCache();
+
+        try {
+            $this->resolver([new Response(403, [], '{"errors":["permission denied"]}')], null, $cache)->hydrateEnvironment(self::VAULT_ADDRESS);
+        } catch (RuntimeException $exception) {
+            $this->assertNotSame('', $exception->getMessage());
+        }
+
+        $this->resolver([$this->kv(self::FULL_DB_SECRET)], null, $cache)->hydrateEnvironment(self::VAULT_ADDRESS);
+
+        $this->assertCount(1, $this->requests, 'the retry went to the vault');
+        $this->assertSame('writer', getenv('MYSQL_WRITE_USERNAME'));
+    }
+
+    /**
+     * A cache that throws falls back to the vault rather than failing the request
+     *
+     * @return void
+     */
+    public function testBrokenCacheFallsBackToTheVault(): void
+    {
+        putenv('VAULT_TOKEN=test-token');
+        $cache = $this->createStub(SimpleCache::class);
+        $cache->method('get')->willThrowException(new RuntimeException('cache down'));
+        $cache->method('set')->willThrowException(new RuntimeException('cache down'));
+
+        $this->resolver([$this->kv(self::FULL_DB_SECRET)], null, $cache)->hydrateEnvironment(self::VAULT_ADDRESS);
+
+        $this->assertSame('writer', getenv('MYSQL_WRITE_USERNAME'));
+    }
+
+    /**
+     * An app-secret failure leaves the environment untouched: nothing is applied until everything resolved
+     *
+     * @return void
+     */
+    public function testAppSecretFailureLeavesTheEnvironmentUntouched(): void
+    {
+        putenv('VAULT_TOKEN=test-token');
+        putenv('VAULT_APP_KV_PATH=app/api');
+        putenv('MYSQL_WRITE_PASSWORD=stale');
+
+        try {
+            $this->resolver([$this->kv(self::FULL_DB_SECRET), $this->kv(['lower_case_only' => 'x'])])->hydrateEnvironment(self::VAULT_ADDRESS);
+            $this->fail('Expected the empty app secret to fail closed');
+        } catch (RuntimeException $exception) {
+            $this->assertNotSame('', $exception->getMessage());
+        }
+
+        $this->assertSame('stale', getenv('MYSQL_WRITE_PASSWORD'));
+    }
+
+    /**
      * Capture then clear every env var these tests can set, so a developer's own
      * VAULT_* / MYSQL_* shell variables neither leak in nor get wiped
      *
@@ -478,6 +710,9 @@ final class VaultCredentialResolverServiceTest extends UbixConcreteClassOrEnumTe
             $this->originalEnv[$name] = getenv($name);
             putenv($name);
         }
+
+        $this->jwtPath = (string) tempnam(sys_get_temp_dir(), 'sa-jwt-');
+        file_put_contents($this->jwtPath, "the.pod.jwt\n");
     }
 
     /**
@@ -491,6 +726,10 @@ final class VaultCredentialResolverServiceTest extends UbixConcreteClassOrEnumTe
             putenv($value === false ? $name : $name . '=' . $value);
         }
 
+        if ($this->jwtPath !== '' && is_file($this->jwtPath)) {
+            unlink($this->jwtPath);
+        }
+
         parent::tearDown();
     }
 
@@ -499,10 +738,11 @@ final class VaultCredentialResolverServiceTest extends UbixConcreteClassOrEnumTe
      *
      * @param array<int, Response> $responses Queued responses, in request order
      * @param ?Logger              $logger    Logger to inject, or a stub when null
+     * @param ?SimpleCache         $cache     Cache for the resolved environment (null for none)
      *
      * @return VaultCredentialResolverService
      */
-    private function resolver(array $responses, ?Logger $logger = null): VaultCredentialResolverService
+    private function resolver(array $responses, ?Logger $logger = null, ?SimpleCache $cache = null): VaultCredentialResolverService
     {
         $logger ??= $this->createStub(Logger::class);
 
@@ -515,7 +755,7 @@ final class VaultCredentialResolverServiceTest extends UbixConcreteClassOrEnumTe
         }));
         $client = new Client(['handler' => $stack]);
 
-        return new VaultCredentialResolverService($logger, new VaultService($logger, $client, new JsonService($logger)));
+        return new VaultCredentialResolverService($logger, new VaultService($logger, $client, new JsonService($logger)), $cache, $this->jwtPath);
     }
 
     /**
@@ -545,5 +785,40 @@ final class VaultCredentialResolverServiceTest extends UbixConcreteClassOrEnumTe
         $json = new JsonService($this->createStub(Logger::class));
 
         return new Response(200, ['Content-Type' => 'application/json'], $json->encode(['data' => ['username' => $username, 'password' => $password]]));
+    }
+
+    /**
+     * A JSON response
+     *
+     * @param array<string, mixed> $body Response body
+     *
+     * @return Response
+     */
+    private function json(array $body): Response
+    {
+        $json = new JsonService($this->createStub(Logger::class));
+
+        return new Response(200, ['Content-Type' => 'application/json'], $json->encode($body));
+    }
+
+    /**
+     * An in-memory PSR-16 cache standing in for APCu (get and set are all the resolver uses)
+     *
+     * @return SimpleCache
+     */
+    private function arrayCache(): SimpleCache
+    {
+        $items = new ArrayObject();
+        $cache = $this->createStub(SimpleCache::class);
+        $cache->method('get')->willReturnCallback(function (string $key, mixed $default = null) use ($items): mixed {
+            return $items[$key] ?? $default;
+        });
+        $cache->method('set')->willReturnCallback(function (string $key, mixed $value) use ($items): bool {
+            $items[$key] = $value;
+
+            return true;
+        });
+
+        return $cache;
     }
 }
