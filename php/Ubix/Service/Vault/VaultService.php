@@ -26,6 +26,8 @@ final class VaultService
 {
     private const AUTH_KUBERNETES_LOGIN = '/v1/auth/kubernetes/login';
 
+    private const AUTH_TOKEN_REVOKE_SELF = '/v1/auth/token/revoke-self';
+
     private const KV_V2_READ_PREFIX = '/v1/secret/data/';
 
     private const DATABASE_CREDS_PREFIX = '/v1/database/creds/';
@@ -110,6 +112,23 @@ final class VaultService
     }
 
     /**
+     * Revoke the given token (the token revokes itself).
+     *
+     * For tokens this process obtained by logging in and no longer needs: a token
+     * left to expire stays a valid credential until it does, and uBix Vault keeps a
+     * record of it until then.
+     *
+     * @param string $vaultAddress Base address of the Vault server
+     * @param string $token        The token to revoke (a failed request surfaces as a RuntimeException)
+     *
+     * @return void
+     */
+    public function revokeSelf(string $vaultAddress, string $token): void
+    {
+        $this->send($vaultAddress, 'POST', self::AUTH_TOKEN_REVOKE_SELF, $token);
+    }
+
+    /**
      * Read dynamic database credentials for a role.
      *
      * @param string $vaultAddress Base address of the Vault server
@@ -173,6 +192,9 @@ final class VaultService
             throw new RuntimeException('uBix Vault request to `' . $path . '` failed: ' . $exception->getMessage(), 0, $exception);
         }
 
-        return $this->jsonService->decode((string) $response->getBody());
+        $body = (string) $response->getBody();
+
+        // Some endpoints (e.g. revoke-self) answer 204 with no body.
+        return trim($body) === '' ? [] : $this->jsonService->decode($body);
     }
 }

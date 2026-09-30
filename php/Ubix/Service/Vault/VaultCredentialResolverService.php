@@ -5,7 +5,9 @@ declare(strict_types=1);
 namespace Ubix\Service\Vault;
 
 use Psr\Log\LoggerInterface as Logger;
+use Psr\SimpleCache\CacheInterface as SimpleCache;
 use RuntimeException;
+use Throwable;
 
 /**
  * Resolves the application's database credentials from uBix Vault at process
@@ -20,13 +22,29 @@ use RuntimeException;
  *
  * Auth: prefers a static `VAULT_TOKEN` (dev/CI); otherwise, in-cluster, logs in
  * with the Kubernetes auth method using the pod's mounted service-account JWT
- * and `VAULT_K8S_ROLE`.
+ * and `VAULT_K8S_ROLE`. A token obtained by logging in is revoked as soon as the
+ * reads are done — it is not needed afterwards, and a token left to expire is a
+ * live credential (and a stored record in the vault) until it does. A static
+ * `VAULT_TOKEN` is never revoked: it is not this process's to end.
+ *
+ * Caching: given a cache (APCu in the entry points, see `Bootstrap/vault.php`),
+ * the resolved environment is kept for `VAULT_CACHE_TTL` seconds (default 300;
+ * 0 disables it), so a PHP-FPM pool logs in to the vault a few times an hour
+ * instead of on every request, and a short vault outage does not take requests
+ * down with it. Only a complete, successful resolution is cached, keyed on the
+ * vault address and every setting that decides what is read; `dynamic` database
+ * credentials are never cached (their lease belongs to the vault). A secret
+ * rotated in the vault reaches the app within one TTL.
  *
  * @see \Ubix\Tests\Service\Vault\VaultCredentialResolverServiceTest PHPUnit test case
  */
 final class VaultCredentialResolverService
 {
     private const KUBERNETES_SERVICE_ACCOUNT_JWT = '/var/run/secrets/kubernetes.io/serviceaccount/token';
+
+    private const CACHE_KEY_PREFIX = 'vault.environment.';
+
+    private const CACHE_TTL_DEFAULT = 300;
 
     /**
      * Map of Vault KV keys -> the environment variable each populates. The KV
@@ -59,12 +77,16 @@ final class VaultCredentialResolverService
     /**
      * Constructor
      *
-     * @param Logger       $logger       Logger
-     * @param VaultService $vaultService Client for the uBix Vault server
+     * @param Logger       $logger                  Logger
+     * @param VaultService $vaultService            Client for the uBix Vault server
+     * @param ?SimpleCache $cache                   Where the resolved environment is kept between requests; null for no cache
+     * @param string       $serviceAccountTokenPath The pod's service-account JWT (for Kubernetes auth)
      */
     public function __construct(
         private Logger $logger,
         private VaultService $vaultService,
+        private ?SimpleCache $cache = null,
+        private string $serviceAccountTokenPath = self::KUBERNETES_SERVICE_ACCOUNT_JWT,
     ) {
     }
 
@@ -82,20 +104,41 @@ final class VaultCredentialResolverService
      */
     public function hydrateEnvironment(string $vaultAddress): void
     {
-        $token       = $this->resolveToken($vaultAddress);
-        $credentials = $this->resolveCredentials($vaultAddress, $token);
+        $cacheKey = $this->cacheKey($vaultAddress);
+        $cached   = $this->cachedEnvironment($cacheKey);
 
-        foreach ($credentials as $envName => $value) {
-            // MysqlPdoSqlService reads credentials via getenv(), so putenv() is
-            // sufficient — no need to touch the $_ENV / $_SERVER superglobals.
-            putenv($envName . '=' . $value);
+        if ($cached !== null) {
+            $this->putEnvironment($cached);
+            $this->logger->debug('Hydrated environment from the uBix Vault cache', ['vars' => array_keys($cached)]);
+
+            return;
         }
 
+        // Resolve everything before touching the environment, so a failure part-way
+        // (an app secret, after the database credentials) leaves it as it was.
+        [$credentials, $appSecrets] = $this->withToken($vaultAddress, function (string $token) use ($vaultAddress): array {
+            return [
+                $this->resolveCredentials($vaultAddress, $token),
+                $this->resolveAppSecrets($vaultAddress, $token),
+            ];
+        });
+
+        $this->putEnvironment($credentials);
         $this->logger->info('Hydrated database credentials from uBix Vault', [
             'vars' => array_keys($credentials), // Names only — never the values.
         ]);
 
-        $this->hydrateAppSecrets($vaultAddress, $token);
+        if ($appSecrets !== []) {
+            $this->putEnvironment($appSecrets);
+            $this->logger->info('Hydrated app secrets from uBix Vault', [
+                'paths' => $this->appSecretPaths(),
+                'vars'  => array_keys($appSecrets), // Names only — never the values.
+            ]);
+        }
+
+        if ($this->readEnv('VAULT_DB_STRATEGY') !== 'dynamic') {
+            $this->storeEnvironment($cacheKey, $credentials + $appSecrets);
+        }
     }
 
     /**
@@ -124,7 +167,9 @@ final class VaultCredentialResolverService
             return;
         }
 
-        $secret   = $this->vaultService->readKvV2Secret($vaultAddress, $this->resolveToken($vaultAddress), $path);
+        $secret   = $this->withToken($vaultAddress, function (string $token) use ($vaultAddress, $path): array {
+            return $this->vaultService->readKvV2Secret($vaultAddress, $token, $path);
+        });
         $resolved = [];
 
         foreach (self::TEST_KV_KEY_TO_ENV as $kvKey => $envName) {
@@ -173,19 +218,15 @@ final class VaultCredentialResolverService
      * @param string $vaultAddress Base address of the Vault server
      * @param string $token        A valid Vault client token
      *
-     * @return void
+     * @return array<string, string> Environment variable name => value, empty when not configured
      *
      * @throws RuntimeException When a configured path yields no usable keys
      */
-    private function hydrateAppSecrets(string $vaultAddress, string $token): void
+    private function resolveAppSecrets(string $vaultAddress, string $token): array
     {
-        $paths = $this->appSecretPaths();
-
-        if ($paths === []) {
-            return;
-        }
-
+        $paths    = $this->appSecretPaths();
         $hydrated = [];
+        $values   = [];
 
         foreach ($paths as $path) {
             $usable = 0;
@@ -212,8 +253,8 @@ final class VaultCredentialResolverService
                     continue;
                 }
 
-                putenv($key . '=' . $value);
-                $hydrated[$key] = $path;
+                $values[(string) $key] = $value;
+                $hydrated[$key]        = $path;
             }
 
             if ($usable === 0) {
@@ -224,10 +265,7 @@ final class VaultCredentialResolverService
             }
         }
 
-        $this->logger->info('Hydrated app secrets from uBix Vault', [
-            'paths' => $paths,
-            'vars'  => array_keys($hydrated), // Names only — never the values.
-        ]);
+        return $values;
     }
 
     /**
@@ -251,31 +289,163 @@ final class VaultCredentialResolverService
     }
 
     /**
-     * Obtain a Vault client token: a static VAULT_TOKEN when present, otherwise
-     * a Kubernetes-auth login with the pod's service-account JWT.
+     * Run $use with a Vault client token: a static VAULT_TOKEN when present,
+     * otherwise a Kubernetes-auth login with the pod's service-account JWT — which
+     * is revoked afterwards, whether $use succeeded or not.
      *
-     * @param string $vaultAddress Base address of the Vault server
+     * A failed revocation is logged and otherwise ignored: the token still expires
+     * on its own, and failing the request over it would trade a stray token for an
+     * outage.
+     *
+     * @param string              $vaultAddress Base address of the Vault server
+     * @param callable(string): T $use          What to do with the token
      *
      * @throws RuntimeException If no usable auth method is configured
      *
-     * @return string A Vault client token
+     * @return T What $use returned
+     *
+     * @template T
      */
-    private function resolveToken(string $vaultAddress): string
+    private function withToken(string $vaultAddress, callable $use): mixed
     {
         $staticToken = $this->readEnv('VAULT_TOKEN');
         if ($staticToken !== '') {
-            return $staticToken;
+            return $use($staticToken);
         }
 
         $role = $this->readEnv('VAULT_K8S_ROLE');
-        if ($role !== '' && is_readable(self::KUBERNETES_SERVICE_ACCOUNT_JWT)) {
-            $jwt = (string) file_get_contents(self::KUBERNETES_SERVICE_ACCOUNT_JWT);
-            return $this->vaultService->loginKubernetes($vaultAddress, $role, trim($jwt));
+        if ($role === '' || !is_readable($this->serviceAccountTokenPath)) {
+            throw new RuntimeException(
+                'VAULT_ADDR is set but no auth is available: set VAULT_TOKEN, or VAULT_K8S_ROLE with a mounted service-account token.',
+            );
         }
 
-        throw new RuntimeException(
-            'VAULT_ADDR is set but no auth is available: set VAULT_TOKEN, or VAULT_K8S_ROLE with a mounted service-account token.',
-        );
+        $jwt   = (string) file_get_contents($this->serviceAccountTokenPath);
+        $token = $this->vaultService->loginKubernetes($vaultAddress, $role, trim($jwt));
+
+        try {
+            return $use($token);
+        } finally {
+            try {
+                $this->vaultService->revokeSelf($vaultAddress, $token);
+            } catch (Throwable $exception) {
+                $this->logger->warning('Could not revoke the uBix Vault login token; it will expire on its own', [
+                    'error' => $exception->getMessage(),
+                ]);
+            }
+        }
+    }
+
+    /**
+     * Put each variable into the process environment
+     *
+     * MysqlPdoSqlService reads credentials via getenv(), so putenv() is sufficient —
+     * no need to touch the $_ENV / $_SERVER superglobals.
+     *
+     * @param array<string, string> $environment Environment variable name => value
+     *
+     * @return void
+     */
+    private function putEnvironment(array $environment): void
+    {
+        foreach ($environment as $envName => $value) {
+            putenv($envName . '=' . $value);
+        }
+    }
+
+    /**
+     * The cache key for this configuration: the vault address plus every setting
+     * that decides what is read, hashed (no path or role appears in the key)
+     *
+     * @param string $vaultAddress Base address of the Vault server
+     *
+     * @return string A PSR-16-safe key
+     */
+    private function cacheKey(string $vaultAddress): string
+    {
+        $settings = [$vaultAddress];
+
+        foreach (['VAULT_K8S_ROLE', 'VAULT_DB_STRATEGY', 'VAULT_DB_KV_PATH', 'VAULT_DB_ROLE', 'VAULT_APP_KV_PATH', 'VAULT_APP_KV_PATHS'] as $name) {
+            $settings[] = $name . '=' . $this->readEnv($name);
+        }
+
+        return self::CACHE_KEY_PREFIX . hash('sha256', implode("\n", $settings));
+    }
+
+    /**
+     * The cache lifetime in seconds from VAULT_CACHE_TTL (default 300; 0 disables)
+     *
+     * @return int Seconds; 0 when caching is off
+     */
+    private function cacheTtl(): int
+    {
+        $raw = $this->readEnv('VAULT_CACHE_TTL');
+
+        if ($raw === '') {
+            return self::CACHE_TTL_DEFAULT;
+        }
+
+        return ctype_digit($raw) ? (int) $raw : self::CACHE_TTL_DEFAULT;
+    }
+
+    /**
+     * The cached environment for $key, or null on a miss, when caching is off, or
+     * when the cache fails (a broken cache falls back to the vault, never errors)
+     *
+     * @param string $key Cache key
+     *
+     * @return array<string, string>|null Environment variable name => value
+     */
+    private function cachedEnvironment(string $key): ?array
+    {
+        if ($this->cache === null || $this->cacheTtl() === 0) {
+            return null;
+        }
+
+        try {
+            $value = $this->cache->get($key);
+        } catch (Throwable $exception) {
+            $this->logger->debug('Could not read the uBix Vault cache; resolving from the vault', ['error' => $exception->getMessage()]);
+
+            return null;
+        }
+
+        if (!is_array($value) || $value === []) {
+            return null;
+        }
+
+        $environment = [];
+
+        foreach ($value as $name => $item) {
+            if (!is_string($name) || !is_string($item)) {
+                return null;
+            }
+
+            $environment[$name] = $item;
+        }
+
+        return $environment;
+    }
+
+    /**
+     * Keep a successfully resolved environment for the next requests
+     *
+     * @param string                $key         Cache key
+     * @param array<string, string> $environment Environment variable name => value
+     *
+     * @return void
+     */
+    private function storeEnvironment(string $key, array $environment): void
+    {
+        if ($this->cache === null || $this->cacheTtl() === 0) {
+            return;
+        }
+
+        try {
+            $this->cache->set($key, $environment, $this->cacheTtl());
+        } catch (Throwable $exception) {
+            $this->logger->debug('Could not cache the uBix Vault environment', ['error' => $exception->getMessage()]);
+        }
     }
 
     /**
