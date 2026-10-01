@@ -27,6 +27,8 @@ use Ubix\Tests\UbixConcreteClassOrEnumTestCaseInterface as IUbixConcreteClassOrE
  */
 final class AiReviewServiceTest extends UbixConcreteClassOrEnumTestCase implements IUbixConcreteClassOrEnumTestCase
 {
+    private const API = 'https://gitlab.test/api/v4';
+
     /**
      * Responses the stubbed HTTP client hands back, in order
      *
@@ -183,64 +185,164 @@ final class AiReviewServiceTest extends UbixConcreteClassOrEnumTestCase implemen
     }
 
     /**
-     * The note carries the marker, the model, the short commit and a truncation warning
+     * The request makes Gemini answer in the fixed JSON shape
      *
      * @return void
      */
-    public function testTheNoteSaysWhatItIs(): void
+    public function testTheRequestAsksForStructuredFindings(): void
     {
-        $note = $this->buildService()->noteBody('Nothing worth raising.', 'gemini-flash-latest', '0123456789abcdef', true);
+        $this->responses = [new Psr7Response(200, [], '{"candidates":[{"content":{"parts":[{"text":"{}"}]}}]}')];
 
-        $this->assertStringStartsWith(AiReviewService::NOTE_MARKER, $note);
-        $this->assertStringContainsString('`gemini-flash-latest` on `01234567`', $note);
-        $this->assertStringContainsString('covers the first files only', $note);
+        $this->buildService()->review('key', 'm', 'guide', 'Title', 'diff');
+
+        $sent = (string) $this->requests[0]->getBody();
+        $this->assertStringContainsString('"responseMimeType":"application\/json"', $sent);
+        $this->assertStringContainsString('"findings"', $sent);
     }
 
     /**
-     * A second push edits the note the first one wrote
+     * A structured answer becomes a verdict and clean findings
      *
      * @return void
      */
-    public function testALaterPushEditsTheEarlierNote(): void
+    public function testAStructuredAnswerIsRead(): void
     {
-        $this->responses = [
-            new Psr7Response(200, [], '[{"id":5,"body":"a person"},{"id":9,"body":"' . AiReviewService::NOTE_MARKER . ' old"}]'),
-            new Psr7Response(200, [], '{}'),
-        ];
+        $review = $this->buildService()->parseReview('{"verdict":"One bug","findings":[{"severity":"bug","file":"/php/A.php","line":12,"title":"Off by one","detail":"Loses the last row."},{"severity":"risk","file":"x","line":0,"title":"  ","detail":"no title, dropped"}]}');
 
-        $this->buildService()->upsertNote('https://gitlab.test/api/v4', '12', '34', 'token', 'new');
-
-        $this->assertSame('PUT', $this->requests[1]->getMethod());
-        $this->assertSame('https://gitlab.test/api/v4/projects/12/merge_requests/34/notes/9', (string) $this->requests[1]->getUri());
+        $this->assertSame('One bug', $review['verdict']);
+        $this->assertSame([['detail' => 'Loses the last row.', 'file' => 'php/A.php', 'line' => 12, 'severity' => 'bug', 'title' => 'Off by one']], $review['findings']);
     }
 
     /**
-     * The first push adds a note
+     * Prose instead of JSON still produces a summary rather than a failed run
      *
      * @return void
      */
-    public function testTheFirstPushAddsANote(): void
+    public function testProseFallsBackToAVerdict(): void
     {
-        $this->responses = [new Psr7Response(200, [], '[{"id":5,"body":"a person"}]'), new Psr7Response(201, [], '{}')];
+        $this->assertSame(['findings' => [], 'verdict' => 'Looks fine to me.'], $this->buildService()->parseReview('Looks fine to me.'));
+    }
 
-        $this->buildService()->upsertNote('https://gitlab.test/api/v4', '12', '34', 'token', 'new');
+    /**
+     * The summary names every finding and tells a human the merge waits for them
+     *
+     * @return void
+     */
+    public function testTheSummarySaysWhatItIs(): void
+    {
+        $review = ['findings' => [['detail' => 'd', 'file' => 'php/A.php', 'line' => 12, 'severity' => 'bug', 'title' => 'Off by one']], 'verdict' => 'One bug'];
+        $body   = $this->buildService()->summaryBody($review, 'gemini-flash-latest', '0123456789abcdef', true);
+
+        $this->assertStringStartsWith(AiReviewService::NOTE_MARKER, $body);
+        $this->assertStringContainsString('#### AI review — One bug', $body);
+        $this->assertStringContainsString('**[bug]** `php/A.php:12` — Off by one', $body);
+        $this->assertStringContainsString('the merge waits for it', $body);
+        $this->assertStringContainsString('covers the first files only', $body);
+    }
+
+    /**
+     * With no review thread yet, one is opened
+     *
+     * @return void
+     */
+    public function testTheFirstPushOpensAThread(): void
+    {
+        $this->responses = [new Psr7Response(200, [], '[]'), new Psr7Response(201, [], '{}')];
+
+        $this->buildService()->upsertThread(self::API, '12', '34', 'token', 'summary');
 
         $this->assertSame('POST', $this->requests[1]->getMethod());
-        $this->assertSame('token', $this->requests[1]->getHeaderLine('PRIVATE-TOKEN'));
+        $this->assertSame(self::API . '/projects/12/merge_requests/34/discussions', (string) $this->requests[1]->getUri());
     }
 
     /**
-     * A refused write is a failure
+     * An unresolved summary is edited in place: one thread to read, however many pushes
      *
      * @return void
      */
-    public function testARefusedNoteIsAFailure(): void
+    public function testAnUnresolvedSummaryIsEditedInPlace(): void
+    {
+        $this->responses = [new Psr7Response(200, [], $this->threads([['abc', 5, AiReviewService::NOTE_MARKER . ' old', false]])), new Psr7Response(200, [], '{}')];
+
+        $this->buildService()->upsertThread(self::API, '12', '34', 'token', 'summary');
+
+        $this->assertSame('PUT', $this->requests[1]->getMethod());
+        $this->assertSame(self::API . '/projects/12/merge_requests/34/discussions/abc/notes/5', (string) $this->requests[1]->getUri());
+    }
+
+    /**
+     * Once a human resolved the summary, the next push opens a new one
+     *
+     * @return void
+     */
+    public function testAResolvedSummaryIsNotReopened(): void
+    {
+        $this->responses = [new Psr7Response(200, [], $this->threads([['abc', 5, AiReviewService::NOTE_MARKER . ' old', true]])), new Psr7Response(201, [], '{}')];
+
+        $this->buildService()->upsertThread(self::API, '12', '34', 'token', 'summary');
+
+        $this->assertSame('POST', $this->requests[1]->getMethod());
+    }
+
+    /**
+     * A refused thread is a failure, never silence
+     *
+     * @return void
+     */
+    public function testARefusedThreadIsAFailure(): void
     {
         $this->responses = [new Psr7Response(200, [], '[]'), new Psr7Response(403, [], '{}')];
 
         $this->expectException(RuntimeException::class);
 
-        $this->buildService()->upsertNote('https://gitlab.test/api/v4', '12', '34', 'token', 'new');
+        $this->buildService()->upsertThread(self::API, '12', '34', 'token', 'summary');
+    }
+
+    /**
+     * A new finding goes inline on its line; one already raised is not raised again
+     *
+     * @return void
+     */
+    public function testFindingsGoInlineAndAreNotRaisedTwice(): void
+    {
+        $service = $this->buildService();
+        $old     = ['detail' => 'd', 'file' => 'php/A.php', 'line' => 3, 'severity' => 'bug', 'title' => 'Already raised'];
+        $new     = ['detail' => 'd', 'file' => 'php/B.php', 'line' => 9, 'severity' => 'risk', 'title' => 'Fresh'];
+
+        $this->responses = [
+            new Psr7Response(200, [], $this->threads([['f1', 7, $service->getFindingBody($old, 'aaaaaaaa'), true]])),
+            new Psr7Response(200, [], '{"diff_refs":{"base_sha":"b","head_sha":"h","start_sha":"s"}}'),
+            new Psr7Response(201, [], '{}'),
+        ];
+
+        $result = $service->postFindings(self::API, '12', '34', 'token', [$old, $new], 'cccccccc');
+
+        $this->assertSame(['inline' => 1, 'posted' => 1, 'skipped' => 1], $result);
+        $sent = (string) $this->requests[2]->getBody();
+        $this->assertStringContainsString('"new_path":"php\/B.php"', $sent);
+        $this->assertStringContainsString('"new_line":9', $sent);
+    }
+
+    /**
+     * A line outside the diff becomes a general thread instead of being lost
+     *
+     * @return void
+     */
+    public function testAFindingOffTheDiffBecomesAGeneralThread(): void
+    {
+        $finding = ['detail' => 'd', 'file' => 'php/B.php', 'line' => 400, 'severity' => 'risk', 'title' => 'Far away'];
+
+        $this->responses = [
+            new Psr7Response(200, [], '[]'),
+            new Psr7Response(200, [], '{"diff_refs":{"base_sha":"b","head_sha":"h","start_sha":"s"}}'),
+            new Psr7Response(400, [], '{"message":"line_code can not be blank"}'),
+            new Psr7Response(201, [], '{}'),
+        ];
+
+        $result = $this->buildService()->postFindings(self::API, '12', '34', 'token', [$finding], 'cccccccc');
+
+        $this->assertSame(['inline' => 0, 'posted' => 1, 'skipped' => 0], $result);
+        $this->assertStringNotContainsString('position', (string) $this->requests[3]->getBody());
     }
 
     /**
@@ -290,6 +392,22 @@ final class AiReviewServiceTest extends UbixConcreteClassOrEnumTestCase implemen
         $this->requests[] = $request;
 
         return array_shift($this->responses) ?? new Psr7Response(500);
+    }
+
+    /**
+     * A discussions listing: one thread per [id, note id, body, resolved]
+     *
+     * @param array<array{string, int, string, bool}> $threads The threads
+     *
+     * @return string The JSON
+     */
+    private function threads(array $threads): string
+    {
+        $json = new JsonService($this->createStub(Logger::class));
+
+        return $json->encode(array_map(static function (array $thread): array {
+            return ['id' => $thread[0], 'notes' => [['body' => $thread[2], 'id' => $thread[1], 'resolvable' => true, 'resolved' => $thread[3]]]];
+        }, $threads));
     }
 
     /**
