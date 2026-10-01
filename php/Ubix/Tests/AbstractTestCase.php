@@ -103,6 +103,23 @@ abstract class AbstractTestCase extends TestCase
             putenv('MYSQL_WRITE_PASSWORD=' . getenv('TEST_MYSQL_WRITE_PASSWORD'));
             putenv('MYSQL_READ_PORT=' . getenv('TEST_MYSQL_WRITE_PORT'));
             putenv('MYSQL_WRITE_PORT=' . getenv('TEST_MYSQL_WRITE_PORT'));
+
+            // The database NAME, which this mapping used to leave out. Host,
+            // user, password and port all pointed at the test server while the
+            // schema name still came from `MYSQL_*_DATABASE` -- so a host whose
+            // test database is not named the same as its development one either
+            // failed to connect for no obvious reason, or, where a same-named
+            // schema happened to exist on the test server, connected to the
+            // wrong one and said nothing.
+            //
+            // Guarded, so a host that sets no test database keeps exactly the
+            // behaviour it has today.
+            $testDatabase = getenv('TEST_MYSQL_WRITE_DATABASE');
+
+            if (is_string($testDatabase) && $testDatabase !== '') {
+                putenv('MYSQL_READ_DATABASE=' . $testDatabase);
+                putenv('MYSQL_WRITE_DATABASE=' . $testDatabase);
+            }
             putenv('MEMCACHE_SERVERS=localhost:11211');
 
             /**
