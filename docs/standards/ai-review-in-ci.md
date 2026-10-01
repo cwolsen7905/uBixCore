@@ -1,6 +1,6 @@
 # AI review in CI — `ci:aiReview`
 
-**Version:** 2.0
+**Version:** 2.1
 **Date:** 2026-09-30
 **Status:** Active
 
@@ -45,8 +45,10 @@ minute and per day); a busy day of pushes can exhaust them, and the job then fai
 
 ### 2.2 A GitLab token to write the note
 
-Project → Settings → Access tokens → **Add new token**: role **Reporter**, scope **`api`**,
-an expiry you will remember to rotate. `CI_JOB_TOKEN` cannot write MR notes.
+Project → Settings → Access tokens → **Add new token**: role **Developer**, scope **`api`**,
+an expiry you will remember to rotate. Developer, not Reporter, because the job resolves
+the summary of a clean review; with Reporter everything else works and a clean summary
+stays open. `CI_JOB_TOKEN` cannot write MR threads.
 
 ### 2.3 The CI variables
 
@@ -60,8 +62,8 @@ are unprotected, so a protected variable never reaches an MR pipeline:
 | `AI_REVIEW_MODEL` | optional; default `gemini-flash-latest` (Google's alias for its newest Flash) |
 | `AI_REVIEW_FALLBACK_MODEL` | optional; default `gemini-flash-lite-latest`, tried when the first stays busy |
 
-Unprotected means any branch's pipeline can read them, which is why both are low-privilege:
-a free-tier key, and a Reporter token that can comment.
+Unprotected means any branch's pipeline can read them, which is why both are kept narrow:
+a free-tier key, and a token scoped to this one project.
 
 ### 2.4 The job
 
@@ -109,7 +111,13 @@ default and every run times out.
 5. **One summary thread** — verdict and a line per finding — is always posted, and is
    **edited in place while unresolved**, so many pushes before anyone looks leave one summary
    to read. Once a human resolves it, the next push opens a new one: new code, new look.
-6. No review at all (all models busy, a refusal, an empty answer, a bad key): the summary
+6. **A clean review resolves itself.** No findings: the summary is posted (or an open one is
+   updated, since a later clean review supersedes it) and then resolved by the job, so it is
+   on the record without anyone having to click it. **Findings, or a failed run, are never
+   resolved by the job** — those are what a person has to look at. Resolving needs the
+   **Developer** role; with a Reporter token the resolve is refused, logged, and the thread
+   simply stays open, which is the safe way to fail.
+7. No review at all (all models busy, a refusal, an empty answer, a bad key): the summary
    becomes **"NOT reviewed — review this one yourself"**, and the job exits 1 (yellow).
 
 ## 4. Working the threads

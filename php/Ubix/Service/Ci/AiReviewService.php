@@ -283,7 +283,8 @@ final class AiReviewService
 
         $list   = $lines === [] ? '' : "\n\n" . implode("\n", $lines) . "\n\nEach finding has its own thread.";
         $cut    = $truncated ? "\n\n> The diff was too large to send whole: this review covers the first files only." : '';
-        $footer = "\n\n<sub>`" . $model . '` on `' . substr($commitSha, 0, 8) . '` · edited on each push until resolved · **resolve this thread once a human has read it — the merge waits for it**</sub>';
+        $ask    = $review['findings'] === [] ? 'nothing to raise, so this thread resolves itself' : 'edited on each push until resolved · **resolve this thread once a human has read it — the merge waits for it**';
+        $footer = "\n\n<sub>`" . $model . '` on `' . substr($commitSha, 0, 8) . '` · ' . $ask . '</sub>';
 
         return self::NOTE_MARKER . "\n#### AI review — " . $review['verdict'] . $list . $cut . $footer;
     }
@@ -410,12 +411,13 @@ final class AiReviewService
      * @param string $mrIid     Merge request iid
      * @param string $token     Project access token (Reporter, `api` scope)
      * @param string $body      Thread body
+     * @param bool   $resolve   Resolve it once written: a clean review needs no human click
      *
      * @throws RuntimeException When GitLab refuses the write
      *
      * @return void
      */
-    public function upsertThread(string $apiUrl, string $projectId, string $mrIid, string $token, string $body): void
+    public function upsertThread(string $apiUrl, string $projectId, string $mrIid, string $token, string $body, bool $resolve = false): void
     {
         $threadsUrl = rtrim($apiUrl, '/') . '/projects/' . rawurlencode($projectId) . '/merge_requests/' . rawurlencode($mrIid) . '/discussions';
         $open       = $this->getOpenReviewThread($threadsUrl, $token);
@@ -428,10 +430,22 @@ final class AiReviewService
             ->withHeader('Content-Type', 'application/json')
             ->withBody($this->streamFactory->createStream($payload));
 
-        $status = $this->send($request)->getStatusCode();
+        $response = $this->send($request);
+        $status   = $response->getStatusCode();
 
         if ($status < 200 || $status >= 300) {
             throw new RuntimeException(sprintf('GitLab refused the review thread (HTTP %d): check the token has the Reporter role and api scope.', $status));
+        }
+
+        if (!$resolve) {
+            return;
+        }
+
+        $discussionId = $open['discussionId'] ?? $this->getCreatedThreadId((string) $response->getBody());
+
+        if ($discussionId === null || !$this->resolveThread($threadsUrl, $token, $discussionId)) {
+            // Left unresolved: a review that blocks when it need not is the safe way to fail.
+            $this->logger->warning('Could not resolve the clean review thread; it stays open (the token needs the Developer role)');
         }
     }
 
@@ -496,6 +510,45 @@ final class AiReviewService
         }
 
         return $newest === null || $newest['resolved'] ? null : ['discussionId' => $newest['discussionId'], 'noteId' => $newest['noteId']];
+    }
+
+    /**
+     * The id of a thread GitLab just created, from its reply
+     *
+     * @param string $body The reply body
+     *
+     * @return ?string The discussion id
+     */
+    private function getCreatedThreadId(string $body): ?string
+    {
+        try {
+            $thread = $this->jsonService->decode($body);
+        } catch (DtoException $e) {
+            return null;
+        }
+
+        return is_string($thread['id'] ?? null) ? $thread['id'] : null;
+    }
+
+    /**
+     * Mark a thread resolved
+     *
+     * @param string $threadsUrl   The MR's discussions endpoint
+     * @param string $token        Project access token (Developer role: resolving needs it)
+     * @param string $discussionId The thread
+     *
+     * @return bool Whether GitLab accepted it
+     */
+    private function resolveThread(string $threadsUrl, string $token, string $discussionId): bool
+    {
+        $request = $this->requestFactory->createRequest('PUT', $threadsUrl . '/' . rawurlencode($discussionId))
+            ->withHeader('PRIVATE-TOKEN', $token)
+            ->withHeader('Content-Type', 'application/json')
+            ->withBody($this->streamFactory->createStream($this->jsonService->encode(['resolved' => true])));
+
+        $status = $this->send($request)->getStatusCode();
+
+        return $status >= 200 && $status < 300;
     }
 
     /**
