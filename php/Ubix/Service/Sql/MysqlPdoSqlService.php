@@ -14,7 +14,7 @@ use Ubix\Service\Sql\AbstractPdoSqlService as PdoSqlService;
  */
 final class MysqlPdoSqlService extends PdoSqlService
 {
-    private const DSN_SPRINTF_FORMAT = 'mysql:host=%s;port=%s;dbname=%s;charset=latin1';
+    private const DSN_SPRINTF_FORMAT = 'mysql:host=%s;port=%s;dbname=%s;charset=%s';
 
     /**
      * Constructor
@@ -33,6 +33,7 @@ final class MysqlPdoSqlService extends PdoSqlService
             $isPhpUnit ? (getenv('TEST_MYSQL_READ_HOST') ?: getenv('TEST_MYSQL_WRITE_HOST')) : getenv('MYSQL_READ_HOST'),
             $isPhpUnit ? (getenv('TEST_MYSQL_READ_PORT') ?: getenv('TEST_MYSQL_WRITE_PORT')) : getenv('MYSQL_READ_PORT'),
             $isPhpUnit ? (getenv('TEST_MYSQL_READ_DATABASE') ?: getenv('TEST_MYSQL_WRITE_DATABASE')) : getenv('MYSQL_READ_DATABASE'),
+            $this->connectionCharset(),
         );
 
         $writeDsn = sprintf(
@@ -40,6 +41,7 @@ final class MysqlPdoSqlService extends PdoSqlService
             $isPhpUnit ? getenv('TEST_MYSQL_WRITE_HOST') : getenv('MYSQL_WRITE_HOST'),
             $isPhpUnit ? getenv('TEST_MYSQL_WRITE_PORT') : getenv('MYSQL_WRITE_PORT'),
             $isPhpUnit ? getenv('TEST_MYSQL_WRITE_DATABASE') : getenv('MYSQL_WRITE_DATABASE'),
+            $this->connectionCharset(),
         );
 
         $this->initializePdoConstructorParameters(

@@ -44,7 +44,7 @@ use Ubix\Service\Sql\AbstractPdoSqlService as PdoSqlService;
  */
 final class MigrationPdoSqlService extends PdoSqlService
 {
-    private const DSN_SPRINTF_FORMAT = 'mysql:host=%s;port=%s;dbname=%s;charset=latin1';
+    private const DSN_SPRINTF_FORMAT = 'mysql:host=%s;port=%s;dbname=%s;charset=%s';
 
     private bool $initialized = false;
 
@@ -88,7 +88,7 @@ final class MigrationPdoSqlService extends PdoSqlService
         // AbstractPdoSqlService::applyDatabasePrefix().
         $database = $this->applyDatabasePrefix($database);
 
-        $dsn = sprintf(self::DSN_SPRINTF_FORMAT, $host, $port, $database);
+        $dsn = sprintf(self::DSN_SPRINTF_FORMAT, $host, $port, $database, $this->connectionCharset());
 
         $this->initializePdoConstructorParameters(
             readDsn:       $dsn,
