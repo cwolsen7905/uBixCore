@@ -4,8 +4,11 @@ declare(strict_types=1);
 
 namespace Ubix\Service\Ci;
 
+use Psr\Http\Client\ClientExceptionInterface as ClientException;
 use Psr\Http\Client\ClientInterface as HttpClient;
 use Psr\Http\Message\RequestFactoryInterface as RequestFactory;
+use Psr\Http\Message\RequestInterface as Request;
+use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Log\LoggerInterface as Logger;
 use RuntimeException;
 use Ubix\Exception\DtoException;
@@ -142,7 +145,7 @@ final class MergeApprovalService
     private function get(string $apiUrl, string $token, string $path): array
     {
         $request  = $this->requestFactory->createRequest('GET', rtrim($apiUrl, '/') . $path)->withHeader('PRIVATE-TOKEN', $token);
-        $response = $this->httpClient->sendRequest($request);
+        $response = $this->send($request);
 
         if ($response->getStatusCode() !== 200) {
             throw new RuntimeException(sprintf('GitLab answered HTTP %d for %s', $response->getStatusCode(), strtok($path, '?')));
@@ -152,6 +155,24 @@ final class MergeApprovalService
             return $this->jsonService->decode((string) $response->getBody());
         } catch (DtoException $e) {
             throw new RuntimeException('GitLab answered with something that is not JSON: ' . $e->getMessage(), 0, $e);
+        }
+    }
+
+    /**
+     * Send a request; a transport failure becomes the RuntimeException callers already handle
+     *
+     * @param Request $request The request
+     *
+     * @throws RuntimeException When the request cannot be sent (timeout, DNS, TLS)
+     *
+     * @return Response The response
+     */
+    private function send(Request $request): Response
+    {
+        try {
+            return $this->httpClient->sendRequest($request);
+        } catch (ClientException $e) {
+            throw new RuntimeException('Request to ' . $request->getUri()->getHost() . ' failed: ' . $e->getMessage(), 0, $e);
         }
     }
 }

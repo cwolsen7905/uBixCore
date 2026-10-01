@@ -84,6 +84,11 @@ ai-review-mr:
 
 Diffs over 400,000 characters are cut at the last whole file, and the note says so.
 
+**A host with its own CLI container** (one that passes its own file to `console()`, as kitg
+does) must copy the framework's `AiReviewService` binding from `cli-dependencies.php`: it gives
+the review a 240-second HTTP client. Without it the review uses the shared client's 5-second
+default and every run times out.
+
 ## 3. What a run does
 
 1. No key or token: prints "Skipped" and exits 0.

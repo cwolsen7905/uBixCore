@@ -10,6 +10,7 @@ use Psr\Http\Client\ClientInterface as HttpClient;
 use Psr\Http\Message\RequestInterface as Request;
 use Psr\Log\LoggerInterface as Logger;
 use RuntimeException;
+use Ubix\Exception\HttpClientException;
 use Ubix\Service\Ci\MergeApprovalService;
 use Ubix\Service\JsonService;
 use Ubix\Tests\AbstractUbixConcreteClassOrEnumTestCase as UbixConcreteClassOrEnumTestCase;
@@ -127,6 +128,27 @@ final class MergeApprovalServiceTest extends UbixConcreteClassOrEnumTestCase imp
         $this->expectException(RuntimeException::class);
 
         $this->buildService()->getVerdict(self::API, '7', 't', 99, []);
+    }
+
+    /**
+     * A transport failure (timeout, DNS, TLS) arrives as a RuntimeException
+     *
+     * The command handles RuntimeException; a raw client exception escaped it and
+     * killed the job with exit 255 (kitg pipeline 6431, a 5 s timeout).
+     *
+     * @return void
+     */
+    public function testATransportFailureBecomesARuntimeException(): void
+    {
+        $httpClient = $this->createStub(HttpClient::class);
+        $httpClient->method('sendRequest')->willThrowException(new HttpClientException('There was a cURL error (28: timed out).'));
+        $logger  = $this->createStub(Logger::class);
+        $service = new MergeApprovalService($logger, $httpClient, new Psr17Factory(), new JsonService($logger));
+
+        $this->expectException(RuntimeException::class);
+        $this->expectExceptionMessage('timed out');
+
+        $service->getVerdict(self::API, '7', 't', 3, []);
     }
 
     /**

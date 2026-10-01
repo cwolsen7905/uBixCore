@@ -4,8 +4,11 @@ declare(strict_types=1);
 
 namespace Ubix\Service\Ci;
 
+use Psr\Http\Client\ClientExceptionInterface as ClientException;
 use Psr\Http\Client\ClientInterface as HttpClient;
 use Psr\Http\Message\RequestFactoryInterface as RequestFactory;
+use Psr\Http\Message\RequestInterface as Request;
+use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\StreamFactoryInterface as StreamFactory;
 use Psr\Log\LoggerInterface as Logger;
 use RuntimeException;
@@ -124,7 +127,7 @@ final class AiReviewService
             ->withHeader('x-goog-api-key', $apiKey)
             ->withBody($this->streamFactory->createStream($payload));
 
-        $response = $this->httpClient->sendRequest($request);
+        $response = $this->send($request);
         $status   = $response->getStatusCode();
         $body     = (string) $response->getBody();
 
@@ -181,7 +184,7 @@ final class AiReviewService
             ->withHeader('Content-Type', 'application/json')
             ->withBody($this->streamFactory->createStream($payload));
 
-        $status = $this->httpClient->sendRequest($request)->getStatusCode();
+        $status = $this->send($request)->getStatusCode();
 
         if ($status < 200 || $status >= 300) {
             throw new RuntimeException(sprintf('GitLab refused the note (HTTP %d): check the token has the Reporter role and api scope.', $status));
@@ -238,7 +241,7 @@ final class AiReviewService
     private function getOwnNoteId(string $notesUrl, string $token): ?int
     {
         $request  = $this->requestFactory->createRequest('GET', $notesUrl . '?per_page=100&sort=desc')->withHeader('PRIVATE-TOKEN', $token);
-        $response = $this->httpClient->sendRequest($request);
+        $response = $this->send($request);
         try {
             $notes = $response->getStatusCode() === 200 ? $this->jsonService->decode((string) $response->getBody()) : [];
         } catch (DtoException $e) {
@@ -253,5 +256,23 @@ final class AiReviewService
         }
 
         return null;
+    }
+
+    /**
+     * Send a request; a transport failure becomes the RuntimeException callers already handle
+     *
+     * @param Request $request The request
+     *
+     * @throws RuntimeException When the request cannot be sent (timeout, DNS, TLS)
+     *
+     * @return Response The response
+     */
+    private function send(Request $request): Response
+    {
+        try {
+            return $this->httpClient->sendRequest($request);
+        } catch (ClientException $e) {
+            throw new RuntimeException('Request to ' . $request->getUri()->getHost() . ' failed: ' . $e->getMessage(), 0, $e);
+        }
     }
 }

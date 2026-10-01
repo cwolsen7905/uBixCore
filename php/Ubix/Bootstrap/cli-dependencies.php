@@ -23,6 +23,7 @@ use Ubix\Repository\DatabaseEnvironment\DatabaseEnvironmentWriterInterface as Da
 use Ubix\Repository\SchemaMigration\SchemaMigrationReaderInterface as SchemaMigrationReader;
 use Ubix\Repository\SchemaMigration\SchemaMigrationSqlRepository;
 use Ubix\Repository\SchemaMigration\SchemaMigrationWriterInterface as SchemaMigrationWriter;
+use Ubix\Service\Ci\AiReviewService;
 use Ubix\Service\Migration\MigrationFileScannerService;
 use Ubix\Service\Migration\MigrationNotificationService;
 use Ubix\Service\NativeProcessService;
@@ -95,6 +96,10 @@ return static function (): Container {
             ])))),
         MigrationNotificationService::class     => autowire()
             ->constructorParameter('channel', getenv('SLACK_MIGRATION_CHANNEL') ?: '#databases'),
+        // A model reading a whole diff takes far longer than the shared client's 5 s
+        // default; on that default every review timed out (kitg pipeline 6431).
+        AiReviewService::class                  => autowire()
+            ->constructorParameter('httpClient', autowire(CurlHttpClient::class)->constructorParameter('timeout', 240)),
     ]);
 
     return $container->build();
