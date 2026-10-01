@@ -1,6 +1,6 @@
 # Branching and Git Workflow
 
-> **Status:** v0.13 — initial decisions resolved 2026-05-18; concurrent agent-session model added 2026-07-08 (see [Concurrent Agent Sessions](#concurrent-agent-sessions)); worktree bootstrap shipped as `ubix code:worktree`; `dev` is MR-only since 2026-07-30, with the machine gate's first pre-merge leg (`cspell-knip-mr`) added 2026-08-24 (see [One land path](#one-land-path-mr-only-dev-2026-07-30)); the path beyond `dev` is [Promotion to Production](#promotion-to-production-dev--staging--main--prod); remaining enforcement candidates tracked in [Future Automation](#future-automation-next-iteration). **v0.13 (2026-09-12): this document now describes two repository profiles** — see [Repository Profiles](#repository-profiles). uBixCore itself moved to the framework profile (trunk + tags) when it stopped deploying anything; hosts built from the skeleton keep the product profile unchanged.
+> **Status:** v0.14 — every merge needs a human sign-off since 2026-09-30 (see [Merge sign-off](#merge-sign-off-2026-09-30)); initial decisions resolved 2026-05-18; concurrent agent-session model added 2026-07-08 (see [Concurrent Agent Sessions](#concurrent-agent-sessions)); worktree bootstrap shipped as `ubix code:worktree`; `dev` is MR-only since 2026-07-30, with the machine gate's first pre-merge leg (`cspell-knip-mr`) added 2026-08-24 (see [One land path](#one-land-path-mr-only-dev-2026-07-30)); the path beyond `dev` is [Promotion to Production](#promotion-to-production-dev--staging--main--prod); remaining enforcement candidates tracked in [Future Automation](#future-automation-next-iteration). **v0.13 (2026-09-12): this document now describes two repository profiles** — see [Repository Profiles](#repository-profiles). uBixCore itself moved to the framework profile (trunk + tags) when it stopped deploying anything; hosts built from the skeleton keep the product profile unchanged.
 
 This document defines how branches are created, kept in sync, and merged in uBix Core and in the
 projects built on it — whether the work is done by a human or by an AI agent session.
@@ -287,6 +287,36 @@ Judgment, not severity tags, decides which: **fix** anything cheaper to fix than
 
 **Server-side settings this depends on** (project settings, one-time): protected branch `dev` → push **No one** / merge **Developers+Maintainers**; Merge requests → **all threads must be resolved** ✓; **Pipelines must succeed** — still OFF, and the one setting that would turn `cspell-knip-mr` from visibility into enforcement; CI variable `ANTHROPIC_API_KEY` reachable by MR pipelines (unprotect the masked variable, or add an MR-scoped copy); optional `CLAUDE_REVIEW_GITLAB_TOKEN` (api-scope) for thread posting — falls back to the repo `.env` GitLab token.
 
+### Merge sign-off (2026-09-30)
+
+**Every merge needs a human sign-off: the MR's Approve button, or a 👍.** It is enforced by a
+pipeline job, not by GitLab approval rules: those need a paid tier, and they cannot cope with a
+team where every MR is opened under the owner's account (an author cannot approve their own MR,
+so nothing would ever merge).
+
+- **The check:** `bin/ubix ci:requireApproval` (`Ubix\Service\Ci\MergeApprovalService`). It
+  passes when the MR has an Approve or a 👍 from anyone but its author, or from its author when
+  the author is listed in `MERGE_APPROVAL_OWNERS`; the log says **SELF SIGN-OFF** when that
+  happens, so a pushed-through merge is recorded rather than invisible. On a branch pipeline,
+  which carries no MR variables, it finds the MR by source branch.
+- **It blocks because "Pipelines must succeed" is ON.** Without that setting the job is only a
+  red mark.
+- **GitLab does not re-run a pipeline when someone approves.** Approve, then **retry the
+  `require-approval` job**; the pipeline turns green and the merge button unlocks.
+- **It fails open.** No token, or GitLab unreachable: the job passes with an `UNVERIFIED` line
+  rather than holding every merge hostage to an outage.
+- **Agents never approve and never 👍.** Agent sessions run under the owner's account, so the
+  API would let them; the rule is what keeps the click meaning "the owner looked at this".
+- **Honest limit:** a guard against merging in haste, not a security boundary. A click costs
+  nothing to make unread.
+
+**Wiring a host:** a job in the last stage of the MR pipeline (after any notify-on-failure job,
+which would otherwise page for every unapproved push), running `php bin/ubix ci:requireApproval`
+with `MERGE_APPROVAL_OWNERS` set and a token in `APPROVAL_GITLAB_TOKEN` (falls back to
+`AI_REVIEW_GITLAB_TOKEN`: a project access token, Reporter, `api` scope, masked, **not**
+protected, because MR branches are unprotected). Then turn **Pipelines must succeed** on.
+uBixCore's own `require-approval` job in `.gitlab-ci.yml` is the reference.
+
 ### The fast-path (feature/slice → `dev`) — HISTORICAL (superseded by MR-only, 2026-07-30)
 
 Two humans rarely `git push origin dev` in the same second; two agents easily can. This protocol serializes the window and keeps it short:
@@ -490,3 +520,4 @@ Initial decisions resolved during 2026-05-18 review:
 | 0.10 | 2026-08-05 | Christopher W. Olsen | Land-path section gains **push deliberately**: the MR review is metered and re-reads the whole diff on every push (cost ≈ diff size × pushes; rebases and force-pushes count), so a review round is fix-all-threads → gate once → push once; never push to test CI; `-o ci.skip` for handoff pushes only, never for one that should be reviewed. Cost model and levers in `code-review.md` §6 |
 | 0.11 | 2026-08-14 | Christopher W. Olsen | Added **Promotion to Production** (`dev` → `staging` → `main` → prod): the automatic dev→staging mirror promotion and its destructive-migration halt, the two deliberate manual clicks (`promote-to-main`, then `deploy-prod`), the fast-forward-only/never-forced rule for `main` vs staging's lease-guarded mirror, the prod button matrix, and an explicit statement that **no mechanical correctness gate exists in front of prod** (the `release-gate.md` sign-off queue is still design-only). Also documents the CalVer release cut and its `UBIX_CHANGELOG_DELETIONS_OK=1` acknowledgment. Written because the only authoritative description of promotion lived in `bin/promote-to-main.sh` + `.gitlab-ci.yml` comments, and `continuous-delivery/plan.md` §5 described the shipped job as unbuilt future work |
 | 0.12 | 2026-08-24 | Christopher W. Olsen | The machine gate gains its first **pre-merge** leg: `cspell-knip-mr` runs on every MR pipeline, so an MR is no longer reviewed by Claude and nothing else. Records why it is visibility and not yet enforcement (**Pipelines must succeed** is still OFF — now listed with the other server-side settings), why that leg went first (no built image, no secret; the rest need `build-dev`), and what a red job predicts: a merge that reds `dev`'s `lint-and-test`, which stage-gates `deploy-dev` and stops `dev` being redeployed for everyone. Written after that happened on 2026-07-31 and again on 2026-08-24 |
+| 0.14 | 2026-09-30 | Christopher W. Olsen | **Merge sign-off.** Every merge needs an Approve or a 👍, enforced by the `ci:requireApproval` job plus *Pipelines must succeed*, not by GitLab approval rules (paid tier, and they deadlock when every MR is authored by the owner). Owner self-sign-off allowed and logged; fails open; agents never approve. |
