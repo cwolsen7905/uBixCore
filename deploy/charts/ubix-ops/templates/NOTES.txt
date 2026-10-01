@@ -1,0 +1,11 @@
+uBixOps is deployed.
+
+Point each GitLab project's webhook at:
+  {{ if .Values.ingress.enabled }}https://{{ .Values.ingress.host }}{{ else }}http://{{ include "ubix-ops.fullname" . }}.{{ .Release.Namespace }}.svc{{ end }}/gitlab/merge-request-hook
+with "Merge request events" ticked and the Secret token set to GITLAB_WEBHOOK_SECRET.
+{{- if not (include "ubix-ops.secretName" .) }}
+
+WARNING: no existingSecret, webhookSecret or projectTokens set. Unless you supply
+GITLAB_WEBHOOK_SECRET and GITLAB_PROJECT_TOKENS through extraEnv, every delivery is
+refused (401).
+{{- end }}

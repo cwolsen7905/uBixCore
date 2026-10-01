@@ -207,7 +207,9 @@ function console(?string $dependenciesFile, array $commandNamespaces, array $arg
  * Build the Slim application for one of a host project's apps
  *
  * Loads `app/<AppName>/src/{Dependencies,Middleware,Routes}.php` from the host,
- * each of which returns a closure, exactly as the apps in this repo do.
+ * each of which returns a closure, exactly as the apps in this repo do. When the host
+ * has no such folder, an app the framework ships itself (`apps/<AppName>` beside this
+ * file, e.g. UbixOpsApi) is served instead, so any uBixCore image can run it unchanged.
  *
  * @param string $projectRoot The host project root
  * @param string $appName     The app to serve (`APP_NAME`), a folder under `app/`
@@ -222,10 +224,7 @@ function http(string $projectRoot, string $appName): App
         throw new Exception('No app name found', ExceptionCode::APP_NAME_MISSING->value);
     }
 
-    $appFolder = $projectRoot . '/app/' . $appName;
-    if (!is_dir($appFolder)) {
-        throw new Exception('App folder `' . $appFolder . '` does not exist', ExceptionCode::APP_NAME_MISSING->value);
-    }
+    $appFolder = appFolder($projectRoot, $appName);
 
     /**
      * @var callable():?Container $buildContainer
@@ -256,6 +255,35 @@ function http(string $projectRoot, string $appName): App
     $applyRoutes($slimApp);
 
     return $slimApp;
+}
+
+/**
+ * The folder an app is served from: the host's own, else one the framework ships
+ *
+ * The host's `app/<AppName>` always wins, so a host can override a framework app by
+ * copying it.
+ *
+ * @param string $projectRoot The host project root
+ * @param string $appName     The app name
+ *
+ * @return string The app folder
+ *
+ * @throws Exception When neither the host nor the framework has the app
+ */
+function appFolder(string $projectRoot, string $appName): string
+{
+    $hostFolder = $projectRoot . '/app/' . $appName;
+    if (is_dir($hostFolder)) {
+        return $hostFolder;
+    }
+
+    // An app name is a folder name, never a path: basename() keeps it one.
+    $frameworkFolder = __DIR__ . '/apps/' . basename($appName);
+    if (is_dir($frameworkFolder)) {
+        return $frameworkFolder;
+    }
+
+    throw new Exception('App folder `' . $hostFolder . '` does not exist, and the framework ships no app called `' . $appName . '`', ExceptionCode::APP_NAME_MISSING->value);
 }
 
 /**

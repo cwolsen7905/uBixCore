@@ -1,0 +1,23 @@
+apiVersion: v2
+name: ubix-ops
+description: |
+  uBixOps — uBixCore's operations app. Receives GitLab merge-request webhooks and
+  re-runs a merge request's sign-off job (ci:requireApproval) when someone approves
+  or un-approves it. One deployment can serve every project on a GitLab instance.
+type: application
+# Chart version — bump on chart changes, independent of the app.
+version: 0.1.0
+# The uBixCore release whose image this chart deploys; image.tag defaults to it.
+appVersion: "0.42.0"
+kubeVersion: ">=1.24.0-0"
+home: https://ubixsys.com
+sources:
+  - https://github.com/ubixsys/ubixcore
+keywords:
+  - gitlab
+  - ci
+  - webhook
+  - code-review
+maintainers:
+  - name: cwolsen
+    url: https://github.com/cwolsen7905
