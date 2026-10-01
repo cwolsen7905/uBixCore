@@ -24,6 +24,14 @@ The operating principle (Christopher, 2026-07-30): **push clean, don't MR-loop-c
 
 ## 2. The AI review at MR time
 
+> **Status 2026-09-30: the job this section describes does not exist in this repository.**
+> `claude-review-mr`, `config/ci/claude-review-prompt.md` and `config/ci/post-mr-review.mjs`
+> belonged to the monorepo uBixCore was forked from and were never carried over; nothing in
+> this repo's history ever defined them. The section is kept as the design to aim for. What
+> uBixCore does ship is an **advisory** single-note review any host can wire into its MR
+> pipeline: [`ai-review-in-ci.md`](ai-review-in-ci.md). It does not block and does not open
+> threads.
+
 Every MR targeting `dev` gets reviewed by the `claude-review-mr` CI job (`.gitlab-ci.yml`), which:
 
 1. Diffs the MR against its **merge base** (never the target tip), excluding `.env` / `.env_prod`.
