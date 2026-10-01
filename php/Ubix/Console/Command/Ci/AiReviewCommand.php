@@ -19,7 +19,7 @@ use Ubix\Service\ProjectRootService;
  *
  * Run by a host's MR pipeline on the GitLab runner, with the diff on stdin; it is not a
  * developer tool. Settings come from the job's environment: `GEMINI_API_KEY`,
- * `AI_REVIEW_GITLAB_TOKEN`, optional `AI_REVIEW_MODEL`, and GitLab's predefined `CI_*`
+ * `AI_REVIEW_GITLAB_TOKEN`, optional `AI_REVIEW_MODEL` / `AI_REVIEW_FALLBACK_MODEL`, and GitLab's predefined `CI_*`
  * variables. Wiring: `docs/standards/ai-review-in-ci.md`.
  *
  * A missing key or an empty diff is a skip, not a failure. A refused or rate-limited
@@ -33,6 +33,11 @@ final class AiReviewCommand extends Command
      * Used when AI_REVIEW_MODEL is unset: Google's alias for its newest Flash model
      */
     private const DEFAULT_MODEL = 'gemini-flash-latest';
+
+    /**
+     * Used when AI_REVIEW_FALLBACK_MODEL is unset: the lighter Flash, usually far less busy
+     */
+    private const DEFAULT_FALLBACK_MODEL = 'gemini-flash-lite-latest';
 
     /**
      * Constructor
@@ -93,22 +98,24 @@ HELP,
             return Command::SUCCESS;
         }
 
-        $model  = $this->env('AI_REVIEW_MODEL') !== '' ? $this->env('AI_REVIEW_MODEL') : self::DEFAULT_MODEL;
-        $fitted = $this->aiReviewService->fitDiff($diff);
+        $model    = $this->env('AI_REVIEW_MODEL') !== '' ? $this->env('AI_REVIEW_MODEL') : self::DEFAULT_MODEL;
+        $fallback = $this->env('AI_REVIEW_FALLBACK_MODEL') !== '' ? $this->env('AI_REVIEW_FALLBACK_MODEL') : self::DEFAULT_FALLBACK_MODEL;
+        $models   = array_values(array_unique([$model, $fallback]));
+        $fitted   = $this->aiReviewService->fitDiff($diff);
 
         try {
             $instructions = $this->aiReviewService->instructions($this->projectGuide($input));
-            $review       = $this->aiReviewService->review($apiKey, $model, $instructions, $this->env('CI_MERGE_REQUEST_TITLE'), $fitted['diff']);
+            $answer       = $this->aiReviewService->reviewWithFallback($apiKey, $models, $instructions, $this->env('CI_MERGE_REQUEST_TITLE'), $fitted['diff']);
             $this->aiReviewService->upsertNote(
                 $this->env('CI_API_V4_URL'),
                 $this->env('CI_PROJECT_ID'),
                 $this->env('CI_MERGE_REQUEST_IID'),
                 $token,
-                $this->aiReviewService->noteBody($review, $model, $this->env('CI_COMMIT_SHA'), $fitted['truncated']),
+                $this->aiReviewService->noteBody($answer['text'], $answer['model'], $this->env('CI_COMMIT_SHA'), $fitted['truncated']),
             );
         } catch (RuntimeException $e) {
-            // Logged, not posted: a note saying "the robot failed" is noise on the MR.
             $output->writeln('<error>' . $e->getMessage() . '</error>');
+            $this->postNotReviewed($token, $e->getMessage(), $output);
 
             return Command::FAILURE;
         }
@@ -116,6 +123,34 @@ HELP,
         $output->writeln('<info>Review posted for ' . substr($this->env('CI_COMMIT_SHA'), 0, 8) . '.</info>');
 
         return Command::SUCCESS;
+    }
+
+    /**
+     * Replace the MR's review note with a "not reviewed" one
+     *
+     * Otherwise the previous push's review stays up and reads as current. Best effort: if
+     * GitLab refuses this too, the job log is all there is.
+     *
+     * @param string $token  Project access token
+     * @param string $reason Why there is no review
+     * @param Output $output Console output
+     *
+     * @return void
+     */
+    private function postNotReviewed(string $token, string $reason, Output $output): void
+    {
+        try {
+            $this->aiReviewService->upsertNote(
+                $this->env('CI_API_V4_URL'),
+                $this->env('CI_PROJECT_ID'),
+                $this->env('CI_MERGE_REQUEST_IID'),
+                $token,
+                $this->aiReviewService->notReviewedNoteBody($reason, $this->env('CI_COMMIT_SHA')),
+            );
+            $output->writeln('<comment>Posted a "not reviewed" note on the MR.</comment>');
+        } catch (RuntimeException $e) {
+            $output->writeln('<error>Could not post the "not reviewed" note either: ' . $e->getMessage() . '</error>');
+        }
     }
 
     /**

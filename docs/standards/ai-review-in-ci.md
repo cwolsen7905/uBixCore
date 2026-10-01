@@ -55,6 +55,7 @@ are unprotected, so a protected variable never reaches an MR pipeline:
 | `GEMINI_API_KEY` | the AI Studio key |
 | `AI_REVIEW_GITLAB_TOKEN` | the project access token |
 | `AI_REVIEW_MODEL` | optional; default `gemini-flash-latest` (Google's alias for its newest Flash) |
+| `AI_REVIEW_FALLBACK_MODEL` | optional; default `gemini-flash-lite-latest`, tried when the first stays busy |
 
 Unprotected means any branch's pipeline can read them, which is why both are low-privilege:
 a free-tier key, and a Reporter token that can comment.
@@ -96,5 +97,10 @@ default and every run times out.
 3. Sends the diff and instructions to `generateContent`.
 4. Writes the note, marked `<!-- ubix-ai-review -->`, or replaces the one an earlier push
    wrote — one note per MR however many pushes.
-5. A rate limit, a refusal or an empty answer exits 1 with the reason in the job log and posts
-   nothing: a note saying "the review failed" is noise on the MR.
+5. A busy model (HTTP 503 "high demand", or 429) is retried after 10 s and 30 s, then the
+   fallback model gets the same three tries (`AI_REVIEW_FALLBACK_MODEL`, default
+   `gemini-flash-lite-latest`). The note names the model that answered.
+6. When there is still no review (all busy, a refusal, an empty answer, a bad key), the note
+   is **replaced with "NOT reviewed — review this one yourself"** naming the commit and the
+   reason, and the job exits 1 (yellow). Leaving it unposted would leave the previous push's
+   review up, describing code that has since changed.
