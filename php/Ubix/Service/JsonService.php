@@ -68,12 +68,15 @@ final class JsonService
      * Encode a value as JSON
      *
      * @param mixed $value The value being encoded (can be any type except a resource)
+     * @param int   $flags `json_encode` flags, e.g. JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE for a file
+     *                     a person will read. JSON_THROW_ON_ERROR is removed: failures are reported the
+     *                     one way this service reports them, a DtoException with the JsonError
      *
      * @throws DtoException If the JSON encoding fails
      *
      * @return string The encoded JSON
      */
-    public function encode(mixed $value): string
+    public function encode(mixed $value, int $flags = 0): string
     {
         //
         //  Encode the value as JSON
@@ -81,7 +84,7 @@ final class JsonService
         /**
          * @var non-empty-string|false $encoded
          */
-        $encoded = json_encode($value); // phpcs:ignore Generic.PHP.ForbiddenFunctions -- This is the only place in our code we allow json_encode, otherwise developers must be using \Ubix\Service\JsonService::encode()
+        $encoded = json_encode($value, $flags & ~JSON_THROW_ON_ERROR); // phpcs:ignore Generic.PHP.ForbiddenFunctions -- This is the only place in our code we allow json_encode, otherwise developers must be using \Ubix\Service\JsonService::encode()
 
         //
         //  Throw an exception if the encoding failed, otherwise return the JSON
