@@ -68,7 +68,7 @@ final class JsonService
      * Encode a value as JSON
      *
      * @param mixed $value The value being encoded (can be any type except a resource)
-     * @param int   $flags `json_encode` flags, e.g. JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE for a file
+     * @param int   $flags Flags for json_encode, e.g. JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE for a file
      *                     a person will read. JSON_THROW_ON_ERROR is removed: failures are reported the
      *                     one way this service reports them, a DtoException with the JsonError
      *
