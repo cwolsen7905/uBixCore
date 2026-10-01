@@ -11,6 +11,8 @@ Multiple agent sessions can run in this repo at the same time and lack the ambie
 
 Full rules — branch topology (**`main` is the trunk and is MR-only**; this repo uses the *framework profile* — trunk + tags, no `dev`/`staging`, because it deploys nothing), sync/merge flow, the serialized merge window, and the disposition convention — are in **`docs/standards/branching-and-git-workflow.md`** (§ Concurrent Agent Sessions). `AGENTS-COORD.md` is this sandbox's living instance of that standard; the standard wins if they disagree.
 
+**Every merge needs the owner's sign-off** (Approve or 👍), enforced by the `require-approval` job and *Pipelines must succeed* (standard § Merge sign-off). **Agents never approve or 👍 an MR**, not even their own: they run under the owner's account, so the API would allow it, and that would empty the click of meaning. Open the MR, then wait for the owner.
+
 ## Project Overview
 
 uBixCore is a PHP 8.5+ / React 19 application framework that ships with its tooling, published as Composer and npm packages plus a `create-project` skeleton. This repo holds the framework only; products built on it live in their own host repos. It descends from "uBixCore" (the maintained upstream for tooling ports).

@@ -31,6 +31,7 @@ stages:
   - lint-and-test
   - publish
   - notify
+  - approval
 
 .registry_login:
   before_script:
@@ -177,3 +178,32 @@ notify-failure:
       Pipeline: ${CI_PIPELINE_URL}"
       discord alerts 15158332 "🔴 Pipeline FAILED" "$TEXT"
       exit 0
+
+# ---------------------------------------------------------------------------
+# approval — every merge needs a human sign-off
+# ---------------------------------------------------------------------------
+# Fails until the branch's MR has an Approve or a thumbs-up (bin/ubix
+# ci:requireApproval). With "Pipelines must succeed" on, that blocks the merge.
+# GitLab does not re-run a pipeline on approval: approve, then retry this job.
+# Its own stage AFTER notify, on purpose: notify-failure runs on any red ref and
+# would page #ubixcore-alerts for every push that is simply not approved yet.
+# MERGE_APPROVAL_OWNERS may sign off on their own MRs (every MR here is opened
+# under the owner's account); the job log says so when it happens. Token:
+# APPROVAL_GITLAB_TOKEN, or AI_REVIEW_GITLAB_TOKEN (Reporter, api, masked, not
+# protected). See docs/standards/branching-and-git-workflow.md § Merge sign-off.
+require-approval:
+  extends: .registry_login
+  stage: approval
+  tags: [shell]
+  timeout: 5 minutes
+  rules:
+    - if: $CI_COMMIT_BRANCH && $CI_COMMIT_BRANCH != $CI_DEFAULT_BRANCH
+  variables:
+    MERGE_APPROVAL_OWNERS: cwolsen
+  script:
+    - |
+      docker run --rm --workdir /web \
+        -e APPROVAL_GITLAB_TOKEN -e AI_REVIEW_GITLAB_TOKEN -e MERGE_APPROVAL_OWNERS \
+        -e CI_API_V4_URL -e CI_PROJECT_ID -e CI_COMMIT_BRANCH -e CI_MERGE_REQUEST_IID \
+        "$CI_REGISTRY_IMAGE:$CI_COMMIT_SHA-test" \
+        php bin/ubix ci:requireApproval

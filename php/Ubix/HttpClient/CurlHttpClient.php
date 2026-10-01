@@ -90,7 +90,8 @@ final class CurlHttpClient implements HttpClient
 
         $raw = curl_exec($ch);
         if ($raw === false) {
-            throw new HttpClientException('There was a cURL error.', ExceptionCode::CURL_HTTP_CLIENT_ERROR->value);
+            // Say what cURL said: "a cURL error" alone cannot tell a timeout from DNS from TLS.
+            throw new HttpClientException(sprintf('There was a cURL error (%d: %s).', curl_errno($ch), curl_error($ch)), ExceptionCode::CURL_HTTP_CLIENT_ERROR->value);
         }
         assert(is_string($raw));
 
