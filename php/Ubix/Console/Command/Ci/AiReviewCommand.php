@@ -122,6 +122,7 @@ HELP,
                 $this->env('CI_MERGE_REQUEST_IID'),
                 $token,
                 $this->aiReviewService->summaryBody($review, $answer['model'], $this->env('CI_COMMIT_SHA'), $fitted['truncated']),
+                $review['findings'] === [],
             );
             $output->writeln(sprintf('<info>%d new finding thread(s), %d inline; %d already raised.</info>', $threads['posted'], $threads['inline'], $threads['skipped']));
         } catch (RuntimeException $e) {

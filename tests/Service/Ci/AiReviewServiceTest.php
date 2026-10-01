@@ -285,6 +285,69 @@ final class AiReviewServiceTest extends UbixConcreteClassOrEnumTestCase implemen
     }
 
     /**
+     * A clean review opens its summary and resolves it: visible, but nothing to click
+     *
+     * @return void
+     */
+    public function testACleanReviewResolvesItsSummary(): void
+    {
+        $this->responses = [new Psr7Response(200, [], '[]'), new Psr7Response(201, [], '{"id":"new1"}'), new Psr7Response(200, [], '{}')];
+
+        $this->buildService()->upsertThread(self::API, '12', '34', 'token', 'summary', true);
+
+        $this->assertSame('PUT', $this->requests[2]->getMethod());
+        $this->assertSame(self::API . '/projects/12/merge_requests/34/discussions/new1', (string) $this->requests[2]->getUri());
+        $this->assertSame('{"resolved":true}', (string) $this->requests[2]->getBody());
+    }
+
+    /**
+     * A clean review after a blocking one updates that thread and resolves it: it is superseded
+     *
+     * @return void
+     */
+    public function testACleanReviewResolvesASupersededSummary(): void
+    {
+        $this->responses = [
+            new Psr7Response(200, [], $this->threads([['abc', 5, AiReviewService::NOTE_MARKER . ' NOT reviewed', false]])),
+            new Psr7Response(200, [], '{}'),
+            new Psr7Response(200, [], '{}'),
+        ];
+
+        $this->buildService()->upsertThread(self::API, '12', '34', 'token', 'summary', true);
+
+        $this->assertSame(self::API . '/projects/12/merge_requests/34/discussions/abc/notes/5', (string) $this->requests[1]->getUri());
+        $this->assertSame(self::API . '/projects/12/merge_requests/34/discussions/abc', (string) $this->requests[2]->getUri());
+    }
+
+    /**
+     * A refused resolve leaves the thread open rather than failing the run
+     *
+     * @return void
+     */
+    public function testARefusedResolveLeavesTheThreadOpen(): void
+    {
+        $this->responses = [new Psr7Response(200, [], '[]'), new Psr7Response(201, [], '{"id":"new1"}'), new Psr7Response(403, [], '{}')];
+
+        $this->buildService()->upsertThread(self::API, '12', '34', 'token', 'summary', true);
+
+        $this->assertCount(3, $this->requests);
+    }
+
+    /**
+     * A review with findings is never resolved by the job
+     *
+     * @return void
+     */
+    public function testAReviewWithFindingsIsNotResolved(): void
+    {
+        $this->responses = [new Psr7Response(200, [], '[]'), new Psr7Response(201, [], '{"id":"new1"}')];
+
+        $this->buildService()->upsertThread(self::API, '12', '34', 'token', 'summary');
+
+        $this->assertCount(2, $this->requests);
+    }
+
+    /**
      * A refused thread is a failure, never silence
      *
      * @return void
