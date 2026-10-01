@@ -202,7 +202,7 @@ abstract class AbstractPdoSqlService implements SqlService
     /**
      * The character set a MySQL/MariaDB connection speaks: `MYSQL_CHARSET`, default `utf8mb4`
      *
-     * PHP strings are UTF-8, so the connection has to say so. Until v0.36 the
+     * PHP strings are UTF-8, so the connection has to say so. Until v0.37 the
      * DSNs hardcoded `latin1`: the server then read every UTF-8 byte as a
      * latin1 character and stored non-ASCII text double-encoded in utf8mb4
      * columns -- an em dash became the three characters `â€”`. It round-tripped

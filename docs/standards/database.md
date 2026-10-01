@@ -258,7 +258,7 @@ Before merging a new table, confirm:
 - [ ] Soft-FK columns are indexed.
 - [ ] Soft-FK column type matches the referenced `id` exactly.
 - [ ] Engine is `InnoDB`, charset is `utf8mb4`.
-- [ ] The connection speaks `utf8mb4` too (the default since v0.36; `MYSQL_CHARSET` overrides it). A `utf8mb4` table behind a `latin1` connection stores every non-ASCII character double-encoded.
+- [ ] The connection speaks `utf8mb4` too (the default since v0.37; `MYSQL_CHARSET` overrides it). A `utf8mb4` table behind a `latin1` connection stores every non-ASCII character double-encoded.
 - [ ] Every column has explicit `NULL` / `NOT NULL`.
 - [ ] Money columns are `DECIMAL`, not float.
 - [ ] If event-table archetype (§6.5): append-only writes; immutable post-insert (no UPDATE; DELETE only via retention purge); `event_timestamp NOT NULL DATETIME`; no JSON columns; stable monotonic `BIGINT UNSIGNED AUTO_INCREMENT` PK; retention policy documented in the surface's spec.
