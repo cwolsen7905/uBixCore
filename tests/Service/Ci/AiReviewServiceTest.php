@@ -128,6 +128,61 @@ final class AiReviewServiceTest extends UbixConcreteClassOrEnumTestCase implemen
     }
 
     /**
+     * A busy model is retried, then the fallback answers, and the answer names it
+     *
+     * @return void
+     */
+    public function testABusyModelIsRetriedThenTheFallbackAnswers(): void
+    {
+        $busy            = '{"error":{"code":503,"status":"UNAVAILABLE"}}';
+        $this->responses = [
+            new Psr7Response(503, [], $busy),
+            new Psr7Response(503, [], $busy),
+            new Psr7Response(200, [], '{"candidates":[{"content":{"parts":[{"text":"Nothing worth raising."}]}}]}'),
+        ];
+
+        $answer = $this->buildService()->reviewWithFallback('key', ['busy-model', 'lite-model'], 'guide', 'Title', 'diff', [0]);
+
+        $this->assertSame(['model' => 'lite-model', 'text' => 'Nothing worth raising.'], $answer);
+        $this->assertCount(3, $this->requests);
+        $this->assertStringContainsString('/models/lite-model:', (string) $this->requests[2]->getUri());
+    }
+
+    /**
+     * A refusal is final: no retry, and the fallback is not asked
+     *
+     * @return void
+     */
+    public function testARefusalIsNotRetried(): void
+    {
+        $this->responses = [new Psr7Response(400, [], '{"error":{"message":"API key not valid."}}')];
+
+        try {
+            $this->buildService()->reviewWithFallback('key', ['a', 'b'], 'guide', 'Title', 'diff', [0]);
+            $this->fail('A 400 must not be retried');
+        } catch (RuntimeException $e) {
+            $this->assertSame(400, $e->getCode());
+        }
+
+        $this->assertCount(1, $this->requests);
+    }
+
+    /**
+     * When there is no review, the note says so and tells a human to look
+     *
+     * @return void
+     */
+    public function testTheNotReviewedNoteSendsItToAHuman(): void
+    {
+        $note = $this->buildService()->notReviewedNoteBody("Gemini answered HTTP 503: {\n  \"error\"", '0123456789abcdef');
+
+        $this->assertStringStartsWith(AiReviewService::NOTE_MARKER, $note);
+        $this->assertStringContainsString('`01234567` was not reviewed: review this one yourself', $note);
+        $this->assertStringContainsString('Reason: Gemini answered HTTP 503: {', $note);
+        $this->assertStringNotContainsString('"error"', $note);
+    }
+
+    /**
      * The note carries the marker, the model, the short commit and a truncation warning
      *
      * @return void

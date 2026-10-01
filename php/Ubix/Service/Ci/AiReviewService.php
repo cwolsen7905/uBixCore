@@ -132,14 +132,61 @@ final class AiReviewService
         $body     = (string) $response->getBody();
 
         if ($status === 429) {
-            throw new RuntimeException('Gemini rate limit reached (free tier); no review for this push.');
+            throw new RuntimeException('Gemini rate limit reached (free tier); no review for this push.', $status);
         }
 
         if ($status !== 200) {
-            throw new RuntimeException(sprintf('Gemini answered HTTP %d: %s', $status, substr($body, 0, 500)));
+            // The status is the code, so a caller can tell "busy, try again" (503) from "refused" (4xx).
+            throw new RuntimeException(sprintf('Gemini answered HTTP %d: %s', $status, substr($body, 0, 500)), $status);
         }
 
         return $this->reviewText($body);
+    }
+
+    /**
+     * Ask each model in turn, retrying a busy one before moving to the next
+     *
+     * Gemini's free tier answers 503 ("high demand") and 429 often, and usually only for a
+     * minute or two; the newest model is the busiest. So a busy answer is retried after
+     * each of `$backoffSeconds`, and only then does the next model get a turn. Any other
+     * failure (a refusal, an empty answer, a bad key) is final and is not retried.
+     *
+     * @param string   $apiKey         Gemini API key
+     * @param string[] $models         Model ids, first choice first
+     * @param string   $guide          The system instruction (see instructions())
+     * @param string   $title          The MR title
+     * @param string   $diff           The diff to review
+     * @param int[]    $backoffSeconds Waits between attempts on one model
+     *
+     * @throws RuntimeException When no model produced a review
+     *
+     * @return array{model: string, text: string} The review and the model that wrote it
+     */
+    public function reviewWithFallback(string $apiKey, array $models, string $guide, string $title, string $diff, array $backoffSeconds = [10, 30]): array
+    {
+        $lastError = new RuntimeException('No model to ask.');
+
+        foreach ($models as $model) {
+            foreach ([0, ...$backoffSeconds] as $wait) {
+                if ($wait > 0) {
+                    sleep($wait);
+                }
+
+                try {
+                    return ['model' => $model, 'text' => $this->review($apiKey, $model, $guide, $title, $diff)];
+                } catch (RuntimeException $e) {
+                    $lastError = $e;
+
+                    if (!in_array($e->getCode(), [429, 503], true)) {
+                        throw $e;
+                    }
+
+                    $this->logger->info('Gemini busy; retrying', ['model' => $model, 'status' => $e->getCode()]);
+                }
+            }
+        }
+
+        throw $lastError;
     }
 
     /**
@@ -158,6 +205,30 @@ final class AiReviewService
         $footer = "\n\n<sub>`" . $model . '` on `' . substr($commitSha, 0, 8) . '` · updated on each push</sub>';
 
         return self::NOTE_MARKER . "\n#### AI review — advisory\n\n" . trim($review) . $cut . $footer;
+    }
+
+    /**
+     * The note that replaces the review when there is none for this push
+     *
+     * Posting it matters as much as the review itself: without it a failed run left the
+     * previous push's review standing, describing code that has since changed.
+     *
+     * @param string $reason    Why there is no review (one line)
+     * @param string $commitSha The commit that was not reviewed
+     *
+     * @return string Note body, carrying NOTE_MARKER
+     */
+    public function notReviewedNoteBody(string $reason, string $commitSha): string
+    {
+        $reason = trim(strtok($reason, "\n") ?: $reason);
+        $reason = strlen($reason) > 200 ? substr($reason, 0, 200) . '…' : $reason;
+
+        return sprintf(
+            "%s\n#### AI review — NOT reviewed\n\n**`%s` was not reviewed: review this one yourself.** Any earlier AI review on this MR described older code and has been replaced.\n\n<sub>Reason: %s · retry the `ai-review` job to try again</sub>",
+            self::NOTE_MARKER,
+            substr($commitSha, 0, 8),
+            $reason,
+        );
     }
 
     /**
