@@ -102,6 +102,7 @@ enum ExceptionCode: int
     case DISCORD_CHANNEL_NOT_CONFIGURED               = 11171;
     case ONE_TIME_CODE_PEPPER_TOO_SHORT               = 11172;
     case ONE_TIME_CODE_BINDING_MISSING                = 11173;
+    case INVALID_DATABASE_CHARSET                     = 11174;
     case ERROR_EXECUTING_PDO_QUERY                    = 13001;
     case USER_NOT_FOUND                               = 13019;
     case VALIDATION_FAILED                            = 29003;

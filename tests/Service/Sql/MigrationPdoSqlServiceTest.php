@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Ubix\Tests\Service\Sql;
 
+use InvalidArgumentException;
 use Psr\Log\LoggerInterface as Logger;
 use Ubix\Service\Sql\MigrationPdoSqlService;
 use Ubix\Tests\AbstractUbixConcreteClassOrEnumTestCase as UbixConcreteClassOrEnumTestCase;
@@ -77,6 +78,84 @@ final class MigrationPdoSqlServiceTest extends UbixConcreteClassOrEnumTestCase i
                 'idTwo'   => self::USER_ID_TWO,
             ],
         );
+    }
+
+    /**
+     * The connection speaks utf8mb4 unless MYSQL_CHARSET says otherwise
+     *
+     * @return void
+     *
+     * @covers ::ensureInitialized
+     */
+    public function testTheConnectionSpeaksUtf8mb4ByDefault(): void
+    {
+        putenv('MYSQL_CHARSET');
+
+        $this->assertSame('utf8mb4', $this->buildMigrationSqlService()->getColumn('SELECT @@character_set_client'));
+    }
+
+    /**
+     * Non-ASCII text is stored as the characters written, not double-encoded
+     *
+     * Under the old hardcoded latin1 connection an em dash was stored as the
+     * three characters `â€”`; it read back intact through the same connection,
+     * which is why nobody saw it.
+     *
+     * @return void
+     *
+     * @covers ::ensureInitialized
+     */
+    public function testNonAsciiIsStoredAsTheCharactersWritten(): void
+    {
+        putenv('MYSQL_CHARSET');
+        $schema     = (string) getenv('DATABASE_PREFIX') . self::TEST_DATABASE;
+        $sqlService = $this->buildMigrationSqlService();
+        $text       = 'Café — Grace 🙏';
+
+        $sqlService->query('UPDATE ' . $schema . '.users SET display_name=:name WHERE id=:id', ['id' => self::USER_ID_ONE, 'name' => $text]);
+        $row = $sqlService->getRow('SELECT display_name, CHAR_LENGTH(display_name) chars, HEX(display_name) bytes FROM ' . $schema . '.users WHERE id=:id', ['id' => self::USER_ID_ONE]);
+
+        $this->assertIsArray($row);
+        $this->assertSame($text, $row['display_name']);
+        $this->assertSame(mb_strlen($text), (int) $row['chars']);
+        $this->assertSame(strtoupper(bin2hex($text)), $row['bytes']);
+    }
+
+    /**
+     * MYSQL_CHARSET still selects another charset, for a host that needs one
+     *
+     * @return void
+     *
+     * @covers ::ensureInitialized
+     */
+    public function testMysqlCharsetOverridesTheDefault(): void
+    {
+        putenv('MYSQL_CHARSET=latin1');
+
+        try {
+            $this->assertSame('latin1', $this->buildMigrationSqlService()->getColumn('SELECT @@character_set_client'));
+        } finally {
+            putenv('MYSQL_CHARSET');
+        }
+    }
+
+    /**
+     * A MYSQL_CHARSET that is not a bare name never reaches the DSN
+     *
+     * @return void
+     *
+     * @covers ::ensureInitialized
+     */
+    public function testAMalformedCharsetIsRefused(): void
+    {
+        putenv('MYSQL_CHARSET=utf8mb4;host=elsewhere');
+
+        try {
+            $this->expectException(InvalidArgumentException::class);
+            $this->buildMigrationSqlService()->getColumn('SELECT 1');
+        } finally {
+            putenv('MYSQL_CHARSET');
+        }
     }
 
     /**

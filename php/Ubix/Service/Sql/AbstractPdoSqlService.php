@@ -6,6 +6,7 @@ namespace Ubix\Service\Sql;
 
 use Exception;
 use Generator;
+use InvalidArgumentException;
 use PDO;
 use PDOException;
 use PDOStatement;
@@ -196,6 +197,36 @@ abstract class AbstractPdoSqlService implements SqlService
         }
 
         return (string) getenv('DATABASE_PREFIX') . $database;
+    }
+
+    /**
+     * The character set a MySQL/MariaDB connection speaks: `MYSQL_CHARSET`, default `utf8mb4`
+     *
+     * PHP strings are UTF-8, so the connection has to say so. Until v0.37 the
+     * DSNs hardcoded `latin1`: the server then read every UTF-8 byte as a
+     * latin1 character and stored non-ASCII text double-encoded in utf8mb4
+     * columns -- an em dash became the three characters `â€”`. It round-tripped
+     * through the same wrong setting, so the application never saw it; every
+     * other reader of the database did. `MYSQL_CHARSET=latin1` keeps the old
+     * behaviour for a host whose stored data still depends on it.
+     *
+     * @return string A charset name for the DSN
+     *
+     * @throws InvalidArgumentException When `MYSQL_CHARSET` is not a bare charset name
+     */
+    protected function connectionCharset(): string
+    {
+        $charset = strtolower(trim((string) getenv('MYSQL_CHARSET')));
+        if ($charset === '') {
+            return 'utf8mb4';
+        }
+
+        // It is interpolated into the DSN, so only a bare name is accepted.
+        if (preg_match('/^[a-z0-9_]{1,32}$/', $charset) !== 1) {
+            throw new InvalidArgumentException('MYSQL_CHARSET must be a charset name such as utf8mb4', ExceptionCode::INVALID_DATABASE_CHARSET->value);
+        }
+
+        return $charset;
     }
 
     /**
