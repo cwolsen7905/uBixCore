@@ -1,0 +1,54 @@
+# uBixOps — see docs/architecture/ubix-ops.md in uBixCore for the full wiring.
+
+image:
+  repository: ghcr.io/ubixsys/ubixcore-ops
+  # Empty means the chart's appVersion.
+  tag: ""
+  pullPolicy: IfNotPresent
+
+replicaCount: 1
+
+gitlab:
+  # Your GitLab's API base, e.g. https://gitlab.example.com/api/v4 (required).
+  apiUrl: ""
+  # The job names ci:requireApproval runs under in your pipelines.
+  approvalJobNames: "require-approval,require-approval-mr"
+
+# The webhook secret and the per-project tokens. Use ONE of:
+#   - existingSecret: a Secret you manage, with keys GITLAB_WEBHOOK_SECRET and
+#     GITLAB_PROJECT_TOKENS ("projectId=token,projectId=token"; Developer role, api scope);
+#   - webhookSecret + projectTokens below, and the chart creates the Secret (fine for a
+#     test install; for production keep credentials out of values files);
+#   - neither, and supply them through extraEnv (e.g. uBixVault: VAULT_ADDR,
+#     VAULT_K8S_ROLE, VAULT_APP_KV_PATH -- uBixCore resolves them at boot).
+existingSecret: ""
+webhookSecret: ""
+projectTokens: ""
+
+# Extra environment variables, as a list of EnvVar objects.
+extraEnv: []
+
+service:
+  type: ClusterIP
+  port: 80
+
+# GitLab must be able to reach /gitlab/merge-request-hook. Keep it internal where you can.
+ingress:
+  enabled: false
+  className: ""
+  annotations: {}
+  host: ""
+  tls: []
+
+resources:
+  requests:
+    cpu: 10m
+    memory: 64Mi
+  limits:
+    memory: 256Mi
+
+nodeSelector: {}
+tolerations: []
+affinity: {}
+nameOverride: ""
+fullnameOverride: ""

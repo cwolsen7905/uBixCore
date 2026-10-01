@@ -1,0 +1,27 @@
+# uBixOps: the framework's own operations app (APP_NAME=UbixOpsApi), published as
+# ghcr.io/ubixsys/ubixcore-ops:<version> on every v* tag by .github/workflows/ops-image.yml.
+# Deployed with deploy/charts/ubix-ops; see docs/architecture/ubix-ops.md.
+#
+# Built from the public runtime image, not the internal registry the host Dockerfiles
+# use, because GitHub's runners build it and anyone may pull it. Nothing secret goes
+# in: every credential arrives as an environment variable at runtime.
+FROM ghcr.io/ubixsys/ubixcore-php:8.5
+
+USER root
+COPY config/devops/nginx.conf /etc/nginx/nginx.conf
+USER www
+
+WORKDIR /web
+COPY --chown=www composer.json composer.lock /web/
+RUN composer install --working-dir=/web --no-dev --no-interaction --prefer-dist --no-progress --no-scripts --no-autoloader
+COPY --chown=www php/    /web/php/
+COPY --chown=www public/ /web/public/
+COPY --chown=www bin/    /web/bin/
+RUN composer dump-autoload --working-dir=/web --no-dev --optimize --classmap-authoritative \
+    && mkdir -p /web/var /web/log
+
+ENV APP_NAME=UbixOpsApi \
+    UBIX_PROJECT_ROOT=/web
+
+EXPOSE 8080
+CMD ["/usr/bin/supervisord", "-c", "/etc/supervisor/conf.d/supervisord.conf"]

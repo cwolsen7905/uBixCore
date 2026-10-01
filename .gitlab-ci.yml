@@ -65,6 +65,19 @@ build-test-image:
       docker buildx build --provenance=false --sbom=false --platform linux/amd64 --push \
         -t "${CI_REGISTRY_IMAGE}:${CI_COMMIT_SHA}-test" -f Dockerfile_Test .
 
+# The uBixOps image (Dockerfile_Ops) is published from GitHub on a tag, so this is the
+# only place a broken Dockerfile_Ops shows up before the release: build it, push nothing.
+# Branches only -- the tag's own build is the GitHub workflow.
+build-ops-image:
+  stage: test
+  tags: [shell]
+  rules:
+    - if: $CI_COMMIT_BRANCH
+  script:
+    - |
+      set -euo pipefail
+      docker buildx build --provenance=false --sbom=false --platform linux/amd64 -f Dockerfile_Ops .
+
 # ---------------------------------------------------------------------------
 # lint-and-test
 # ---------------------------------------------------------------------------

@@ -301,8 +301,11 @@ so nothing would ever merge).
   which carries no MR variables, it finds the MR by source branch.
 - **It blocks because "Pipelines must succeed" is ON.** Without that setting the job is only a
   red mark.
-- **GitLab does not re-run a pipeline when someone approves.** Approve, then **retry the
-  `require-approval` job**; the pipeline turns green and the merge button unlocks.
+- **GitLab does not re-run a pipeline when someone approves.** Where uBixOps is deployed
+  and the project's merge-request webhook points at it, approving retries the
+  `require-approval` job by itself ([`../architecture/ubix-ops.md`](../architecture/ubix-ops.md)).
+  Otherwise: approve, then **retry the `require-approval` job**; the pipeline turns green
+  and the merge button unlocks.
 - **It fails open.** No token, or GitLab unreachable: the job passes with an `UNVERIFIED` line
   rather than holding every merge hostage to an outage.
 - **Agents never approve and never 👍.** Agent sessions run under the owner's account, so the
