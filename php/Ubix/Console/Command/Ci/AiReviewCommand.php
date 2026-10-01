@@ -64,8 +64,9 @@ final class AiReviewCommand extends Command
         $this->setDescription('CI only: post an advisory AI review on this pipeline\'s merge request')->setHelp(
             <<<'HELP'
 Sends the merge request's diff (stdin, or a file) to Gemini with the framework's review
-instructions plus the host's own conventions, and writes the answer to one MR note that
-is replaced on each push. Meant for an MR pipeline job; see docs/standards/ai-review-in-ci.md.
+instructions plus the host's own conventions. Each finding becomes its own resolvable
+thread (inline on its line when the diff has it), plus one summary thread, so with
+"All threads must be resolved" a human has to read the review before the merge. Meant for an MR pipeline job; see docs/standards/ai-review-in-ci.md.
 
 Usage:
   git diff "$CI_MERGE_REQUEST_DIFF_BASE_SHA" HEAD | ubix ci:aiReview --guide=bin/ci/ai-review-guide.md
@@ -106,13 +107,23 @@ HELP,
         try {
             $instructions = $this->aiReviewService->instructions($this->projectGuide($input));
             $answer       = $this->aiReviewService->reviewWithFallback($apiKey, $models, $instructions, $this->env('CI_MERGE_REQUEST_TITLE'), $fitted['diff']);
-            $this->aiReviewService->upsertNote(
+            $review       = $this->aiReviewService->parseReview($answer['text']);
+            $threads      = $this->aiReviewService->postFindings(
                 $this->env('CI_API_V4_URL'),
                 $this->env('CI_PROJECT_ID'),
                 $this->env('CI_MERGE_REQUEST_IID'),
                 $token,
-                $this->aiReviewService->noteBody($answer['text'], $answer['model'], $this->env('CI_COMMIT_SHA'), $fitted['truncated']),
+                $review['findings'],
+                $this->env('CI_COMMIT_SHA'),
             );
+            $this->aiReviewService->upsertThread(
+                $this->env('CI_API_V4_URL'),
+                $this->env('CI_PROJECT_ID'),
+                $this->env('CI_MERGE_REQUEST_IID'),
+                $token,
+                $this->aiReviewService->summaryBody($review, $answer['model'], $this->env('CI_COMMIT_SHA'), $fitted['truncated']),
+            );
+            $output->writeln(sprintf('<info>%d new finding thread(s), %d inline; %d already raised.</info>', $threads['posted'], $threads['inline'], $threads['skipped']));
         } catch (RuntimeException $e) {
             $output->writeln('<error>' . $e->getMessage() . '</error>');
             $this->postNotReviewed($token, $e->getMessage(), $output);
@@ -140,7 +151,7 @@ HELP,
     private function postNotReviewed(string $token, string $reason, Output $output): void
     {
         try {
-            $this->aiReviewService->upsertNote(
+            $this->aiReviewService->upsertThread(
                 $this->env('CI_API_V4_URL'),
                 $this->env('CI_PROJECT_ID'),
                 $this->env('CI_MERGE_REQUEST_IID'),

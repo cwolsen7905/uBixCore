@@ -1,20 +1,23 @@
 # AI review in CI — `ci:aiReview`
 
-**Version:** 1.0
+**Version:** 2.0
 **Date:** 2026-09-30
 **Status:** Active
 
-An advisory review of each merge request by an LLM, run on the GitLab runner. The job sends
-the MR diff to Gemini and writes the answer to **one note on the MR**, replaced on every push.
-It is never a gate: the job is `allow_failure`, it never approves, and with no keys it skips
-green. Humans decide what to act on. Local review, with Claude or whatever each developer
-uses, is separate and unaffected.
+A review of each merge request by an LLM, run on the GitLab runner, that a **human has to
+read before the MR merges**. Each finding becomes its own resolvable thread — inline on its
+line when the diff has that line — plus one summary thread, posted even when the verdict is
+"Nothing worth raising". With the project setting **All threads must be resolved**, the merge
+waits until a person has resolved every one. The model never approves and never resolves;
+the job itself stays `allow_failure`, so an outage cannot wedge a merge, but a failed run
+still posts a "NOT reviewed — review this one yourself" thread that must be resolved. Local
+review, with whatever AI each developer uses, is separate and unaffected.
 
 ## 1. What the framework ships, and what the host owns
 
 | Piece | Layer |
 |---|---|
-| `Ubix\Service\Ci\AiReviewService` — Gemini request, response parsing, one-note upsert | uBixCore |
+| `Ubix\Service\Ci\AiReviewService` — Gemini request (structured JSON), threads per finding, summary thread | uBixCore |
 | `Ubix\Console\Command\Ci\AiReviewCommand` — `bin/ubix ci:aiReview` | uBixCore |
 | Generic review instructions (`php/Ubix/Service/Ci/ai-review-instructions.md`): bugs, security, the host's conventions, tests; no style nits; a fixed output format | uBixCore |
 | **The host's conventions file** — the rules that have caused that product's incidents | Host |
@@ -94,13 +97,33 @@ default and every run times out.
 
 1. No key or token: prints "Skipped" and exits 0.
 2. Empty diff: "Skipped", exit 0.
-3. Sends the diff and instructions to `generateContent`.
-4. Writes the note, marked `<!-- ubix-ai-review -->`, or replaces the one an earlier push
-   wrote — one note per MR however many pushes.
-5. A busy model (HTTP 503 "high demand", or 429) is retried after 10 s and 30 s, then the
-   fallback model gets the same three tries (`AI_REVIEW_FALLBACK_MODEL`, default
-   `gemini-flash-lite-latest`). The note names the model that answered.
-6. When there is still no review (all busy, a refusal, an empty answer, a bad key), the note
-   is **replaced with "NOT reviewed — review this one yourself"** naming the commit and the
-   reason, and the job exits 1 (yellow). Leaving it unposted would leave the previous push's
-   review up, describing code that has since changed.
+3. Sends the diff and instructions to `generateContent`, with a response schema: the answer
+   is a verdict plus findings (severity, file, line, title, detail), not prose to scrape.
+   A busy model (HTTP 503 or 429) is retried after 10 s and 30 s, then the fallback model
+   (`AI_REVIEW_FALLBACK_MODEL`, default `gemini-flash-lite-latest`) gets the same tries.
+4. **Each finding is a resolvable thread**, inline at `file:line` when that line is in the
+   diff; GitLab refuses a position outside the diff, and the finding then becomes a general
+   thread rather than being lost. A finding carries a fingerprint (file + title, not the
+   line, so an unrelated edit above it does not re-raise it): a push that reports the same
+   finding again **does not post it again**, and a thread a human resolved is never reopened.
+5. **One summary thread** — verdict and a line per finding — is always posted, and is
+   **edited in place while unresolved**, so many pushes before anyone looks leave one summary
+   to read. Once a human resolves it, the next push opens a new one: new code, new look.
+6. No review at all (all models busy, a refusal, an empty answer, a bad key): the summary
+   becomes **"NOT reviewed — review this one yourself"**, and the job exits 1 (yellow).
+
+## 4. Working the threads
+
+Resolve a thread once you have decided, and say what you decided — start the reply with
+`Fixed:` (code changed), `Dismissed:` (deliberately not; the reason is the record) or
+`Deferred:` (accepted, with where it is tracked). Suggested, not enforced: a resolved thread
+should mean "a person decided", and the reply is how anyone can tell later.
+
+**Agents never resolve AI-review threads.** Agent sessions often run under a person's account,
+so the API would let them; resolving on someone's behalf empties the gate.
+
+## 5. Turning it on
+
+Project → Settings → Merge requests → **All threads must be resolved** (API:
+`only_allow_merge_if_all_discussions_are_resolved=true`). Without it the threads are only
+visible, not blocking.
