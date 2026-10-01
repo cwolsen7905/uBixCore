@@ -563,26 +563,67 @@ The manual-play `drop-orphan-schemas-dev` Play button on every `dev` pipeline ba
 
 ### Test Isolation
 
-Each test must manage its own data using `setUp()` and `tearDown()`:
+**Extend `AbstractDatabaseTestCase` and let the transaction do it.** It opens a
+transaction before each test and always rolls it back afterwards — on a pass, a
+failure or a throw — so a test cannot leave anything behind for the next one to
+trip over. It also **skips** rather than fails when the test database is not
+reachable, so the suite stays runnable on a laptop without credentials.
 
 ```php
-public function setUp(): void
+final class ThingSqlRepositoryTest extends AbstractDatabaseTestCase
 {
-    // Insert only the data this test needs
-    $this->insertSeedData("INSERT INTO table_name (col1, col2) VALUES ('val1', 'val2')");
-}
+    protected function setUp(): void
+    {
+        parent::setUp();            // opens the transaction -- seed AFTER this
 
-public function tearDown(): void
-{
-    // Clean up all tables touched by this test
-    $this->insertSeedData('TRUNCATE TABLE table_name');
+        $this->insertSeedData("INSERT INTO things (name) VALUES ('one')");
+    }
 }
 ```
 
+No `tearDown()`, and **no `TRUNCATE`**. Truncating was the previous advice and it
+has two problems: it empties the whole table rather than the rows this test
+wrote, which is destructive on a shared test database, and it only cleans the
+tables the author remembered to list — the one they forgot is the one that
+breaks an unrelated test next week.
+
+Two things to know when writing one:
+
+- **Seed after `parent::setUp()`.** Seeding before it puts the fixture outside
+  the transaction, where nothing will take it away again.
+- **Do not commit.** A test that commits has opted out of the only thing
+  protecting the next one. The same goes for statements MySQL commits
+  implicitly — a plain `CREATE TABLE`, `ALTER`, `DROP` or `TRUNCATE` ends the
+  transaction underneath you. Use a `TEMPORARY` table if a test needs one of
+  its own.
+
 **Requirements:**
 - Tests must not depend on data from other tests
-- Tests must clean up all data they create
+- Build the fixture so the right answer and the wrong answer differ. A fixture
+  where both coincide will pass either way — see "When a row-level test earns
+  its keep" below
 - Use specific INSERT statements, not shared fixtures
+
+### When a row-level test earns its keep
+
+Most tests should **not** touch a database. A mocked `SqlService` is faster,
+needs no infrastructure, and is the right tool for logic that happens to read a
+row.
+
+Reach for `AbstractDatabaseTestCase` when the database itself is the thing under
+test: a query whose correctness lives in its SQL rather than in the PHP around
+it, a generated column, a constraint, an index-dependent ordering — or a
+predicate whose operands are all the same type, so that using the wrong one
+still compiles, still runs, and still passes a test that asserts the query's
+text.
+
+That last case is not hypothetical. A host shipped a count that gated on a tier
+**id** where it meant a tier **position**. Ids and positions are both integers,
+so every unit test asserting the SQL's text passed, and the query returned
+confidently wrong numbers. Only rows told the two apart.
+
+Asserting the text of a query proves it was written as intended. Only rows prove
+it was intended correctly.
 
 ### Accessing the Database
 
