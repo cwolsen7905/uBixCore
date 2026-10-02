@@ -9,12 +9,21 @@
 set -euo pipefail
 
 remote_name="${1:-origin}"
+refs="$(cat)"   # git gives the push list once, on stdin; both checks below read it
+
+# uBixShepherd, when installed: a push from a lane stays inside its scope, and a release
+# tag must be reserved (shepherd tag reserve) and contain its lane's merge. Not
+# installed: skipped, and nothing else changes.
+if command -v shepherd >/dev/null 2>&1; then
+    printf '%s\n' "$refs" | shepherd hook pre-push "$@" || exit 1
+fi
+
 gate=0; gated_refs=""
 while read -r _local_ref local_oid remote_ref _remote_oid; do
     [[ "$remote_ref" == refs/heads/* ]] || continue        # tags are not re-gated
     [[ "$local_oid" =~ ^0+$ ]] && continue                # branch deletion
     gate=1; gated_refs="${gated_refs} ${remote_ref}"
-done
+done <<< "$refs"
 [ "$gate" -eq 1 ] || exit 0
 
 repo_root="$(git rev-parse --show-toplevel)"
