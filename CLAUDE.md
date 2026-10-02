@@ -112,6 +112,8 @@ This repo is the **framework only** — the `ubixsys/ubixcore` Composer package,
 
 A `v*` tag on `main` publishes all three packages with the same version: `ubixsys/ubixcore` and `ubixsys/ubixcore-skeleton` (Composer, the latter by subtree split via `bin/publish-skeleton.sh`) and `@ubixsys/ubixcore` (npm). Hosts upgrade with `composer update ubixsys/ubixcore` and commit the lock.
 
+**Reserve the version before you tag.** `shepherd tag reserve ubixcore <major|minor|patch>` hands out the next version, past the remote's tags and every other session's reservation, so no two sessions take the same one. With uBixShepherd installed, the pre-push hook refuses a `v*` tag that is not reserved, or that does not contain its lane's merge.
+
 ## Key Entry Points
 
 - **PHP CLI**: `bin/ubix` - `Ubix\Bootstrap\console()`; commands discovered by namespace through Composer's PSR-4 map
