@@ -1,7 +1,7 @@
 # uBix Core: Complete PHP Architecture Guide
 
-**Version:** 1.5
-**Date:** 2026-08-05
+**Version:** 1.6
+**Date:** 2026-10-08
 **PHP Version:** 8.5+
 **Framework:** Slim 4 + PHP-DI 7
 
@@ -2497,6 +2497,60 @@ interface BlobServiceInterface
 
 ---
 
+### Federated Sign-In ("Continue with ...")
+
+**Interface:** `Ubix\Service\Identity\IdentityProviderServiceInterface`
+
+**Implementations:**
+- `GoogleIdentityProviderService` - OpenID Connect, code flow + PKCE; ID token verified by `OidcIdTokenVerifierService` (needs `firebase/php-jwt`, in `suggest`)
+- `FacebookIdentityProviderService` - OAuth 2.0 code flow (web Facebook Login is not OIDC); the token is proved with Graph `debug_token` and every Graph call carries `appsecret_proof`
+
+The seam answers one question: *this browser just proved it holds provider account `subject`, and the provider says these things about it* (`VerifiedIdentity`). Which of the host's accounts that is -- sign in, sign up, link, or prove an existing account first -- is host policy and is never decided here. Key identities on `provider` + `subject`, never on `email`. Full design: `docs/projects/federated-identity/plan.md`.
+
+**Wiring (`Dependencies.php`).** Every provider reads its credentials from the environment (uBixVault in a deployed image) when its constructor arguments are empty, and fails closed when they are missing, so plain autowiring is enough:
+
+| Provider | Env vars |
+|---|---|
+| Google | `GOOGLE_OAUTH_CLIENT_ID`, `GOOGLE_OAUTH_CLIENT_SECRET` |
+| Facebook | `FACEBOOK_APP_ID`, `FACEBOOK_APP_SECRET`, optional `FACEBOOK_GRAPH_API_VERSION` (`vN.N`; default `FacebookIdentityProviderService::DEFAULT_GRAPH_API_VERSION`) |
+
+```php
+return [
+    // PSR-16 cache shared by every pod that can receive a callback (memcached in production)
+    AuthorizationFlowService::class      => autowire(),
+    // Google only: the JWKS cache the ID-token verifier reads through
+    CacheItemPoolInterface::class        => autowire(FilesystemAdapter::class),
+    ReturnToValidatorService::class      => factory(fn (Logger $l) => new ReturnToValidatorService($l, ['https://app.example.com'], 'https://app.example.com/')),
+    // Providers: autowired; the host keeps its own registry of which are enabled
+    GoogleIdentityProviderService::class   => autowire(),
+    FacebookIdentityProviderService::class => autowire(),
+];
+```
+
+The PSR-18 client and PSR-17 request/stream factories come from the host's existing bindings (the same ones the payment and media seams use). A host that enables several providers keeps a small registry keyed by `getProvider()->value` and depends on the interface from there on; adding a provider is then one constructor argument and one switch, never a controller change.
+
+**Routes.** Two per provider, sharing one controller:
+
+```php
+$app->get('/auth/federated/{provider}/start', [FederatedSignInController::class, 'start']);
+$app->map(['GET', 'POST'], '/auth/federated/{provider}/callback', [FederatedSignInController::class, 'callback']); // POST for Apple's form_post
+```
+
+- **start:** validate `returnTo` with `ReturnToValidatorService`, call `beginAuthorization()` with the **exact registered** redirect URI (from config, never from the request host), `store()` the result with `AuthorizationFlowService`, and 302 to `authorizationUrl` with `Set-Cookie: getCookieHeader($handle)`.
+- **callback:** always expire the flow cookie (`getExpiredCookieHeader()`), then `takeForCallback($cookie, $parameters)` -- which refuses a missing cookie, a mismatched `state` and a replayed handle -- check the flow's provider is the route's, and `completeAuthorization()`. Anything the host needs back (a signed-in user connecting a provider, an intent) travels in `hostContext`, because the host session is not visible on a cross-site callback.
+- The callback must not sit behind a CSRF-token check: its protection is `state` + the flow cookie (+ `nonce` for OIDC).
+- `DtoException` with `IDENTITY_AUTHORIZATION_DENIED` means the person cancelled; every other code is a failed sign-in. The message is safe to show.
+
+**The cookie.** `__Host-ubix_authflow=<handle>; Path=/; Secure; HttpOnly; SameSite=None; Max-Age=600` -- a single-purpose handle, not the PHP session, so the session cookie can stay `SameSite=Lax`.
+
+**What a host must handle per provider:**
+
+- **Google** reports `email_verified` as given and passes `hd` through as `hostedDomain`; Google treats its email claim as authoritative only for `gmail.com` or a matching `hd`.
+- **Facebook** asserts nothing about email verification: `emailVerified` is **always false**, and `email` is **empty** when the person signed up by phone or declined the permission. A host that only trusts verified email must decide what a Facebook identity with no prior link does (for example: confirm the address by email first).
+- **Facebook data deletion.** Meta's App Review requires a data-deletion callback (or instructions URL). Meta POSTs a `signed_request`; `FacebookSignedRequestParserService::parse()` verifies the HMAC-SHA256 signature with the app secret (constant time), refuses any other algorithm, and returns a `FacebookSignedRequest` with the `userId` (the same value as `VerifiedIdentity::$subject`). The route must not require a session; what to delete and the `{url, confirmation_code}` JSON Meta expects back are the host's. The deauthorize callback has the same shape.
+
+---
+
 ### Legacy Session Bridge
 
 **Purpose:** Make uBix Core-issued sessions readable by legacy webservices (`chat-room-interface.php`, `chat-login.php`, `LiveSite.cl`, etc.) without round-tripping through legacy `login.php`. The legacy stack reads `$_SESSION['USER']` as a snake_case associative array; uBix Core authenticates with strongly-typed models. The bridge writes both shapes during login.
@@ -2726,3 +2780,4 @@ When you make a non-trivial change to a section, append a row to the version-his
 | 1.3     | 2026-07-28 | Christopher W. Olsen | **DataType validation now throws typed `DataTypeValidationException`** (`ExceptionCode::DATA_TYPE_VALIDATION_FAILED`) — closes the main half of the SB-06 known deviation. Both `validate()` snippets updated; the Base DataType Pattern callout now documents the catch contract (catch `DataTypeValidationException` for reject/re-roll paths; never `DtoException` around a DataType constructor — the never-matching catch was the root cause of the UsernameGenerator flake). Remaining deviations noted: first-violation-only message, per-construction validator build. |
 | 1.4     | 2026-08-05 | Christopher W. Olsen | **Legacy latin1 charset boundary moved to the PDO seam** — new `#### The legacy charset boundary` subsection under `AbstractPdoSqlService`. The runtime DSN is `charset=latin1`, so legacy CP1252 bytes reached string DataTypes as invalid UTF-8 and their `#[Length]` charset check threw mid-hydration — the DM+ Android login failure ("This value does not match the expected UTF-8 charset." on a customer named "Martín", thrown before the password was even checked). `CharsetService::toUtf8()` existed but only 5 of 71 repositories called it. Both directions now apply centrally in `AbstractPdoSqlService` (fetched strings decode; bound parameters encode via the new `CharsetService::toCp1252()`), so **repositories must no longer call `CharsetService` themselves** — documented along with the two deliberate pass-throughs (non-UTF-8 / CP1252-unrepresentable input, rather than `mb_convert_encoding`'s silent `?` substitution) and the DSN-derived guard that leaves `SqlitePdoSqlService` alone and self-disables on the eventual utf8mb4 migration (`ARCH-12` / `PP-07`). Includes the **binary-column** callout: the seam transcodes text and PDO cannot report that a column is BLOB/VARBINARY (a `varbinary(16)` reports `native_type => VAR_STRING`, indistinguishable from `varchar`), so such fields MUST be named in the new `$binaryFields` argument on `query()`/`getColumn()`/`getRow()`/`getRows()` or their bytes are altered in both directions. |
 | 1.5     | 2026-08-05 | Christopher W. Olsen | **New `Validation Locations` closer: "What none of these four layers is: authorization."** The section enumerated four validation layers (Payload, DataType, Service, DB constraints) without ever noting that none of them answers *may this caller act on this value?* — which let a real defect through: `SessionController::pepHash()` accepted `account_id` in the request body and returned a live PEP broadcast credential for it, passing every validation layer, so any bearer-token holder could mint credentials for any account (now takes only `session_token` and derives the account from the verified payload). The new subsection states the rule — identity comes from the authenticated principal (`AccountAuthenticationMiddleware`'s session, or a verified token such as `PaSessionTokenService::verify()`), never from a request field — plus the two habits that follow: fail closed (401 when a verifier cannot verify, never a fallback identity) and don't accept a redundant id the endpoint can already derive. Paired with `complete-js-guide.md` v1.6, which carries the same rule at the `+server.js` boundary. |
+| 1.6     | 2026-10-08 | Christopher W. Olsen | **New `Federated Sign-In ("Continue with ...")` section under Integration Patterns** (federated-identity FED-06, landing with FED-03). Documents the `IdentityProviderServiceInterface` seam and its two implementations (Google, Facebook), the env vars each reads, `Dependencies.php` wiring, the start/callback route pair (callback accepts POST; no CSRF-token middleware in front of it), the `__Host-ubix_authflow` cookie, `hostContext`, and what a host must handle per provider -- Facebook never asserts email verification and may return no email, and Meta's data-deletion callback is verified with `FacebookSignedRequestParserService`. |
