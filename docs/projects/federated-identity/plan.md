@@ -1,6 +1,6 @@
 # Federated Identity — Plan
 
-**Status:** Draft v0.1 · 2026-09-21 · FED-01/02 in !169 · Owner: Christopher W. Olsen
+**Status:** Draft v0.2 · 2026-10-08 · FED-01/02 shipped v0.14.0 · FED-03 + FED-06 in review · Owner: Christopher W. Olsen
 **First consumer:** kitg / Sowing.me — `docs/surfaces/authentication/{srs,technical-spec,architecture}.md` and platform ADR-009 in that repo.
 
 ## 1. The boundary
@@ -98,7 +98,7 @@ the one case that may need Apple's refresh token kept.
 | Type | Verifies | Returns |
 |---|---|---|
 | `AppleServerNotificationVerifier` | Apple-signed JWT (same JWKS path as §2.3) | typed event: `email-disabled`, `email-enabled`, `consent-revoked`, `account-delete`, with `subject` |
-| `FacebookSignedRequestParser` | Meta `signed_request` (base64url payload, HMAC-SHA256 with the app secret, constant-time) | the Facebook `user_id` whose data-deletion was requested |
+| `FacebookSignedRequestParserService` | Meta `signed_request` (base64url payload, HMAC-SHA256 with the app secret, constant-time; any `algorithm` but `HMAC-SHA256` refused) | `FacebookSignedRequest` DTO: the Facebook `userId` whose data deletion (or deauthorization) was requested, and `issuedAtUnixTimestamp` |
 
 Meta refuses App Review without a data-deletion callback or instructions URL; Apple sends
 notifications when a user stops sharing email or deletes their Apple account. The host
@@ -185,10 +185,10 @@ a host adds one — its protection is `state` + the flow cookie + `nonce`.
 |---|---|---|
 | FED-01 | Seam: interface, enum, DTOs, `AuthorizationFlowService` + cookie helper, `ReturnToValidatorService` | with FED-02 |
 | FED-02 | `OidcIdTokenVerifierService` + `GoogleIdentityProviderService`; `firebase/php-jwt` in `suggest` | **v0.14.0** (v0.13.0 went to TOTP, !170) |
-| FED-03 | `FacebookIdentityProviderService` (`appsecret_proof`, `debug_token`) + `FacebookSignedRequestParser` | v0.14.0 |
+| FED-03 | `FacebookIdentityProviderService` + `FacebookSignedRequestParserService` + `FacebookSignedRequest` DTO. Shipped: login dialog with `state` + PKCE `S256`; code exchange; `debug_token` with the app access token must report `is_valid`, `type=USER`, an unexpired (non-zero) `expires_at` and **our** `app_id` before `/me` is read; `/me` `id` must equal the inspected `user_id`; `appsecret_proof` on every Graph call that carries an access token, tokens in the `Authorization` header not the URL. `emailVerified` always false, `email` empty when Facebook gives none. Config: `FACEBOOK_APP_ID`, `FACEBOOK_APP_SECRET`, optional `FACEBOOK_GRAPH_API_VERSION` (default `v23.0`). The parser carries a `Service` suffix because the house standard requires one for every class under `Service/` | next MINOR, with FED-06 |
 | FED-04 | `AppleIdentityProviderService` (client-secret JWT, form_post callback) + `AppleServerNotificationVerifier`; accepts the native bundle id as a second audience | **deferred** — kitg launches without Apple (2026-09-21) and revisits it with a native iOS app |
 | FED-05 | `OneTimeCodeService` + `OneTimeCode` DTO | **v0.36.0** — shipped on its own, because kitg's passwordless sign-in needs it and FED-03 is not the blocker it was expected to be |
-| FED-06 | `docs/architecture/complete-php-guide.md` section: wiring a provider in `Dependencies.php`, the callback route, the cookie | with the last code slice |
+| FED-06 | `docs/architecture/complete-php-guide.md` § Federated Sign-In: wiring a provider in `Dependencies.php`, the callback route, the cookie, per-provider host obligations (guide v1.6) | next MINOR, with FED-03 -- the last code slice now that FED-04 is deferred; Apple adds its rows when it lands |
 | FED-07 | `RateLimiterService` + `RateLimitResult` (§2.8) | **!171**, with FED-08 — first user is kitg's identifier-first lookup |
 | FED-08 | `SessionService::startAuthenticatedSession()` (§2.9), plus the session-cookie fix it surfaced (HttpOnly, SameSite=Lax) | **!171** |
 
@@ -201,10 +201,11 @@ expired, bad `nonce`, `alg: none`, replayed flow handle, foreign-app Facebook to
 | # | Question | Default |
 |---|---|---|
 | Q1 | Apple requires apps that offer account deletion to **revoke** the user's Apple tokens, which needs the refresh token kept. Web-only today. | Discard tokens; revisit when a native iOS app is scoped — then store the refresh token encrypted, host-side. |
-| Q2 | PKCE for Apple and Facebook web flows: supported and honoured? | Send it; do not rely on it — `state` + `nonce` + flow cookie carry the security. Verify during FED-03/04. |
+| Q2 | PKCE for Apple and Facebook web flows: supported and honoured? | Send it; do not rely on it — `state` + `nonce` + flow cookie carry the security. **Facebook (FED-03):** Meta's manual login flow documents `code_challenge` / `code_challenge_method=S256` on the dialog and `code_verifier` on the exchange, so both are sent; tests assert they are sent, not that Meta enforces them (no network in tests). Facebook's web flow returns no ID token, so `nonce` is generated for the flow record but has nothing to bind: there `state` + flow cookie carry CSRF, and `debug_token` + `app_id` carry token binding. Apple still to verify in FED-04. |
 | Q3 | Passkeys (WebAuthn) are the obvious next seam member. | Not in this project. |
 
 ## Document control
 | Version | Date | Change |
 |---|---|---|
 | 0.1 | 2026-09-21 | FED-07 (rate limiter) and FED-08 (session rotation helper) added the same day: both generic, both needed by kitg's sign-in, neither existed. Initial plan, written alongside kitg's authentication spec revision and ADR-009. `hostContext` added the same day: kitg's TDS showed that connect-from-settings cannot read the host session on Apple's callback. |
+| 0.2 | 2026-10-08 | FED-03 built: Facebook provider + signed-request parser (renamed `…ParserService` for the house suffix rule); FED-06 guide section lands with it; Q2 answered for Facebook. |
