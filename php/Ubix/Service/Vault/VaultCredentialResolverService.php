@@ -20,6 +20,12 @@ use Throwable;
  * development keeps using a git-ignored `.env`, while deployed pods pull
  * credentials from Vault instead of from any committed secret file.
  *
+ * Database credentials are read by default (`VAULT_DB_STRATEGY` unset or `kv`: a KV v2
+ * secret at `VAULT_DB_KV_PATH`; `dynamic`: generated credentials), and a missing or empty
+ * secret fails loudly. An app with no database at all opts out explicitly with
+ * `VAULT_DB_STRATEGY=none`: the database read is skipped and only the app secrets
+ * (`VAULT_APP_KV_PATH(S)`) are hydrated. It is never optional by default.
+ *
  * Auth: prefers a static `VAULT_TOKEN` (dev/CI); otherwise, in-cluster, logs in
  * with the Kubernetes auth method using the pod's mounted service-account JWT
  * and `VAULT_K8S_ROLE`. A token obtained by logging in is revoked as soon as the
@@ -41,6 +47,11 @@ use Throwable;
 final class VaultCredentialResolverService
 {
     private const KUBERNETES_SERVICE_ACCOUNT_JWT = '/var/run/secrets/kubernetes.io/serviceaccount/token';
+
+    /**
+     * `VAULT_DB_STRATEGY` value for an app with no database: skip the credential read
+     */
+    private const STRATEGY_NONE = 'none';
 
     private const CACHE_KEY_PREFIX = 'vault.environment.';
 
@@ -94,6 +105,9 @@ final class VaultCredentialResolverService
      * Resolve database credentials from Vault and inject them into the
      * environment via `putenv()`.
      *
+     * With `VAULT_DB_STRATEGY=none` the database credentials are not read at all and
+     * only the app secrets are hydrated.
+     *
      * Authentication or read failure propagates as a RuntimeException from the
      * callees (fail-closed — when Vault is configured we never silently fall
      * back to potentially-stale environment values).
@@ -114,19 +128,34 @@ final class VaultCredentialResolverService
             return;
         }
 
+        $skipDatabase = $this->readEnv('VAULT_DB_STRATEGY') === self::STRATEGY_NONE;
+
+        if ($skipDatabase) {
+            $this->logger->info('Skipping database credentials (VAULT_DB_STRATEGY=none)');
+
+            if ($this->appSecretPaths() === []) {
+                // Nothing to read: say so rather than logging in to the vault for nothing.
+                $this->logger->warning('VAULT_DB_STRATEGY=none and no VAULT_APP_KV_PATH/VAULT_APP_KV_PATHS; nothing was hydrated from uBix Vault');
+
+                return;
+            }
+        }
+
         // Resolve everything before touching the environment, so a failure part-way
         // (an app secret, after the database credentials) leaves it as it was.
-        [$credentials, $appSecrets] = $this->withToken($vaultAddress, function (string $token) use ($vaultAddress): array {
+        [$credentials, $appSecrets] = $this->withToken($vaultAddress, function (string $token) use ($vaultAddress, $skipDatabase): array {
             return [
-                $this->resolveCredentials($vaultAddress, $token),
+                $skipDatabase ? [] : $this->resolveCredentials($vaultAddress, $token),
                 $this->resolveAppSecrets($vaultAddress, $token),
             ];
         });
 
-        $this->putEnvironment($credentials);
-        $this->logger->info('Hydrated database credentials from uBix Vault', [
-            'vars' => array_keys($credentials), // Names only — never the values.
-        ]);
+        if (!$skipDatabase) {
+            $this->putEnvironment($credentials);
+            $this->logger->info('Hydrated database credentials from uBix Vault', [
+                'vars' => array_keys($credentials), // Names only — never the values.
+            ]);
+        }
 
         if ($appSecrets !== []) {
             $this->putEnvironment($appSecrets);
@@ -451,7 +480,8 @@ final class VaultCredentialResolverService
     /**
      * Resolve the four MYSQL_* credential env values from Vault, using the
      * configured strategy (`kv` — a KV v2 secret, the default; or `dynamic` —
-     * generated database credentials).
+     * generated database credentials). `none` never reaches here: the caller skips
+     * the database read for an app that has no database.
      *
      * @param string $vaultAddress Base address of the Vault server
      * @param string $token        A valid Vault client token
