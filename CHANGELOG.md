@@ -1,6 +1,12 @@
 # Changelog
 
-## Unreleased
+## 0.46.0 - 2026-10-12
+
+### uBixVault
+
+- `VAULT_DB_STRATEGY=none` opts an app with no database out of the `MYSQL_*` credential
+  read, so its app secrets (`VAULT_APP_KV_PATH(S)`) still hydrate. Unset, `kv` and
+  `dynamic` behave exactly as before: a missing database secret still fails loudly.
 
 ### uBixOps
 

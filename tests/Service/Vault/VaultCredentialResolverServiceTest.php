@@ -384,6 +384,104 @@ final class VaultCredentialResolverServiceTest extends UbixConcreteClassOrEnumTe
     }
 
     /**
+     * VAULT_DB_STRATEGY=none skips the database read entirely and still hydrates the app secrets
+     *
+     * @return void
+     */
+    public function testNoneStrategySkipsTheDatabaseReadAndStillHydratesAppSecrets(): void
+    {
+        putenv('VAULT_TOKEN=test-token');
+        putenv('VAULT_DB_STRATEGY=none');
+        putenv('VAULT_APP_KV_PATH=app/api');
+
+        $this->resolver([$this->kv(['API_BEARER_TOKENS' => 'one'])])->hydrateEnvironment(self::VAULT_ADDRESS);
+
+        $this->assertCount(1, $this->requests, 'Only the app secret is read');
+        $this->assertSame(self::VAULT_ADDRESS . '/v1/secret/data/app/api', (string) $this->requests[0]->getUri());
+        $this->assertSame('one', getenv('API_BEARER_TOKENS'));
+        $this->assertFalse(getenv('MYSQL_READ_USERNAME'));
+        $this->assertFalse(getenv('MYSQL_WRITE_PASSWORD'));
+    }
+
+    /**
+     * With none, a database path that would be forbidden is never touched, so it cannot fail the start
+     *
+     * @return void
+     */
+    public function testNoneStrategyDoesNotFailWhenTheDatabasePathIsForbidden(): void
+    {
+        putenv('VAULT_TOKEN=test-token');
+        putenv('VAULT_DB_STRATEGY=none');
+        putenv('VAULT_DB_KV_PATH=app/db');
+        putenv('VAULT_APP_KV_PATH=app/api');
+
+        // Only one response is queued: a second read would exhaust the mock and throw.
+        $this->resolver([$this->kv(['API_BEARER_TOKENS' => 'one'])])->hydrateEnvironment(self::VAULT_ADDRESS);
+
+        $this->assertSame('one', getenv('API_BEARER_TOKENS'));
+        foreach ($this->requests as $request) {
+            $this->assertStringNotContainsString('app/db', (string) $request->getUri());
+        }
+    }
+
+    /**
+     * With none and no app secret paths nothing is contacted, a warning is logged, and nothing is set
+     *
+     * @return void
+     */
+    public function testNoneStrategyWithoutAppPathsWarnsAndHydratesNothing(): void
+    {
+        putenv('VAULT_TOKEN=test-token');
+        putenv('VAULT_DB_STRATEGY=none');
+
+        $logger = $this->createMock(Logger::class);
+        $logger->expects($this->once())->method('warning')->with($this->stringContains('nothing was hydrated'));
+
+        $this->resolver([], $logger)->hydrateEnvironment(self::VAULT_ADDRESS);
+
+        $this->assertCount(0, $this->requests);
+        $this->assertFalse(getenv('MYSQL_READ_USERNAME'));
+    }
+
+    /**
+     * Without VAULT_DB_STRATEGY the database read is still required: a forbidden or empty secret fails loudly
+     *
+     * @return void
+     */
+    public function testDatabaseReadIsNotOptionalByDefault(): void
+    {
+        putenv('VAULT_TOKEN=test-token');
+        putenv('VAULT_APP_KV_PATH=app/api');
+
+        $this->expectException(RuntimeException::class);
+
+        $this->resolver([$this->kv(['unexpected' => 'x']), $this->kv(['API_BEARER_TOKENS' => 'one'])])
+            ->hydrateEnvironment(self::VAULT_ADDRESS);
+    }
+
+    /**
+     * Cache entries made under none are kept apart from the default strategy's (the key includes the strategy)
+     *
+     * @return void
+     */
+    public function testNoneStrategyIsCachedSeparatelyFromTheDefault(): void
+    {
+        putenv('VAULT_TOKEN=test-token');
+        putenv('VAULT_APP_KV_PATH=app/api');
+        $cache = $this->arrayCache();
+
+        putenv('VAULT_DB_STRATEGY=none');
+        $this->resolver([$this->kv(['API_BEARER_TOKENS' => 'one'])], null, $cache)->hydrateEnvironment(self::VAULT_ADDRESS);
+
+        putenv('VAULT_DB_STRATEGY');
+        $this->resolver([$this->kv(self::FULL_DB_SECRET), $this->kv(['API_BEARER_TOKENS' => 'one'])], null, $cache)
+            ->hydrateEnvironment(self::VAULT_ADDRESS);
+
+        $this->assertCount(2, $this->requests, 'The default strategy must not reuse the none entry');
+        $this->assertSame('reader', getenv('MYSQL_READ_USERNAME'));
+    }
+
+    /**
      * App secrets are read with the same token and after the database credentials
      *
      * @return void
