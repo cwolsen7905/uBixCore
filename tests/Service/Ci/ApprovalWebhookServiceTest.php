@@ -43,6 +43,13 @@ final class ApprovalWebhookServiceTest extends UbixConcreteClassOrEnumTestCase i
     private array $sent = [];
 
     /**
+     * Tokens the requests carried, in order
+     *
+     * @var list<string>
+     */
+    private array $tokensUsed = [];
+
+    /**
      * Whether the stubbed client fails at the transport
      */
     private bool $unreachable = false;
@@ -147,6 +154,107 @@ final class ApprovalWebhookServiceTest extends UbixConcreteClassOrEnumTestCase i
     }
 
     /**
+     * A project with no pair of its own uses the fallback token
+     *
+     * @return void
+     */
+    public function testTheFallbackTokenServesAnyProject(): void
+    {
+        $this->givenPipeline([['id' => 12, 'name' => 'require-approval', 'status' => 'failed']]);
+
+        $result = $this->buildService(tokens: '', apiToken: 'group-tok')->handle(self::SECRET, $this->event('approved'));
+
+        $this->assertStringStartsWith('retried', $result['outcome']);
+        $this->assertSame(['group-tok'], array_values(array_unique($this->tokensUsed)));
+    }
+
+    /**
+     * A project's own token wins over the fallback
+     *
+     * @return void
+     */
+    public function testAProjectTokenWinsOverTheFallback(): void
+    {
+        $this->givenPipeline([['id' => 12, 'name' => 'require-approval', 'status' => 'failed']]);
+
+        $this->buildService(apiToken: 'group-tok')->handle(self::SECRET, $this->event('approved'));
+
+        $this->assertSame(['tok'], array_values(array_unique($this->tokensUsed)));
+    }
+
+    /**
+     * A manual job that has not run is played, not retried
+     *
+     * @return void
+     */
+    public function testAManualJobIsPlayed(): void
+    {
+        $this->givenPipeline([['id' => 12, 'name' => 'require-approval', 'status' => 'manual']]);
+        $this->replies['POST /api/v4/projects/7/jobs/12/play'] = '{}';
+
+        $result = $this->buildService()->handle(self::SECRET, $this->event('approved'));
+
+        $this->assertStringStartsWith('played: job 12', $result['outcome']);
+        $this->assertContains('POST /api/v4/projects/7/jobs/12/play', $this->sent);
+        $this->assertNotContains('POST /api/v4/projects/7/jobs/12/retry', $this->sent);
+    }
+
+    /**
+     * An approval of a job that already passed changes nothing, so it is not re-run
+     *
+     * @return void
+     */
+    public function testAPassedJobIsNotRetriedOnApproval(): void
+    {
+        $this->givenPipeline([['id' => 12, 'name' => 'require-approval', 'status' => 'success']]);
+
+        $result = $this->buildService()->handle(self::SECRET, $this->event('approved'));
+
+        $this->assertStringStartsWith('skipped', $result['outcome']);
+        $this->assertNotContains('POST /api/v4/projects/7/jobs/12/retry', $this->sent);
+    }
+
+    /**
+     * A thumbs-up awarded to a merge request re-runs the job
+     *
+     * @return void
+     */
+    public function testAThumbsUpRetriesTheJob(): void
+    {
+        $this->givenPipeline([['id' => 12, 'name' => 'require-approval', 'status' => 'failed']]);
+
+        $result = $this->buildService()->handle(self::SECRET, $this->emojiEvent('thumbsup', 'award', 'MergeRequest'));
+
+        $this->assertStringStartsWith('retried: job 12', $result['outcome']);
+    }
+
+    /**
+     * Revoking a thumbs-up re-runs even a passed job, so the verdict can turn red
+     *
+     * @return void
+     */
+    public function testRevokingAThumbsUpRetriesAPassedJob(): void
+    {
+        $this->givenPipeline([['id' => 12, 'name' => 'require-approval', 'status' => 'success']]);
+
+        $this->assertStringStartsWith('retried', $this->buildService()->handle(self::SECRET, $this->emojiEvent('thumbsup', 'revoke', 'MergeRequest'))['outcome']);
+    }
+
+    /**
+     * Other emoji, and emoji on anything but a merge request, are ignored
+     *
+     * @return void
+     */
+    public function testOtherEmojiAreIgnored(): void
+    {
+        $service = $this->buildService();
+
+        $this->assertStringStartsWith('ignored', $service->handle(self::SECRET, $this->emojiEvent('heart', 'award', 'MergeRequest'))['outcome']);
+        $this->assertStringStartsWith('ignored', $service->handle(self::SECRET, $this->emojiEvent('thumbsup', 'award', 'Issue'))['outcome']);
+        $this->assertSame([], $this->sent);
+    }
+
+    /**
      * An unreachable GitLab is still answered 200, so GitLab keeps the webhook enabled
      *
      * @return void
@@ -190,8 +298,9 @@ final class ApprovalWebhookServiceTest extends UbixConcreteClassOrEnumTestCase i
             throw new HttpClientException('There was a cURL error (6: could not resolve host).');
         }
 
-        $key          = $request->getMethod() . ' ' . $request->getUri()->getPath();
-        $this->sent[] = $key;
+        $key                = $request->getMethod() . ' ' . $request->getUri()->getPath();
+        $this->sent[]       = $key;
+        $this->tokensUsed[] = $request->getHeaderLine('PRIVATE-TOKEN');
 
         return array_key_exists($key, $this->replies) ? new Psr7Response(200, [], $this->replies[$key]) : new Psr7Response(404, [], '{}');
     }
@@ -229,19 +338,39 @@ final class ApprovalWebhookServiceTest extends UbixConcreteClassOrEnumTestCase i
     }
 
     /**
+     * An emoji event body for MR !3 of project 7
+     *
+     * @param string $name          The emoji
+     * @param string $action        Either `award` or `revoke`
+     * @param string $awardableType What it was awarded to
+     *
+     * @return string The JSON payload
+     */
+    private function emojiEvent(string $name, string $action, string $awardableType): string
+    {
+        return (new JsonService($this->createStub(Logger::class)))->encode([
+            'merge_request'     => ['iid' => 3],
+            'object_attributes' => ['action' => $action, 'awardable_type' => $awardableType, 'name' => $name],
+            'object_kind'       => 'emoji',
+            'project'           => ['id' => 7],
+        ]);
+    }
+
+    /**
      * The service under test
      *
-     * @param string $secret The webhook secret it expects
-     * @param string $tokens Project tokens, `id=token,...`
+     * @param string $secret   The webhook secret it expects
+     * @param string $tokens   Project tokens, `id=token,...`
+     * @param string $apiToken Fallback token
      *
      * @return ApprovalWebhookService The service
      */
-    private function buildService(string $secret = self::SECRET, string $tokens = '7=tok'): ApprovalWebhookService
+    private function buildService(string $secret = self::SECRET, string $tokens = '7=tok', string $apiToken = ''): ApprovalWebhookService
     {
         $httpClient = $this->createStub(HttpClient::class);
         $httpClient->method('sendRequest')->willReturnCallback($this->answer(...));
         $logger = $this->createStub(Logger::class);
 
-        return new ApprovalWebhookService($logger, $httpClient, new Psr17Factory(), new JsonService($logger), 'https://gitlab.test/api/v4', $secret, $tokens, ['require-approval', 'require-approval-mr']);
+        return new ApprovalWebhookService($logger, $httpClient, new Psr17Factory(), new JsonService($logger), 'https://gitlab.test/api/v4', $secret, $tokens, $apiToken, ['require-approval', 'require-approval-mr']);
     }
 }

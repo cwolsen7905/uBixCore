@@ -1,7 +1,7 @@
 # uBixOps — the framework's operations app
 
-**Version:** 1.0
-**Date:** 2026-10-01
+**Version:** 1.1
+**Date:** 2026-10-11
 **Status:** Active
 
 uBixOps is an HTTP app that ships **inside** uBixCore, for operational plumbing that
@@ -27,11 +27,21 @@ wants to change it copies the folder into its own `app/` and the copy wins.
 ## 2. What a delivery does
 
 1. Wrong or missing `X-Gitlab-Token` → **401**. Nothing is sent to GitLab.
-2. Anything but a merge-request `approved`/`unapproved` event → 200, ignored.
-3. A project with no token configured → 200, ignored.
-4. Otherwise: read the MR's head pipeline, find the **newest** job named in
-   `APPROVAL_JOB_NAMES`, and `POST /jobs/:id/retry`. A job already queued or running is
-   left alone. **One job, never a new pipeline**: a pipeline would re-run every check,
+2. Anything but a merge-request `approved`/`unapproved` event, or a `thumbsup` emoji
+   awarded or revoked on a merge request (§4) → 200, ignored.
+3. No token for the project (neither its own entry nor the fallback, §3) → 200, ignored.
+4. Otherwise: read the MR's head pipeline and find the **newest** job named in
+   `APPROVAL_JOB_NAMES`, then act on its state:
+
+   | Job state | Action |
+   |---|---|
+   | `created`, `pending`, `preparing`, `running`, `waiting_for_resource` | left alone |
+   | `manual` (never run) | `POST /jobs/:id/play` |
+   | `success`, and the event added a sign-off | left alone: it already passed |
+   | anything else, including `success` after an un-approve or a revoked thumbs-up | `POST /jobs/:id/retry` |
+
+   A passed job is still retried when a sign-off is withdrawn, so the verdict can turn
+   red again. **One job, never a new pipeline**: a pipeline would re-run every check,
    including the AI review, for each click.
 5. Any GitLab failure → **200**, with the reason logged. GitLab disables a webhook that
    keeps failing, and a disabled webhook fails silently, so only a bad secret is an error.
@@ -44,19 +54,48 @@ helm install ubix-ops deploy/charts/ubix-ops -n ubix-ops --create-namespace \
   --set existingSecret=ubix-ops-credentials
 ```
 
-The Secret carries `GITLAB_WEBHOOK_SECRET` and `GITLAB_PROJECT_TOKENS`
-(`projectId=token,projectId=token`). Each token is a **project access token, Developer
-role, `api` scope** — retrying a job needs Developer; the Reporter token that
-`ci:requireApproval` reads with is not enough. With uBixVault, skip the Secret and pass
+The Secret carries `GITLAB_WEBHOOK_SECRET` plus tokens, in either or both forms:
+
+- `GITLAB_API_TOKEN` — **one token for any project.** Used for every project with no entry
+  in `GITLAB_PROJECT_TOKENS`, so a new repo needs only the webhook. Make it a **group
+  access token** on the group that holds your repos (on ours, `ubixsys`).
+- `GITLAB_PROJECT_TOKENS` — `projectId=token,projectId=token`, for a project that needs
+  its own token. A project's entry wins over `GITLAB_API_TOKEN`.
+
+Every token is **Developer role, `api` scope**: retrying or playing a job needs
+Developer; the Reporter token that `ci:requireApproval` reads with is not enough. A
+token only reaches projects inside its own group, so a repo in another group needs its
+own entry (or another uBixOps).
+
+Which projects have a token is recorded in the cluster repo's `kubernetes/ubix-ops`
+README (at the time of writing: kitg and ubixcore; Kelpie and the rest not yet). With
+`GITLAB_API_TOKEN` set, a project in the group needs only the webhook. With uBixVault, skip the Secret and pass
 `VAULT_ADDR`, `VAULT_K8S_ROLE` and `VAULT_APP_KV_PATH` through `extraEnv`; uBixCore
 resolves them at boot.
 
 Then, per GitLab project: **Settings → Webhooks → Add new webhook**, URL
 `https://<host>/gitlab/merge-request-hook`, the same secret token, trigger **Merge request
-events** only. Keep the endpoint internal where you can: GitLab must reach it, nobody else
-needs to.
+events**, and **Emoji events** if thumbs-up sign-offs should re-run the job (§4). Keep the endpoint
+internal where you can: GitLab must reach it, nobody else needs to.
 
-## 4. Why it is a framework app and not a product route
+## 4. Thumbs-up
+
+`ci:requireApproval` counts a `thumbsup` award as a sign-off, but the merge-request hook
+does not fire on award emoji. GitLab has a separate **Emoji events** webhook
+(`object_kind: emoji`, with `object_attributes.action` of `award` or `revoke`, and the
+merge request under `merge_request`), and uBixOps handles it: a `thumbsup` awarded to a
+merge request is treated like an approval, and one revoked like an un-approval. Any other
+emoji, or an emoji on an issue or commit, is ignored.
+
+- Turn on **Emoji events** on the webhook, besides Merge request events.
+- It is the *project* webhook trigger; a GitLab that predates it (it appears in the 16.2
+  webhook-events docs) shows no such checkbox, and then thumbs-up does not re-run the
+  job. Approve with the Approve button instead.
+- The handler is written from GitLab's documented payload and unit-tested against it. It
+  has not yet been observed on our GitLab instance; check the first real delivery in the
+  webhook's **Recent events** and the uBixOps log before relying on it.
+
+## 5. Why it is a framework app and not a product route
 
 The first draft hung the webhook off a product API. Three reasons it moved:
 

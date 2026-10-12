@@ -31,7 +31,9 @@ use function DI\get;
  *
  *   GITLAB_API_URL         e.g. https://gitlab.example.com/api/v4
  *   GITLAB_WEBHOOK_SECRET  the secret set on each project's webhook
- *   GITLAB_PROJECT_TOKENS  `projectId=token,projectId=token` (Developer role, `api` scope)
+ *   GITLAB_PROJECT_TOKENS  optional; `projectId=token,projectId=token` (Developer role, `api` scope)
+ *   GITLAB_API_TOKEN       optional; used for a project with no entry above, e.g. a group
+ *                          access token (Developer role, `api` scope)
  *   APPROVAL_JOB_NAMES     optional; default `require-approval,require-approval-mr`
  *
  * Logs go to stderr, where a container's logs belong.
@@ -47,6 +49,7 @@ return static function (): Container {
             ->constructorParameter('apiUrl', (string) getenv('GITLAB_API_URL'))
             ->constructorParameter('secret', (string) getenv('GITLAB_WEBHOOK_SECRET'))
             ->constructorParameter('projectTokens', (string) getenv('GITLAB_PROJECT_TOKENS'))
+            ->constructorParameter('apiToken', (string) getenv('GITLAB_API_TOKEN'))
             ->constructorParameter('jobNames', array_values(array_filter(array_map('trim', explode(',', $jobNames))))),
         Engine::class                 => autowire(),
         HttpClient::class             => autowire(CurlHttpClient::class)->constructorParameter('timeout', 20),

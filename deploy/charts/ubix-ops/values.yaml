@@ -16,14 +16,17 @@ gitlab:
 
 # The webhook secret and the per-project tokens. Use ONE of:
 #   - existingSecret: a Secret you manage, with keys GITLAB_WEBHOOK_SECRET and
-#     GITLAB_PROJECT_TOKENS ("projectId=token,projectId=token"; Developer role, api scope);
-#   - webhookSecret + projectTokens below, and the chart creates the Secret (fine for a
+#     GITLAB_PROJECT_TOKENS ("projectId=token,projectId=token"; Developer role, api scope)
+#     and/or GITLAB_API_TOKEN (one token for every project with no entry in the list,
+#     e.g. a group access token; Developer role, api scope);
+#   - webhookSecret + projectTokens + apiToken below, and the chart creates the Secret (fine for a
 #     test install; for production keep credentials out of values files);
 #   - neither, and supply them through extraEnv (e.g. uBixVault: VAULT_ADDR,
 #     VAULT_K8S_ROLE, VAULT_APP_KV_PATH -- uBixCore resolves them at boot).
 existingSecret: ""
 webhookSecret: ""
 projectTokens: ""
+apiToken: ""
 
 # Extra environment variables, as a list of EnvVar objects.
 extraEnv: []
