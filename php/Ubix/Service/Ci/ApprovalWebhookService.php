@@ -15,6 +15,7 @@ use Ubix\Service\JsonService;
 
 /**
  * Re-run a merge request's sign-off job when someone approves or un-approves it
+ * (or adds or removes a thumbs-up, which `ci:requireApproval` also counts)
  *
  * GitLab creates no pipeline on approval, so `ci:requireApproval`'s verdict would stay
  * frozen at the last push. A merge-request webhook delivers the approve event here, and
@@ -35,6 +36,16 @@ final class ApprovalWebhookService
     private const SIGN_OFF_ACTIONS = ['approval', 'approved', 'unapproval', 'unapproved'];
 
     /**
+     * The merge-request actions that take a sign-off away
+     */
+    private const REVOKING_ACTIONS = ['unapproval', 'unapproved'];
+
+    /**
+     * The award emoji `ci:requireApproval` counts as a sign-off
+     */
+    private const SIGN_OFF_EMOJI = 'thumbsup';
+
+    /**
      * Job states where a retry would only queue a duplicate
      */
     private const ACTIVE_STATES = ['created', 'pending', 'preparing', 'running', 'waiting_for_resource'];
@@ -49,6 +60,7 @@ final class ApprovalWebhookService
      * @param string         $apiUrl         GitLab API v4 base URL
      * @param string         $secret         The webhook's secret token; empty refuses everything
      * @param string         $projectTokens  Pairs `id=token`, comma-separated as the environment carries them (Developer role, `api` scope)
+     * @param string         $apiToken       Fallback token for a project with no pair above (e.g. a group access token); empty means none
      * @param string[]       $jobNames       Names of the sign-off jobs to retry
      */
     public function __construct(
@@ -59,6 +71,7 @@ final class ApprovalWebhookService
         private string $apiUrl,
         private string $secret,
         private string $projectTokens,
+        private string $apiToken,
         private array $jobNames,
     ) {
     }
@@ -98,18 +111,18 @@ final class ApprovalWebhookService
      */
     private function retrySignOffJob(string $body): string
     {
-        $event      = $this->decode($body);
-        $attributes = is_array($event['object_attributes'] ?? null) ? $event['object_attributes'] : [];
-        $project    = is_array($event['project'] ?? null) ? $event['project'] : [];
-        $action     = is_string($attributes['action'] ?? null) ? $attributes['action'] : '';
+        $event   = $this->decode($body);
+        $signOff = $this->getSignOff($event);
 
-        if (($event['object_kind'] ?? null) !== 'merge_request' || !in_array($action, self::SIGN_OFF_ACTIONS, true)) {
+        if ($signOff === null) {
             return 'ignored: not an approval event';
         }
 
+        $project   = is_array($event['project'] ?? null) ? $event['project'] : [];
         $projectId = is_int($project['id'] ?? null) ? (string) $project['id'] : '';
-        $iid       = is_int($attributes['iid'] ?? null) ? $attributes['iid'] : 0;
-        $token     = $this->getProjectTokens()[$projectId] ?? '';
+        $iid       = $signOff['iid'];
+        $action    = $signOff['action'];
+        $token     = $this->getProjectTokens()[$projectId] ?? $this->apiToken;
 
         if ($token === '' || $iid === 0) {
             return 'ignored: no token configured for project ' . $projectId;
@@ -134,9 +147,58 @@ final class ApprovalWebhookService
             return 'skipped: job ' . $job['id'] . ' is already ' . $job['status'];
         }
 
+        if ($job['status'] === 'manual') {
+            $this->call('POST', $base . '/jobs/' . $job['id'] . '/play', $token);
+
+            return 'played: job ' . $job['id'] . ' (' . $job['name'] . ') for !' . $iid . ' after ' . $action;
+        }
+
+        // A job that passed already holds the verdict an approval would give it; only a
+        // withdrawn sign-off can turn it red again.
+        if ($job['status'] === 'success' && !$signOff['revoking']) {
+            return 'skipped: job ' . $job['id'] . ' has already passed';
+        }
+
         $this->call('POST', $base . '/jobs/' . $job['id'] . '/retry', $token);
 
         return 'retried: job ' . $job['id'] . ' (' . $job['name'] . ') for !' . $iid . ' after ' . $action;
+    }
+
+    /**
+     * Whether an event is a sign-off change, and which merge request it is about
+     *
+     * Covers the merge-request hook (approve, un-approve) and the emoji hook (a thumbs-up
+     * awarded or revoked on a merge request).
+     *
+     * @param array<int|string, mixed> $event The decoded payload
+     *
+     * @return ?array{iid: int, action: string, revoking: bool} Null when the event is not one
+     */
+    private function getSignOff(array $event): ?array
+    {
+        $attributes = is_array($event['object_attributes'] ?? null) ? $event['object_attributes'] : [];
+        $action     = is_string($attributes['action'] ?? null) ? $attributes['action'] : '';
+        $kind       = $event['object_kind'] ?? null;
+
+        if ($kind === 'merge_request' && in_array($action, self::SIGN_OFF_ACTIONS, true)) {
+            return [
+                'action'   => $action,
+                'iid'      => is_int($attributes['iid'] ?? null) ? $attributes['iid'] : 0,
+                'revoking' => in_array($action, self::REVOKING_ACTIONS, true),
+            ];
+        }
+
+        if ($kind === 'emoji' && ($attributes['name'] ?? null) === self::SIGN_OFF_EMOJI && ($attributes['awardable_type'] ?? null) === 'MergeRequest' && in_array($action, ['award', 'revoke'], true)) {
+            $mergeRequest = is_array($event['merge_request'] ?? null) ? $event['merge_request'] : [];
+
+            return [
+                'action'   => 'thumbsup ' . $action,
+                'iid'      => is_int($mergeRequest['iid'] ?? null) ? $mergeRequest['iid'] : 0,
+                'revoking' => $action === 'revoke',
+            ];
+        }
+
+        return null;
     }
 
     /**
