@@ -94,8 +94,11 @@ emoji, or an emoji on an issue or commit, is ignored.
 - The log tells the two apart. The outcome reads `retried: job N (require-approval) for !M
   after approved` for the Approve button, and `... after thumbsup award` for a thumbs-up
   (`after unapproved` and `after thumbsup revoke` for the removals).
-- The handler is written from GitLab's documented payload and unit-tested against it. It
-  has not yet been observed on a real delivery; check the first one in the webhook's
+- The payload shape is GitLab's: `X-Gitlab-Event: Emoji Hook` and `object_kind: emoji` as
+  documented, and (from GitLab's `Gitlab::DataBuilder::Emoji`) the awardable under its own
+  key, so a 👍 on a merge request carries `merge_request.iid`, while one on a comment is
+  `awardable_type: Note` and is ignored. The handler dispatches on `object_kind`, not the
+  header, so both hooks share the one endpoint. It has not yet been observed on a real delivery; check the first one in the webhook's
   **Recent events** and the uBixOps log before relying on it.
 
 ## 5. Why it is a framework app and not a product route

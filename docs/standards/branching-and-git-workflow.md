@@ -303,7 +303,8 @@ so nothing would ever merge).
   red mark.
 - **GitLab does not re-run a pipeline when someone approves.** Where uBixOps is deployed
   and the project's merge-request webhook points at it, approving retries the
-  `require-approval` job by itself ([`../architecture/ubix-ops.md`](../architecture/ubix-ops.md)).
+  `require-approval` job by itself, and so does a 👍 when the webhook's **Emoji events** trigger
+  is on ([`../architecture/ubix-ops.md`](../architecture/ubix-ops.md)).
   Otherwise: approve, then **retry the `require-approval` job**; the pipeline turns green
   and the merge button unlocks.
 - **It fails open.** No token, or GitLab unreachable: the job passes with an `UNVERIFIED` line
