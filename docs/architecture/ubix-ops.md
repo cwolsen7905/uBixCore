@@ -88,12 +88,15 @@ merge request is treated like an approval, and one revoked like an un-approval. 
 emoji, or an emoji on an issue or commit, is ignored.
 
 - Turn on **Emoji events** on the webhook, besides Merge request events.
-- It is the *project* webhook trigger; a GitLab that predates it (it appears in the 16.2
-  webhook-events docs) shows no such checkbox, and then thumbs-up does not re-run the
-  job. Approve with the Approve button instead.
+- It is a *project* webhook trigger (`emoji_events` in the hooks API). Our GitLab
+  (19.4.1-ee) supports it, but it is off on a hook that existed before: the uBixOps hook
+  on ubixcore had `emoji_events: false` on 2026-10-11, so turning it on is a manual step.
+- The log tells the two apart. The outcome reads `retried: job N (require-approval) for !M
+  after approved` for the Approve button, and `... after thumbsup award` for a thumbs-up
+  (`after unapproved` and `after thumbsup revoke` for the removals).
 - The handler is written from GitLab's documented payload and unit-tested against it. It
-  has not yet been observed on our GitLab instance; check the first real delivery in the
-  webhook's **Recent events** and the uBixOps log before relying on it.
+  has not yet been observed on a real delivery; check the first one in the webhook's
+  **Recent events** and the uBixOps log before relying on it.
 
 ## 5. Why it is a framework app and not a product route
 
