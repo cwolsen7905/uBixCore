@@ -14,7 +14,7 @@ use Ubix\Service\Ci\ApprovalWebhookService;
 use Ubix\Service\JsonService;
 
 /**
- * The uBixOps app's endpoints: a health check, and GitLab's merge-request webhook
+ * The uBixOps app's endpoints: a health check, and GitLab's merge-request and emoji webhook
  *
  * Wiring: `docs/architecture/ubix-ops.md`.
  *
@@ -54,6 +54,9 @@ final class OpsController extends Controller
 
     /**
      * POST /gitlab/merge-request-hook
+     *
+     * Takes both the Merge request and the Emoji event deliveries (a 👍 on a merge request);
+     * ApprovalWebhookService tells them apart by `object_kind`.
      *
      * @param Request  $request  The webhook delivery
      * @param Response $response The response
